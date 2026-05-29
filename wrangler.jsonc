@@ -1,7 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "whoismrkt",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  // Custom domains — activate once nameservers point to Cloudflare
+  "routes": [
+    { "pattern": "whoismrkt.com/*", "zone_name": "whoismrkt.com" },
+    { "pattern": "www.whoismrkt.com/*", "zone_name": "whoismrkt.com" }
+  ]
 }
