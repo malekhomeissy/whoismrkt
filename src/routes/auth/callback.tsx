@@ -8,24 +8,68 @@ export const Route = createFileRoute("/auth/callback")({
   component: AuthCallback,
 });
 
-/** Reads the onboarding intent from localStorage and writes it to the profile row.
- *  Silently no-ops if there is no stored intent (e.g. returning user). */
-async function commitIntent(userId: string) {
+type Dest = "/chat" | "/onboarding" | "/login";
+
+/**
+ * Commits any pre-stored onboarding intent from localStorage to the profile.
+ * Returns the committed path (or null if there was no stored intent).
+ */
+async function commitIntent(userId: string): Promise<string | null> {
   const intent = getStoredIntent();
-  if (!intent) return;
+  if (!intent) return null;
   try {
     const { error } = await supabase
       .from("profiles")
       .update({
-        account_type: intentToAccountType(intent.path),
-        onboarding_path: intent.path,
-        business_stage: intent.business_stage ?? null,
+        account_type:         intentToAccountType(intent.path),
+        onboarding_path:      intent.path,
+        business_stage:       intent.business_stage ?? null,
         onboarding_completed: true,
       })
       .eq("id", userId);
     if (!error) clearIntent();
-  } catch (e) {
-    console.error("[auth/callback] intent commit failed:", e);
+    return intent.path;
+  } catch (err) {
+    console.error("[auth/callback] intent commit failed:", err);
+    return null;
+  }
+}
+
+/**
+ * Decides where to send the user after a successful sign-in.
+ *
+ * Rules:
+ * 1. If an intent was just committed → they're set up → /chat
+ * 2. If onboarding_completed = true → returning user → /chat
+ * 3. If onboarding_completed = false / no profile yet → first-time → /onboarding
+ */
+async function resolveDestination(userId: string, committedPath: string | null): Promise<Dest> {
+  // Intent was committed this session — profile is fully set up.
+  if (committedPath !== null) return "/chat";
+
+  // Check the existing profile.
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("[auth/callback] profile fetch error:", error.message);
+      // On any DB error, fall through to /onboarding so the user can pick a workspace
+      // rather than landing in a broken state.
+      return "/onboarding";
+    }
+
+    // Profile exists and onboarding is complete → returning user.
+    if (data?.onboarding_completed === true) return "/chat";
+
+    // No profile yet or onboarding not done → first-time → workspace selector.
+    return "/onboarding";
+  } catch (err) {
+    console.error("[auth/callback] resolveDestination error:", err);
+    return "/onboarding";
   }
 }
 
@@ -34,35 +78,37 @@ function AuthCallback() {
 
   useEffect(() => {
     let done = false;
-
-    const go = (to: "/chat" | "/login") => {
+    const go = (to: Dest) => {
       if (done) return;
       done = true;
       nav({ to, replace: true });
     };
 
-    // Supabase auto-detects OAuth tokens in the URL hash / PKCE code
-    // and fires onAuthStateChange with SIGNED_IN once the session is ready.
+    // Primary path — listen for the SIGNED_IN event that Supabase fires
+    // after the OAuth redirect lands and the session is established.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-          await commitIntent(session.user.id);
-          go("/chat");
+          const path = await commitIntent(session.user.id);
+          const dest = await resolveDestination(session.user.id, path);
+          go(dest);
         } else if (event === "SIGNED_OUT") {
           go("/login");
         }
       },
     );
 
-    // In case the session is already present (e.g., page refreshed mid-flow)
+    // Fallback — handles cases where the session is already present when the
+    // component mounts (e.g. a page refresh mid-flow or a very fast redirect).
     supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
-        await commitIntent(data.session.user.id);
-        go("/chat");
+        const path = await commitIntent(data.session.user.id);
+        const dest = await resolveDestination(data.session.user.id, path);
+        go(dest);
       }
     });
 
-    // Safety net — if nothing resolves in 10 s, fall back to login
+    // Hard timeout — if nothing resolves in 10 s, bail to login.
     const timeout = setTimeout(() => go("/login"), 10_000);
 
     return () => {
@@ -72,9 +118,27 @@ function AuthCallback() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-5">
-      <div className="h-2 w-2 rounded-full bg-white/50 animate-pulse" />
-      <p className="text-[0.8125rem] text-muted-foreground/50 tracking-wide">Signing you in…</p>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{ background: "#000" }}
+    >
+      {/* Subtle orbital rings — matches the chat empty state aesthetic */}
+      <div className="relative h-10 w-10">
+        <div
+          className="ring-spinner absolute inset-0 rounded-full"
+          style={{ border: "1px solid oklch(1 0 0 / 14%)", animation: "ring-spin 16s linear infinite" }}
+        />
+        <div
+          className="ring-spinner absolute inset-[7px] rounded-full"
+          style={{ border: "1px solid oklch(1 0 0 / 8%)", animation: "ring-spin-r 26s linear infinite" }}
+        />
+      </div>
+      <p
+        className="text-[12.5px] tracking-wide"
+        style={{ color: "oklch(1 0 0 / 30%)" }}
+      >
+        Signing you in…
+      </p>
     </div>
   );
 }

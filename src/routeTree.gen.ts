@@ -15,13 +15,31 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForCreatorsRouteImport } from './routes/for-creators'
+import { Route as ForBusinessesRouteImport } from './routes/for-businesses'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CreatorsCreatorIdRouteImport } from './routes/creators/$creatorId'
+import { Route as CampaignsCampaignIdRouteImport } from './routes/campaigns/$campaignId'
+import { Route as BusinessOnboardingRouteImport } from './routes/business/onboarding'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
+import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
+import { Route as AuthenticatedGlobeRouteImport } from './routes/_authenticated/globe'
+import { Route as AuthenticatedFindCreatorsRouteImport } from './routes/_authenticated/find-creators'
+import { Route as AuthenticatedCreatorOnboardingRouteImport } from './routes/_authenticated/creator-onboarding'
+import { Route as AuthenticatedContentPlannerRouteImport } from './routes/_authenticated/content-planner'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
+import { Route as AuthenticatedCampaignCreateRouteImport } from './routes/_authenticated/campaign-create'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
+import { Route as AuthenticatedCampaignsCampaignIdEditRouteImport } from './routes/_authenticated/campaigns.$campaignId.edit'
 
 const WorkRoute = WorkRouteImport.update({
   id: '/work',
@@ -53,6 +71,16 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForCreatorsRoute = ForCreatorsRouteImport.update({
+  id: '/for-creators',
+  path: '/for-creators',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForBusinessesRoute = ForBusinessesRouteImport.update({
+  id: '/for-businesses',
+  path: '/for-businesses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -77,44 +105,167 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorsCreatorIdRoute = CreatorsCreatorIdRouteImport.update({
+  id: '/creators/$creatorId',
+  path: '/creators/$creatorId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampaignsCampaignIdRoute = CampaignsCampaignIdRouteImport.update({
+  id: '/campaigns/$campaignId',
+  path: '/campaigns/$campaignId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BusinessOnboardingRoute = BusinessOnboardingRouteImport.update({
+  id: '/business/onboarding',
+  path: '/business/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPipelineRoute = AuthenticatedPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedOpportunitiesRoute =
+  AuthenticatedOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedGlobeRoute = AuthenticatedGlobeRouteImport.update({
+  id: '/globe',
+  path: '/globe',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFindCreatorsRoute =
+  AuthenticatedFindCreatorsRouteImport.update({
+    id: '/find-creators',
+    path: '/find-creators',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCreatorOnboardingRoute =
+  AuthenticatedCreatorOnboardingRouteImport.update({
+    id: '/creator-onboarding',
+    path: '/creator-onboarding',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContentPlannerRoute =
+  AuthenticatedContentPlannerRouteImport.update({
+    id: '/content-planner',
+    path: '/content-planner',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
   path: '/chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCampaignCreateRoute =
+  AuthenticatedCampaignCreateRouteImport.update({
+    id: '/campaign-create',
+    path: '/campaign-create',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProjectsIndexRoute =
+  AuthenticatedProjectsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProjectsRoute,
+  } as any)
+const AuthenticatedProjectsProjectIdRoute =
+  AuthenticatedProjectsProjectIdRouteImport.update({
+    id: '/$projectId',
+    path: '/$projectId',
+    getParentRoute: () => AuthenticatedProjectsRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdEditRoute =
+  AuthenticatedCampaignsCampaignIdEditRouteImport.update({
+    id: '/campaigns/$campaignId/edit',
+    path: '/campaigns/$campaignId/edit',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/connect': typeof ConnectRoute
   '/contact': typeof ContactRoute
+  '/for-businesses': typeof ForBusinessesRoute
+  '/for-creators': typeof ForCreatorsRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
   '/services': typeof ServicesRoute
   '/studio': typeof StudioRoute
   '/work': typeof WorkRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/campaign-create': typeof AuthenticatedCampaignCreateRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/content-planner': typeof AuthenticatedContentPlannerRoute
+  '/creator-onboarding': typeof AuthenticatedCreatorOnboardingRoute
+  '/find-creators': typeof AuthenticatedFindCreatorsRoute
+  '/globe': typeof AuthenticatedGlobeRoute
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/pipeline': typeof AuthenticatedPipelineRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
+  '/business/onboarding': typeof BusinessOnboardingRoute
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/creators/$creatorId': typeof CreatorsCreatorIdRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/campaigns/$campaignId/edit': typeof AuthenticatedCampaignsCampaignIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/connect': typeof ConnectRoute
   '/contact': typeof ContactRoute
+  '/for-businesses': typeof ForBusinessesRoute
+  '/for-creators': typeof ForCreatorsRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
   '/services': typeof ServicesRoute
   '/studio': typeof StudioRoute
   '/work': typeof WorkRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/campaign-create': typeof AuthenticatedCampaignCreateRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/content-planner': typeof AuthenticatedContentPlannerRoute
+  '/creator-onboarding': typeof AuthenticatedCreatorOnboardingRoute
+  '/find-creators': typeof AuthenticatedFindCreatorsRoute
+  '/globe': typeof AuthenticatedGlobeRoute
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/pipeline': typeof AuthenticatedPipelineRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/business/onboarding': typeof BusinessOnboardingRoute
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/creators/$creatorId': typeof CreatorsCreatorIdRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/campaigns/$campaignId/edit': typeof AuthenticatedCampaignsCampaignIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,14 +274,32 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/connect': typeof ConnectRoute
   '/contact': typeof ContactRoute
+  '/for-businesses': typeof ForBusinessesRoute
+  '/for-creators': typeof ForCreatorsRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
   '/services': typeof ServicesRoute
   '/studio': typeof StudioRoute
   '/work': typeof WorkRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/campaign-create': typeof AuthenticatedCampaignCreateRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/content-planner': typeof AuthenticatedContentPlannerRoute
+  '/_authenticated/creator-onboarding': typeof AuthenticatedCreatorOnboardingRoute
+  '/_authenticated/find-creators': typeof AuthenticatedFindCreatorsRoute
+  '/_authenticated/globe': typeof AuthenticatedGlobeRoute
+  '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
+  '/business/onboarding': typeof BusinessOnboardingRoute
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/creators/$creatorId': typeof CreatorsCreatorIdRoute
+  '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/campaigns/$campaignId/edit': typeof AuthenticatedCampaignsCampaignIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,28 +308,63 @@ export interface FileRouteTypes {
     | '/about'
     | '/connect'
     | '/contact'
+    | '/for-businesses'
+    | '/for-creators'
     | '/login'
     | '/manifesto'
     | '/onboarding'
     | '/services'
     | '/studio'
     | '/work'
+    | '/analytics'
+    | '/campaign-create'
     | '/chat'
+    | '/content-planner'
+    | '/creator-onboarding'
+    | '/find-creators'
+    | '/globe'
+    | '/opportunities'
+    | '/pipeline'
+    | '/profile'
+    | '/projects'
     | '/auth/callback'
+    | '/business/onboarding'
+    | '/campaigns/$campaignId'
+    | '/creators/$creatorId'
+    | '/projects/$projectId'
+    | '/projects/'
+    | '/campaigns/$campaignId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/connect'
     | '/contact'
+    | '/for-businesses'
+    | '/for-creators'
     | '/login'
     | '/manifesto'
     | '/onboarding'
     | '/services'
     | '/studio'
     | '/work'
+    | '/analytics'
+    | '/campaign-create'
     | '/chat'
+    | '/content-planner'
+    | '/creator-onboarding'
+    | '/find-creators'
+    | '/globe'
+    | '/opportunities'
+    | '/pipeline'
+    | '/profile'
     | '/auth/callback'
+    | '/business/onboarding'
+    | '/campaigns/$campaignId'
+    | '/creators/$creatorId'
+    | '/projects/$projectId'
+    | '/projects'
+    | '/campaigns/$campaignId/edit'
   id:
     | '__root__'
     | '/'
@@ -168,14 +372,32 @@ export interface FileRouteTypes {
     | '/about'
     | '/connect'
     | '/contact'
+    | '/for-businesses'
+    | '/for-creators'
     | '/login'
     | '/manifesto'
     | '/onboarding'
     | '/services'
     | '/studio'
     | '/work'
+    | '/_authenticated/analytics'
+    | '/_authenticated/campaign-create'
     | '/_authenticated/chat'
+    | '/_authenticated/content-planner'
+    | '/_authenticated/creator-onboarding'
+    | '/_authenticated/find-creators'
+    | '/_authenticated/globe'
+    | '/_authenticated/opportunities'
+    | '/_authenticated/pipeline'
+    | '/_authenticated/profile'
+    | '/_authenticated/projects'
     | '/auth/callback'
+    | '/business/onboarding'
+    | '/campaigns/$campaignId'
+    | '/creators/$creatorId'
+    | '/_authenticated/projects/$projectId'
+    | '/_authenticated/projects/'
+    | '/_authenticated/campaigns/$campaignId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +406,8 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ConnectRoute: typeof ConnectRoute
   ContactRoute: typeof ContactRoute
+  ForBusinessesRoute: typeof ForBusinessesRoute
+  ForCreatorsRoute: typeof ForCreatorsRoute
   LoginRoute: typeof LoginRoute
   ManifestoRoute: typeof ManifestoRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -191,6 +415,9 @@ export interface RootRouteChildren {
   StudioRoute: typeof StudioRoute
   WorkRoute: typeof WorkRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  BusinessOnboardingRoute: typeof BusinessOnboardingRoute
+  CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
+  CreatorsCreatorIdRoute: typeof CreatorsCreatorIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -237,6 +464,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/for-creators': {
+      id: '/for-creators'
+      path: '/for-creators'
+      fullPath: '/for-creators'
+      preLoaderRoute: typeof ForCreatorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-businesses': {
+      id: '/for-businesses'
+      path: '/for-businesses'
+      fullPath: '/for-businesses'
+      preLoaderRoute: typeof ForBusinessesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -272,12 +513,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creators/$creatorId': {
+      id: '/creators/$creatorId'
+      path: '/creators/$creatorId'
+      fullPath: '/creators/$creatorId'
+      preLoaderRoute: typeof CreatorsCreatorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campaigns/$campaignId': {
+      id: '/campaigns/$campaignId'
+      path: '/campaigns/$campaignId'
+      fullPath: '/campaigns/$campaignId'
+      preLoaderRoute: typeof CampaignsCampaignIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/business/onboarding': {
+      id: '/business/onboarding'
+      path: '/business/onboarding'
+      fullPath: '/business/onboarding'
+      preLoaderRoute: typeof BusinessOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pipeline': {
+      id: '/_authenticated/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof AuthenticatedPipelineRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/opportunities': {
+      id: '/_authenticated/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/globe': {
+      id: '/_authenticated/globe'
+      path: '/globe'
+      fullPath: '/globe'
+      preLoaderRoute: typeof AuthenticatedGlobeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/find-creators': {
+      id: '/_authenticated/find-creators'
+      path: '/find-creators'
+      fullPath: '/find-creators'
+      preLoaderRoute: typeof AuthenticatedFindCreatorsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/creator-onboarding': {
+      id: '/_authenticated/creator-onboarding'
+      path: '/creator-onboarding'
+      fullPath: '/creator-onboarding'
+      preLoaderRoute: typeof AuthenticatedCreatorOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/content-planner': {
+      id: '/_authenticated/content-planner'
+      path: '/content-planner'
+      fullPath: '/content-planner'
+      preLoaderRoute: typeof AuthenticatedContentPlannerRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/chat': {
       id: '/_authenticated/chat'
@@ -286,15 +604,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/campaign-create': {
+      id: '/_authenticated/campaign-create'
+      path: '/campaign-create'
+      fullPath: '/campaign-create'
+      preLoaderRoute: typeof AuthenticatedCampaignCreateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/': {
+      id: '/_authenticated/projects/'
+      path: '/'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedProjectsRoute
+    }
+    '/_authenticated/projects/$projectId': {
+      id: '/_authenticated/projects/$projectId'
+      path: '/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
+      parentRoute: typeof AuthenticatedProjectsRoute
+    }
+    '/_authenticated/campaigns/$campaignId/edit': {
+      id: '/_authenticated/campaigns/$campaignId/edit'
+      path: '/campaigns/$campaignId/edit'
+      fullPath: '/campaigns/$campaignId/edit'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdEditRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedProjectsRouteChildren {
+  AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+}
+
+const AuthenticatedProjectsRouteChildren: AuthenticatedProjectsRouteChildren = {
+  AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+}
+
+const AuthenticatedProjectsRouteWithChildren =
+  AuthenticatedProjectsRoute._addFileChildren(
+    AuthenticatedProjectsRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedCampaignCreateRoute: typeof AuthenticatedCampaignCreateRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedContentPlannerRoute: typeof AuthenticatedContentPlannerRoute
+  AuthenticatedCreatorOnboardingRoute: typeof AuthenticatedCreatorOnboardingRoute
+  AuthenticatedFindCreatorsRoute: typeof AuthenticatedFindCreatorsRoute
+  AuthenticatedGlobeRoute: typeof AuthenticatedGlobeRoute
+  AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
+  AuthenticatedCampaignsCampaignIdEditRoute: typeof AuthenticatedCampaignsCampaignIdEditRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedCampaignCreateRoute: AuthenticatedCampaignCreateRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedContentPlannerRoute: AuthenticatedContentPlannerRoute,
+  AuthenticatedCreatorOnboardingRoute: AuthenticatedCreatorOnboardingRoute,
+  AuthenticatedFindCreatorsRoute: AuthenticatedFindCreatorsRoute,
+  AuthenticatedGlobeRoute: AuthenticatedGlobeRoute,
+  AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
+  AuthenticatedCampaignsCampaignIdEditRoute:
+    AuthenticatedCampaignsCampaignIdEditRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -307,6 +698,8 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   ConnectRoute: ConnectRoute,
   ContactRoute: ContactRoute,
+  ForBusinessesRoute: ForBusinessesRoute,
+  ForCreatorsRoute: ForCreatorsRoute,
   LoginRoute: LoginRoute,
   ManifestoRoute: ManifestoRoute,
   OnboardingRoute: OnboardingRoute,
@@ -314,6 +707,9 @@ const rootRouteChildren: RootRouteChildren = {
   StudioRoute: StudioRoute,
   WorkRoute: WorkRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  BusinessOnboardingRoute: BusinessOnboardingRoute,
+  CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
+  CreatorsCreatorIdRoute: CreatorsCreatorIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

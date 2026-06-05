@@ -4,6 +4,8 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  // Enable the workers.dev subdomain (whoismrkt.whoismrkt.workers.dev)
+  "workers_dev": true,
   // Custom domains — activate once nameservers point to Cloudflare
   "routes": [
     { "pattern": "whoismrkt.com/*", "zone_name": "whoismrkt.com" },

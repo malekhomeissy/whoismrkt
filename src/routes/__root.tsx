@@ -1,8 +1,97 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Component, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 
 import appCss from "../styles.css?url";
+
+// ─── Error boundary ───────────────────────────────────────────────────────────
+// Catches render errors that would otherwise silently show "Something went wrong".
+// Logs the real error + stack to the console so it's visible in DevTools and
+// Cloudflare Worker tail logs.
+
+class RootErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: { componentStack: string }) {
+    console.error("[MRKT] Render error caught by boundary:", error);
+    console.error("[MRKT] Component stack:", info.componentStack);
+  }
+
+  render() {
+    if (this.state.error) {
+      const msg = this.state.error.message ?? "An unexpected error occurred.";
+      return (
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+            background: "#000",
+            padding: 24,
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              height: 48, width: 48, borderRadius: "50%",
+              background: "oklch(0.65 0.18 25 / 18%)",
+              border: "1px solid oklch(0.65 0.18 25 / 35%)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 22,
+            }}
+          >
+            ⚠
+          </div>
+          <p style={{ color: "oklch(1 0 0 / 72%)", fontSize: 16, fontWeight: 600 }}>
+            Something went wrong
+          </p>
+          <p style={{ color: "oklch(1 0 0 / 40%)", fontSize: 13, maxWidth: 320 }}>
+            {msg}
+          </p>
+          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+            <button
+              onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+              style={{
+                background: "oklch(0.95 0 0)", color: "#000",
+                border: "none", borderRadius: 9999,
+                padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              Try again
+            </button>
+            <a
+              href="/"
+              style={{
+                background: "transparent", color: "oklch(1 0 0 / 50%)",
+                border: "1px solid oklch(1 0 0 / 18%)", borderRadius: 9999,
+                padding: "8px 20px", fontSize: 13, textDecoration: "none",
+              }}
+            >
+              Go home
+            </a>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function NotFoundComponent() {
   return (
@@ -31,15 +120,15 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "whoismrkt — We do the ing." },
-      { name: "description", content: "An AI-native marketing studio for creators, businesses and brands. Strategy, content and growth — decided, designed, delivered." },
+      { title: "MRKT — AI marketing operating system" },
+      { name: "description", content: "MRKT helps creators and businesses plan content, build campaigns, discover collaborations, and grow with AI." },
       { name: "author", content: "whoismrkt" },
-      { property: "og:title", content: "whoismrkt — We do the ing." },
-      { property: "og:description", content: "An AI-native marketing studio. Strategy, content and growth — decided, designed, delivered." },
+      { property: "og:title", content: "MRKT — AI marketing operating system" },
+      { property: "og:description", content: "Plan content, build campaigns, discover creators, and grow with AI. The marketing operating system for ambitious brands." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "whoismrkt — We do the ing." },
-      { name: "twitter:description", content: "An AI-native marketing studio. Strategy, content and growth — decided, designed, delivered." },
+      { name: "twitter:title", content: "MRKT — AI marketing operating system" },
+      { name: "twitter:description", content: "Plan content, build campaigns, discover creators, and grow with AI." },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -64,9 +153,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <AuthProvider>
-      <Outlet />
-      <Toaster theme="dark" position="top-right" />
-    </AuthProvider>
+    <RootErrorBoundary>
+      <AuthProvider>
+        <Outlet />
+        <Toaster theme="dark" position="top-right" />
+      </AuthProvider>
+    </RootErrorBoundary>
   );
 }
