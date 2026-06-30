@@ -14,7 +14,7 @@ import {
 } from "@/lib/onboarding";
 
 export const Route = createFileRoute("/onboarding")({
-  head: () => ({ meta: [{ title: "Get started — whoismrkt" }] }),
+  head: () => ({ meta: [{ title: "Get started — MRKT" }] }),
   component: OnboardingPage,
 });
 
@@ -130,7 +130,7 @@ function OnboardingPage() {
         toast.error("Something went wrong — please try again.");
         return;
       }
-      nav({ to: "/chat" });
+      nav({ to: "/home" });
     } else {
       // Not yet authenticated — persist to localStorage; auth callback will commit it
       storeIntent(intent);
@@ -168,14 +168,14 @@ function OnboardingPage() {
           </p>
 
           {/* Intent cards */}
-          <div className="mt-12 grid md:grid-cols-3 gap-4">
+          <div className="mt-10 grid md:grid-cols-3 gap-4">
             {INTENTS.map((intent) => {
               const selected = path === intent.path;
               return (
                 <button
                   key={intent.path}
                   onClick={() => selectPath(intent.path)}
-                  className="group relative text-left rounded-2xl p-6 transition-all duration-200 flex flex-col min-h-[280px] md:min-h-[320px]"
+                  className="group relative text-left rounded-2xl p-6 transition-all duration-200 flex flex-col h-full"
                   style={{
                     background: selected
                       ? "oklch(1 0 0 / 5.5%)"
@@ -188,15 +188,14 @@ function OnboardingPage() {
                       : "none",
                   }}
                 >
-                  {/* Top row */}
-                  <div className="flex items-start justify-between mb-auto">
+                  {/* Top row — number + checkmark, always flush to top */}
+                  <div className="flex items-start justify-between">
                     <span
                       className="font-display text-[10px] tracking-[0.25em]"
                       style={{ color: selected ? "oklch(0.84 0 0)" : "oklch(1 0 0 / 28%)" }}
                     >
                       {intent.num}
                     </span>
-                    {/* Checkmark */}
                     <span
                       className="h-5 w-5 rounded-full flex items-center justify-center transition-all duration-200 flex-none"
                       style={{
@@ -209,12 +208,12 @@ function OnboardingPage() {
                     </span>
                   </div>
 
-                  {/* Label + tag */}
-                  <div className="mt-8">
+                  {/* Label + tag — consistent distance from top */}
+                  <div className="mt-6">
                     <div className="font-display text-2xl font-semibold tracking-tight">
                       {intent.label}
                     </div>
-                    {intent.tag && (
+                    {intent.tag ? (
                       <div
                         className="mt-1.5 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.2em]"
                         style={{
@@ -224,6 +223,15 @@ function OnboardingPage() {
                       >
                         {intent.tag}
                       </div>
+                    ) : (
+                      /* Invisible clone of the badge — guarantees identical height */
+                      <div
+                        className="mt-1.5 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.2em]"
+                        style={{ visibility: "hidden" }}
+                        aria-hidden
+                      >
+                        placeholder
+                      </div>
                     )}
                   </div>
 
@@ -231,6 +239,9 @@ function OnboardingPage() {
                   <p className="mt-4 text-[0.8125rem] text-muted-foreground/55 leading-relaxed">
                     {intent.description}
                   </p>
+
+                  {/* Flexible spacer — pushes features to the bottom */}
+                  <div className="flex-1 min-h-[16px]" />
 
                   {/* Features */}
                   <ul className="mt-5 space-y-1.5">

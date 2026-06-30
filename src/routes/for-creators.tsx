@@ -4,93 +4,79 @@ import { Footer } from "@/components/site/Footer";
 import { useAuth } from "@/lib/auth";
 import {
   ArrowUpRight, Sparkles, CalendarDays,
-  Users, BarChart3, TrendingUp, Zap, Star,
+  Users, BarChart3, TrendingUp, Zap, MapPin,
 } from "lucide-react";
 
 export const Route = createFileRoute("/for-creators")({
   head: () => ({
     meta: [
-      { title: "MRKT for Creators — Turn your audience into opportunities" },
-      { name: "description", content: "Discover brand partnerships, plan content, and grow your creator business from one intelligent workspace." },
+      { title: "MRKT for Creators — Your creator business. One operating system." },
+      { name: "description", content: "Discover brand partnerships, plan content with AI, track your growth, and manage collaborations — from one intelligent workspace built for MENA creators." },
+      { property: "og:title", content: "MRKT for Creators" },
     ],
   }),
   component: ForCreatorsPage,
 });
 
-// ─────────────────────────────────────────────────────────────
-// Hero visual — creator profile + incoming invitations
-// ─────────────────────────────────────────────────────────────
-function CreatorProfileCard() {
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const EYEBROW = "text-[9.5px] uppercase tracking-[0.35em] font-semibold";
+const eyebrowStyle = { color: "oklch(1 0 0 / 28%)" };
+const bodyStyle    = { color: "oklch(1 0 0 / 46%)" };
+const cardStyle    = { background: "oklch(1 0 0 / 2.5%)", border: "1px solid oklch(1 0 0 / 8%)" };
+
+// ─── Profile mockup ───────────────────────────────────────────────────────────
+function CreatorProfileMockup() {
   return (
     <div
-      className="w-full max-w-sm mx-auto mt-12 rounded-2xl overflow-hidden"
-      style={{
-        background: "oklch(0.09 0 0)",
-        border: "1px solid oklch(1 0 0 / 10%)",
-        boxShadow: "0 24px 64px -16px oklch(0 0 0 / 50%)",
-      }}
+      className="rounded-2xl overflow-hidden w-full"
+      style={{ background: "oklch(0.08 0 0)", border: "1px solid oklch(1 0 0 / 10%)", boxShadow: "0 32px 80px -20px oklch(0 0 0 / 55%)" }}
     >
-      {/* Profile header */}
-      <div className="p-5 flex items-center gap-4" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)" }}>
-        <div
-          className="h-12 w-12 rounded-full shrink-0 flex items-center justify-center text-base font-bold"
-          style={{ background: "oklch(0.72 0.09 20)", color: "oklch(0.1 0 0)" }}
-        >
-          S
-        </div>
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: "oklch(0.055 0 0)" }}>
+        <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: "oklch(0.72 0.09 20)", color: "oklch(0.1 0 0)" }}>S</div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-[14px]" style={{ color: "oklch(1 0 0 / 88%)" }}>Sofia Marlowe</div>
-          <div className="text-[11px] mt-0.5" style={{ color: "oklch(1 0 0 / 38%)" }}>Sustainable fashion · Paris</div>
+          <div className="text-[13px] font-semibold" style={{ color: "oklch(1 0 0 / 85%)" }}>Sara Al-Khatib</div>
+          <div className="text-[10px] mt-0.5 flex items-center gap-1" style={{ color: "oklch(1 0 0 / 36%)" }}>
+            <MapPin className="h-2.5 w-2.5" /> Fashion · Dubai, UAE
+          </div>
         </div>
-        <span
-          className="text-[9px] uppercase tracking-[0.18em] rounded-full px-2.5 py-0.5 font-medium"
-          style={{ background: "oklch(1 0 0 / 7%)", color: "oklch(1 0 0 / 36%)" }}
-        >
-          Creator
-        </span>
+        <span className="text-[9px] font-medium rounded-full px-2.5 py-0.5 uppercase tracking-wider" style={{ background: "oklch(0.62 0.12 158 / 14%)", color: "oklch(0.62 0.12 158)" }}>Active</span>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 p-5 gap-3" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)" }}>
+      <div className="grid grid-cols-3 divide-x" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", borderColor: "oklch(1 0 0 / 7%)" }}>
         {[
-          { value: "280K",  label: "Followers"  },
-          { value: "6.8%",  label: "Engagement" },
-          { value: "24",    label: "Campaigns"  },
+          { v: "148K",  l: "Followers"  },
+          { v: "7.2%",  l: "Engagement" },
+          { v: "Score 81", l: "Visibility"  },
         ].map((s) => (
-          <div key={s.label} className="text-center">
-            <div className="font-display text-xl font-semibold" style={{ color: "oklch(1 0 0 / 88%)" }}>{s.value}</div>
-            <div className="text-[9.5px] mt-0.5" style={{ color: "oklch(1 0 0 / 34%)" }}>{s.label}</div>
+          <div key={s.l} className="text-center py-3.5" style={{ borderColor: "oklch(1 0 0 / 7%)" }}>
+            <div className="text-[15px] font-bold" style={{ color: "oklch(1 0 0 / 85%)" }}>{s.v}</div>
+            <div className="text-[9px] mt-0.5" style={{ color: "oklch(1 0 0 / 30%)" }}>{s.l}</div>
           </div>
         ))}
       </div>
 
-      {/* Incoming invitations */}
-      <div className="p-4 space-y-2">
-        <div
-          className="text-[9px] uppercase tracking-[0.28em] font-medium mb-3"
-          style={{ color: "oklch(1 0 0 / 25%)" }}
-        >
-          New matches
+      {/* AI Strategist result */}
+      <div className="p-4">
+        <div className={`${EYEBROW} text-[8.5px] mb-3`} style={eyebrowStyle}>AI Strategist</div>
+        <div className="rounded-xl p-3.5 text-[11.5px] leading-relaxed mb-3" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 6%)" }}>
+          <span className="font-semibold" style={{ color: "oklch(0.72 0.10 224)" }}>Growth insight: </span>
+          <span style={{ color: "oklch(1 0 0 / 55%)" }}>Your engagement is 2.1× the UAE fashion average. Add your TikTok handle to unlock 18 more matched campaigns this week.</span>
         </div>
+
+        {/* Campaign matches */}
+        <div className={`${EYEBROW} text-[8.5px] mb-2`} style={eyebrowStyle}>Matched campaigns</div>
         {[
-          { brand: "Lumière Studio", note: "Sent a collaboration invite", score: "94%" },
-          { brand: "Maison Aurum",   note: "New campaign match",          score: "88%" },
-        ].map((m) => (
-          <div
-            key={m.brand}
-            className="flex items-center justify-between p-3 rounded-xl"
-            style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 7%)" }}
-          >
+          { brand: "Hayas Collective", match: "96%", platform: "IG + TikTok" },
+          { brand: "Noon Fashion",     match: "89%", platform: "Instagram"   },
+        ].map((c) => (
+          <div key={c.brand} className="flex items-center justify-between py-2.5" style={{ borderBottom: "1px solid oklch(1 0 0 / 5%)" }}>
             <div>
-              <div className="text-[12px] font-medium" style={{ color: "oklch(1 0 0 / 80%)" }}>{m.brand}</div>
-              <div className="text-[10px] mt-0.5" style={{ color: "oklch(1 0 0 / 34%)" }}>{m.note}</div>
+              <div className="text-[12px] font-medium" style={{ color: "oklch(1 0 0 / 78%)" }}>{c.brand}</div>
+              <div className="text-[9.5px]" style={{ color: "oklch(1 0 0 / 32%)" }}>{c.platform}</div>
             </div>
-            <div
-              className="text-[10.5px] font-semibold rounded-full px-2.5 py-0.5"
-              style={{ color: "oklch(0.72 0.14 152)", background: "oklch(0.72 0.14 152 / 12%)" }}
-            >
-              {m.score}
-            </div>
+            <span className="text-[10.5px] font-semibold rounded-full px-2.5 py-0.5" style={{ color: "oklch(0.62 0.12 158)", background: "oklch(0.62 0.12 158 / 12%)" }}>{c.match}</span>
           </div>
         ))}
       </div>
@@ -98,147 +84,36 @@ function CreatorProfileCard() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Campaign browser mockup
-// ─────────────────────────────────────────────────────────────
-function CampaignBrowserMockup() {
-  const campaigns = [
-    { brand: "Lumière Studio", platform: "Instagram", budget: "$12,000", req: "Micro creators",  score: 94 },
-    { brand: "Helio Fit",      platform: "TikTok",    budget: "$8,500",  req: "Wellness niche",  score: 88 },
-    { brand: "Maison Aurum",   platform: "Instagram", budget: "$24,000", req: "Fashion & luxury", score: 82 },
-  ];
-  return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{ background: "oklch(0.09 0 0)", border: "1px solid oklch(1 0 0 / 10%)" }}
-    >
-      <div
-        className="px-4 py-3 flex items-center justify-between"
-        style={{ background: "oklch(0.075 0 0)", borderBottom: "1px solid oklch(1 0 0 / 7%)" }}
-      >
-        <span className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: "oklch(1 0 0 / 30%)" }}>
-          Open Campaigns
-        </span>
-        <span
-          className="text-[9.5px] rounded-full px-2 py-0.5 font-medium"
-          style={{ background: "oklch(0.72 0.14 152 / 12%)", color: "oklch(0.72 0.14 152)" }}
-        >
-          12 matched
-        </span>
-      </div>
-      <div className="p-4 space-y-2.5">
-        {campaigns.map((c) => (
-          <div
-            key={c.brand}
-            className="p-3.5 rounded-xl"
-            style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 7%)" }}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="font-medium text-[12.5px]" style={{ color: "oklch(1 0 0 / 82%)" }}>{c.brand}</div>
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="text-[9px] uppercase tracking-[0.18em] rounded-full px-2 py-0.5"
-                  style={{ background: "oklch(1 0 0 / 7%)", color: "oklch(1 0 0 / 36%)" }}
-                >
-                  {c.platform}
-                </span>
-                <span
-                  className="text-[10.5px] font-semibold rounded-full px-2 py-0.5"
-                  style={{ color: "oklch(0.72 0.14 152)", background: "oklch(0.72 0.14 152 / 12%)" }}
-                >
-                  {c.score}%
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-[10.5px]">
-              <span style={{ color: "oklch(1 0 0 / 55%)" }}>{c.budget}</span>
-              <span style={{ color: "oklch(1 0 0 / 30%)" }}>{c.req}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// AI content output mockup
-// ─────────────────────────────────────────────────────────────
-function AICreatorMockup() {
-  const outputs = [
-    { type: "Hook",    text: "I've refused to buy new clothes for 6 months. Here's what happened." },
-    { type: "Hook",    text: "Fast fashion is destroying the planet. Here's what I wear instead." },
-    { type: "Caption", text: "Sustainable doesn't mean boring. This look took 20 minutes and $0 — thrifted, swapped, and styled." },
-  ];
-  return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{ background: "oklch(0.09 0 0)", border: "1px solid oklch(1 0 0 / 10%)" }}
-    >
-      <div
-        className="px-4 py-3 flex items-center gap-2"
-        style={{ background: "oklch(0.075 0 0)", borderBottom: "1px solid oklch(1 0 0 / 7%)" }}
-      >
-        <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: "oklch(0.72 0.005 250)" }} />
-        <span className="text-[9.5px] font-semibold uppercase tracking-[0.28em]" style={{ color: "oklch(1 0 0 / 28%)" }}>
-          AI Strategist
-        </span>
-      </div>
-      <div className="p-4 space-y-3">
-        <div className="flex justify-end">
-          <div
-            className="max-w-[85%] rounded-[14px] rounded-br-[4px] px-4 py-3 text-[0.8rem] leading-relaxed"
-            style={{ background: "oklch(1 0 0 / 7%)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 74%)" }}
-          >
-            Write hooks and a caption for my sustainable fashion post.
-          </div>
-        </div>
-        <div className="space-y-2">
-          {outputs.map((o, i) => (
-            <div
-              key={i}
-              className="rounded-xl px-4 py-3 text-[0.8rem] leading-[1.65]"
-              style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 6%)" }}
-            >
-              <span
-                className="text-[8.5px] uppercase tracking-[0.24em] font-medium block mb-1"
-                style={{ color: "oklch(1 0 0 / 26%)" }}
-              >
-                {o.type}
-              </span>
-              <span style={{ color: "oklch(1 0 0 / 66%)" }}>{o.text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// Data
-// ─────────────────────────────────────────────────────────────
-
-const FEATURES = [
-  { Icon: Users,       title: "Creator Profile",       desc: "One professional profile that surfaces you to brands automatically. Set your rates, niches, and portfolio once." },
-  { Icon: Zap,         title: "Paid Campaigns",         desc: "Browse live brand opportunities and apply in one click. Receive direct invitations from brands that match your niche." },
-  { Icon: Sparkles,    title: "AI Strategist",          desc: "Generate hooks, captions, campaign concepts, and content strategies on demand. Briefed in seconds." },
-  { Icon: CalendarDays, title: "Content Calendar",      desc: "Plan and schedule content across TikTok, Instagram and YouTube. See everything in one organized view." },
-  { Icon: Star,        title: "Partnership Tracking",   desc: "Manage deliverables, deadlines and brand communications from one place. Nothing falls through the cracks." },
-  { Icon: BarChart3,   title: "Performance Analytics",  desc: "Track reach, engagement and follower growth across all content. See what's working and double down." },
-];
-
+// ─── Workflow steps ───────────────────────────────────────────────────────────
 const WORKFLOW = [
-  { n: "01", title: "Sign in — instantly",     desc: "Create your account in seconds with Apple or Google. No forms, no email confirmation." },
-  { n: "02", title: "Set up your workspace",   desc: "Select Creator, add your niche and platforms. MRKT personalizes to you in one step." },
-  { n: "03", title: "Browse brand campaigns",  desc: "See live opportunities matched to your profile, niche, and audience size." },
-  { n: "04", title: "Apply or get invited",    desc: "Apply directly or accept invitations from brands that discover you through MRKT Connect." },
-  { n: "05", title: "Deliver and grow",        desc: "Manage briefs, deadlines, and brand communications. Track partnerships over time." },
+  { n: "01", title: "Build your profile",       desc: "Set your niche, platforms, and rates once. MRKT surfaces you to brands automatically — no cold pitching." },
+  { n: "02", title: "Get matched",              desc: "Browse campaigns matched to your exact audience, niche, and region. Receive direct invitations from brands." },
+  { n: "03", title: "Plan with AI",             desc: "The AI Strategist writes hooks, captions, posting schedules, and campaign concepts — tailored to your voice." },
+  { n: "04", title: "Deliver and track results", desc: "Manage briefs, deadlines, and brand communications from one dashboard. Nothing falls through the cracks." },
+  { n: "05", title: "Grow your visibility",     desc: "The Growth Hub tracks your score across profile strength, match readiness, and visibility — with specific actions to improve." },
 ];
 
-// ─────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────
+// ─── Features ─────────────────────────────────────────────────────────────────
+const FEATURES = [
+  { Icon: Users,       label: "Creator profile",     desc: "One professional profile. Set rates, niches, and portfolio once. Brands discover you — not the other way around." },
+  { Icon: Zap,         label: "Campaign matching",   desc: "AI matches you to live brand opportunities by niche, audience, platform, and location." },
+  { Icon: Sparkles,    label: "AI Strategist",       desc: "Hooks, captions, content plans, and outreach messages — generated in your voice, in seconds." },
+  { Icon: CalendarDays,label: "Content Calendar",    desc: "Plan and schedule posts across Instagram and TikTok. AI suggests optimal times for your MENA audience." },
+  { Icon: TrendingUp,  label: "Growth Hub",          desc: "Real-time visibility score, profile diagnostics, and AI-driven improvement actions." },
+  { Icon: BarChart3,   label: "Analytics",           desc: "Track engagement, follower growth, and campaign performance across all content." },
+  { Icon: MapPin,      label: "Globe — Travel plans",desc: "Show brands where you're going. Unlock campaigns in cities you're visiting across MENA." },
+];
+
+// ─── Creator types ────────────────────────────────────────────────────────────
+const CREATOR_TYPES = [
+  { type: "Fashion & lifestyle", desc: "Build a professional profile brands trust. Get matched to fashion campaigns across UAE, KSA, and Kuwait." },
+  { type: "Food & dining",       desc: "Connect with restaurants launching in your city, seasonal menus, and MENA food brands." },
+  { type: "Fitness & wellness",  desc: "Gyms, supplements, and sportswear brands are looking for creators your size. Not just mega-influencers." },
+  { type: "Tech & gaming",       desc: "MENA's fastest-growing niche. Connect with regional tech launches, apps, and gaming campaigns." },
+  { type: "Travel & lifestyle",  desc: "Hotels, airlines, and destinations across the region. Your travel plans become business opportunities." },
+];
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 function ForCreatorsPage() {
   const { user } = useAuth();
 
@@ -246,269 +121,283 @@ function ForCreatorsPage() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <Nav />
 
-      {/* ── HERO ─────────────────────────────────────── */}
-      <section className="relative pt-32 pb-0 px-6 text-center overflow-x-hidden">
+      {/* ══ HERO ═════════════════════════════════════════════════════════════ */}
+      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(ellipse 85% 55% at 50% -5%, oklch(0.17 0 0) 0%, oklch(0.04 0 0) 58%)",
-          }}
+          style={{ background: "radial-gradient(ellipse 80% 50% at 50% -6%, oklch(0.15 0 0) 0%, oklch(0 0 0) 60%)" }}
         />
 
-        <div
-          className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 mb-8"
-          style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 10%)" }}
-        >
-          <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.72 0.14 152)" }} />
-          <span className="text-[9px] font-medium uppercase tracking-[0.32em]" style={{ color: "oklch(1 0 0 / 42%)" }}>
-            MRKT for Creators
-          </span>
-        </div>
-
-        <h1 className="font-display text-[clamp(2.5rem,6vw,5rem)] font-bold leading-[1.12] max-w-3xl mx-auto" style={{ letterSpacing: '0.02em', fontFeatureSettings: '"ss01" 1, "cv01" 1, "cv11" 1, "calt" 0' }}>
-          Turn your audience<br />
-          <span style={{ color: "oklch(1 0 0 / 35%)" }}>into opportunities.</span>
-        </h1>
-
-        <p
-          className="mt-6 mx-auto max-w-[30rem] text-[1.0625rem] leading-[1.75] font-light"
-          style={{ color: "oklch(1 0 0 / 42%)" }}
-        >
-          Discover brand partnerships, plan content, and grow your creator
-          business — from one intelligent workspace.
-        </p>
-
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-          {user ? (
-            <Link
-              to="/opportunities"
-              className="btn-primary inline-flex items-center gap-2 rounded-full px-8 h-12 text-sm font-medium"
-            >
-              Explore Opportunities <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          ) : (
-            <Link
-              to="/login"
-              className="btn-primary inline-flex items-center gap-2 rounded-full px-8 h-12 text-sm font-medium"
-            >
-              Join as a Creator <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          )}
-          <Link
-            to="/connect"
-            className="btn-ghost inline-flex items-center gap-2 rounded-full px-8 h-12 text-sm"
-          >
-            Explore campaigns
-          </Link>
-        </div>
-
-        <div className="relative">
-          <CreatorProfileCard />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 inset-x-0 h-40"
-            style={{ background: "linear-gradient(to top, var(--color-background) 20%, transparent)" }}
-          />
-        </div>
-      </section>
-
-      {/* ── PARTNERSHIPS ─────────────────────────────── */}
-      <section className="px-6 py-28 hairline-t">
         <div className="mx-auto max-w-6xl">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
               <div
-                className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium"
-                style={{ color: "oklch(1 0 0 / 28%)" }}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-9"
+                style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 9%)" }}
               >
-                MRKT Connect
+                <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.62 0.12 158)" }} />
+                <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>For Creators</span>
               </div>
-              <h2 className="font-display text-4xl md:text-[3.25rem] font-bold tracking-[-0.04em] leading-[1.07]">
-                Get discovered.<br />
-                <span style={{ color: "oklch(1 0 0 / 35%)" }}>Get paid.</span>
-              </h2>
-              <p
-                className="mt-6 text-[1.0625rem] leading-[1.8] font-light"
-                style={{ color: "oklch(1 0 0 / 44%)" }}
-              >
-                Build your creator profile once. MRKT matches you with brands
-                looking for exactly your niche, audience, and style —
-                no cold outreach required.
+
+              <h1 className="font-display text-[clamp(2.75rem,6vw,5.25rem)] font-bold tracking-[-0.048em] leading-[0.96]">
+                Your creator business.
+                <br />
+                <span style={{ color: "oklch(1 0 0 / 32%)" }}>One operating system.</span>
+              </h1>
+
+              <p className="mt-7 text-[1.0625rem] leading-[1.82] font-light max-w-md" style={bodyStyle}>
+                Discover brand partnerships, plan content, track your growth, and manage
+                collaborations — from a single intelligent workspace built for MENA creators.
               </p>
-              <Link
-                to="/connect"
-                className="btn-primary mt-10 inline-flex items-center gap-2 rounded-full px-7 h-11 text-sm"
-              >
-                Browse open campaigns <ArrowUpRight className="h-4 w-4" />
-              </Link>
+
+              <div className="mt-9 flex flex-wrap gap-3">
+                <Link
+                  to="/login"
+                  className="btn-primary inline-flex items-center gap-2 rounded-full px-8 h-12 text-sm font-medium"
+                >
+                  {user ? "Open MRKT" : "Join as a creator"} <ArrowUpRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to={user ? "/opportunities" : "/for-businesses"}
+                  className="btn-ghost inline-flex items-center gap-2 rounded-full px-7 h-12 text-sm"
+                >
+                  {user ? "Browse campaigns" : "For businesses"}
+                </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                {["Free during beta", "English + Arabic", "MENA-first"].map((t) => (
+                  <span key={t} className="text-[11.5px]" style={{ color: "oklch(1 0 0 / 30%)" }}>{t}</span>
+                ))}
+              </div>
             </div>
-            <CampaignBrowserMockup />
+            <CreatorProfileMockup />
           </div>
         </div>
       </section>
 
-      {/* ── AI TOOLS ─────────────────────────────────── */}
-      <section className="px-6 py-28 hairline-t">
+      {/* ══ THE OS FOR CREATORS ══════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
         <div className="mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div className="order-2 md:order-1">
-              <AICreatorMockup />
-            </div>
-            <div className="order-1 md:order-2">
-              <div
-                className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium"
-                style={{ color: "oklch(1 0 0 / 28%)" }}
-              >
-                AI Strategist
+          <div className="text-center mb-12">
+            <div className={EYEBROW} style={eyebrowStyle}>How it works</div>
+            <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+              From brief to paid.
+              <br />
+              <span style={{ color: "oklch(1 0 0 / 32%)" }}>Everything in one place.</span>
+            </h2>
+            <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light max-w-xl mx-auto" style={bodyStyle}>
+              MRKT replaces the 6 apps you currently use to run your creator business.
+              Profile, opportunities, AI strategy, calendar, analytics — all connected.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-5 gap-3">
+            {WORKFLOW.map((step) => (
+              <div key={step.n} className="rounded-2xl p-5" style={cardStyle}>
+                <div className={`${EYEBROW} text-[8.5px] mb-4`} style={eyebrowStyle}>{step.n}</div>
+                <div className="text-[13px] font-semibold mb-2" style={{ color: "oklch(1 0 0 / 82%)" }}>{step.title}</div>
+                <p className="text-[11.5px] leading-relaxed" style={bodyStyle}>{step.desc}</p>
               </div>
-              <h2 className="font-display text-4xl md:text-[3.25rem] font-bold tracking-[-0.04em] leading-[1.07]">
-                Create better content,<br />
-                <span style={{ color: "oklch(1 0 0 / 35%)" }}>faster.</span>
-              </h2>
-              <p
-                className="mt-6 text-[1.0625rem] leading-[1.8] font-light"
-                style={{ color: "oklch(1 0 0 / 44%)" }}
-              >
-                Hooks, captions, campaign concepts, and content strategies —
-                generated in seconds. Built for the way creators actually work.
-              </p>
-              <Link
-                to={user ? "/chat" : "/login"}
-                className="btn-primary mt-10 inline-flex items-center gap-2 rounded-full px-7 h-11 text-sm"
-              >
-                {user ? "Open AI Strategist" : "Try the AI Strategist"} <ArrowUpRight className="h-4 w-4" />
-              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ DISCOVER OPPORTUNITIES ═══════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(0.06 0 0)", border: "1px solid oklch(1 0 0 / 8%)" }}>
+            <div className="p-8 md:p-12 grid md:grid-cols-2 gap-12 items-center">
+              <div>
+                <div className={EYEBROW} style={eyebrowStyle}>Opportunities</div>
+                <h2 className="mt-5 font-display text-[clamp(2rem,4vw,3.25rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                  Stop cold-pitching.
+                  <br />
+                  <span style={{ color: "oklch(1 0 0 / 32%)" }}>Get discovered.</span>
+                </h2>
+                <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                  Build your creator profile once. MRKT matches you to live campaigns by niche,
+                  audience size, engagement rate, and location. Brands in UAE, KSA, Lebanon,
+                  and Qatar can find you directly — and invite you to campaigns.
+                </p>
+                <ul className="mt-7 space-y-3">
+                  {[
+                    "AI-matched to campaigns by niche + location",
+                    "Receive direct invitations from brands",
+                    "Apply with one click — AI drafts your pitch",
+                    "See your match score before you apply",
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-3 text-[13px]" style={{ color: "oklch(1 0 0 / 50%)" }}>
+                      <span className="h-[5px] w-[5px] rounded-full shrink-0" style={{ background: "oklch(0.62 0.12 158)" }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to={user ? "/opportunities" : "/login"}
+                  className="mt-8 inline-flex items-center gap-2 text-[13px] font-medium transition-colors"
+                  style={{ color: "oklch(0.62 0.12 158)" }}
+                >
+                  Browse campaigns <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+
+              {/* Campaign card preview */}
+              <div className="space-y-2.5">
+                {[
+                  { brand: "Hayas Collective", niche: "Fashion · UAE + KSA", budget: "AED 8,000", match: "96%", c: "oklch(0.62 0.12 158)" },
+                  { brand: "Noon Fashion",     niche: "E-commerce · MENA",   budget: "AED 5,500", match: "89%", c: "oklch(0.62 0.12 158)" },
+                  { brand: "Ubuy Arabia",      niche: "Lifestyle · Gulf",     budget: "AED 4,200", match: "81%", c: "oklch(0.78 0.14 60)"  },
+                ].map((c) => (
+                  <div key={c.brand} className="flex items-center gap-4 rounded-xl p-4" style={{ background: "oklch(1 0 0 / 4%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold" style={{ color: "oklch(1 0 0 / 82%)" }}>{c.brand}</div>
+                      <div className="text-[10.5px] mt-0.5" style={{ color: "oklch(1 0 0 / 34%)" }}>{c.niche}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[12px] font-medium" style={{ color: "oklch(1 0 0 / 60%)" }}>{c.budget}</div>
+                      <div className="text-[10.5px] font-semibold mt-0.5" style={{ color: c.c }}>{c.match} match</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── FEATURE GRID ─────────────────────────────── */}
-      <section className="px-6 py-28 hairline-t">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-14">
-            <div
-              className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium"
-              style={{ color: "oklch(1 0 0 / 28%)" }}
-            >
-              Everything you need
+      {/* ══ AI STRATEGIST ════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-16 items-center">
+          {/* AI chat preview */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(0.08 0 0)", border: "1px solid oklch(1 0 0 / 10%)" }}>
+            <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: "oklch(0.055 0 0)" }}>
+              <Sparkles className="h-3.5 w-3.5" style={{ color: "oklch(0.72 0.10 224)" }} />
+              <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>AI Strategist</span>
             </div>
-            <h2 className="font-display text-4xl md:text-[3.25rem] font-bold tracking-[-0.04em] leading-[1.07]">
-              One workspace.<br />
-              <span style={{ color: "oklch(1 0 0 / 35%)" }}>Every tool.</span>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-end">
+                <div className="max-w-[80%] rounded-[14px] rounded-br-[4px] px-4 py-3 text-[12px] leading-relaxed" style={{ background: "oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 72%)" }}>
+                  Write 3 Reel hooks for my Dubai streetwear haul this week.
+                </div>
+              </div>
+              {[
+                "I wore Dubai streetwear for 7 days straight. Here's the breakdown.",
+                "The hidden streetwear spots in Dubai no one talks about — thread.",
+                "POV: you find the cleanest fits in Al Quoz at 11 PM.",
+              ].map((hook, i) => (
+                <div key={i} className="rounded-xl px-4 py-3 text-[12px] leading-[1.65]" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 6%)" }}>
+                  <span className="text-[8.5px] uppercase tracking-[0.22em] font-semibold block mb-1" style={{ color: "oklch(0.72 0.10 224 / 70%)" }}>Hook {i + 1}</span>
+                  <span style={{ color: "oklch(1 0 0 / 65%)" }}>{hook}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className={EYEBROW} style={eyebrowStyle}>AI Strategist</div>
+            <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+              Create better content.
+              <br />
+              <span style={{ color: "oklch(1 0 0 / 32%)" }}>In seconds.</span>
+            </h2>
+            <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+              The AI Strategist knows your niche, your audience, your region. It doesn't give
+              you generic hooks — it gives you content built for your specific creator voice
+              and the MENA market.
+            </p>
+            <div className="mt-8 grid grid-cols-2 gap-2">
+              {[
+                { label: "Hook writing",        sub: "Viral-optimized for your niche"     },
+                { label: "Caption drafting",    sub: "Platform-specific, Arabic + English" },
+                { label: "Campaign concepts",   sub: "Brief-to-concept in seconds"         },
+                { label: "Outreach messages",   sub: "Personalized to each brand"          },
+              ].map((f) => (
+                <div key={f.label} className="rounded-xl p-3.5" style={cardStyle}>
+                  <div className="text-[12.5px] font-semibold" style={{ color: "oklch(1 0 0 / 80%)" }}>{f.label}</div>
+                  <div className="text-[10.5px] mt-0.5" style={{ color: "oklch(1 0 0 / 36%)" }}>{f.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ EVERY CREATOR TYPE ═══════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-start">
+            <div>
+              <div className={EYEBROW} style={eyebrowStyle}>Every niche</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                Built for your
+                <br />
+                <span style={{ color: "oklch(1 0 0 / 32%)" }}>specific niche.</span>
+              </h2>
+              <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                Whether you're a fashion creator in Dubai, a food blogger in Beirut, or a fitness
+                creator in Riyadh — MRKT matches you to brands in your exact space.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {CREATOR_TYPES.map((t) => (
+                <div key={t.type} className="flex gap-4 rounded-2xl p-5" style={cardStyle}>
+                  <div className="h-[5px] w-[5px] rounded-full shrink-0 mt-2" style={{ background: "oklch(0.72 0.10 224 / 60%)" }} />
+                  <div>
+                    <div className="text-[13.5px] font-semibold" style={{ color: "oklch(1 0 0 / 80%)" }}>{t.type}</div>
+                    <div className="text-[12px] mt-0.5 leading-relaxed" style={bodyStyle}>{t.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ FEATURE GRID ═════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <div className={EYEBROW} style={eyebrowStyle}>Everything you need</div>
+            <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+              One workspace.
+              <br />
+              <span style={{ color: "oklch(1 0 0 / 32%)" }}>Every tool.</span>
             </h2>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {FEATURES.map(({ Icon, title, desc }) => (
-              <div
-                key={title}
-                className="rounded-2xl p-6"
-                style={{ background: "oklch(1 0 0 / 2.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}
-              >
-                <div
-                  className="h-9 w-9 rounded-xl flex items-center justify-center mb-5"
-                  style={{ background: "oklch(1 0 0 / 7%)", border: "1px solid oklch(1 0 0 / 9%)" }}
-                >
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {FEATURES.map(({ Icon, label, desc }) => (
+              <div key={label} className="rounded-2xl p-5" style={cardStyle}>
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center mb-4" style={{ background: "oklch(1 0 0 / 7%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
                   <Icon className="h-4 w-4" style={{ color: "oklch(1 0 0 / 48%)" }} />
                 </div>
-                <div className="font-semibold mb-2 tracking-tight" style={{ color: "oklch(1 0 0 / 84%)" }}>
-                  {title}
-                </div>
-                <p className="text-sm leading-relaxed" style={{ color: "oklch(1 0 0 / 42%)" }}>
-                  {desc}
-                </p>
+                <div className="text-[12.5px] font-semibold mb-1.5" style={{ color: "oklch(1 0 0 / 82%)" }}>{label}</div>
+                <p className="text-[11.5px] leading-relaxed" style={bodyStyle}>{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ─────────────────────────────── */}
-      <section className="px-6 py-28 hairline-t">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-14">
-            <div
-              className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium"
-              style={{ color: "oklch(1 0 0 / 28%)" }}
-            >
-              How it works
-            </div>
-            <h2 className="font-display text-4xl md:text-[3.25rem] font-bold tracking-[-0.04em] leading-[1.07]">
-              From profile<br />
-              <span style={{ color: "oklch(1 0 0 / 35%)" }}>to paid partnership.</span>
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-5 gap-4">
-            {WORKFLOW.map((step) => (
-              <div
-                key={step.n}
-                className="rounded-2xl p-5"
-                style={{ background: "oklch(1 0 0 / 2.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}
-              >
-                <div
-                  className="text-[9.5px] uppercase tracking-[0.28em] font-medium mb-4"
-                  style={{ color: "oklch(1 0 0 / 26%)" }}
-                >
-                  {step.n}
-                </div>
-                <div className="font-semibold text-sm mb-2" style={{ color: "oklch(1 0 0 / 82%)" }}>
-                  {step.title}
-                </div>
-                <p className="text-[0.8125rem] leading-relaxed" style={{ color: "oklch(1 0 0 / 40%)" }}>
-                  {step.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FINAL CTA ────────────────────────────────── */}
-      <section className="px-6 py-40 hairline-t">
+      {/* ══ CTA ══════════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-32 hairline-t">
         <div className="mx-auto max-w-2xl text-center">
-          {user ? (
-            <>
-              <h2 className="font-display text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.1]" style={{ letterSpacing: '-0.02em' }}>
-                Your opportunities<br />
-                <span style={{ color: "oklch(1 0 0 / 34%)" }}>are waiting.</span>
-              </h2>
-              <p
-                className="mt-6 font-light max-w-xs mx-auto leading-relaxed"
-                style={{ color: "oklch(1 0 0 / 38%)", fontSize: "1.0625rem" }}
-              >
-                Brands are looking for creators like you. Browse live campaigns now.
-              </p>
-              <Link
-                to="/opportunities"
-                className="btn-primary mt-10 inline-flex items-center gap-2 rounded-full px-10 h-14 text-base"
-              >
-                Explore Opportunities <ArrowUpRight className="h-5 w-5" />
-              </Link>
-            </>
-          ) : (
-            <>
-              <h2 className="font-display text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.1]" style={{ letterSpacing: '-0.02em' }}>
-                More partnerships.<br />
-                <span style={{ color: "oklch(1 0 0 / 34%)" }}>Faster growth.</span>
-              </h2>
-              <p
-                className="mt-6 font-light max-w-xs mx-auto leading-relaxed"
-                style={{ color: "oklch(1 0 0 / 38%)", fontSize: "1.0625rem" }}
-              >
-                Join creators building their brand and business with MRKT.
-              </p>
-              <Link
-                to="/login"
-                className="btn-primary mt-10 inline-flex items-center gap-2 rounded-full px-10 h-14 text-base"
-              >
-                Join as a Creator — free <ArrowUpRight className="h-5 w-5" />
-              </Link>
-            </>
-          )}
+          <h2 className="font-display text-[clamp(2.75rem,6vw,5rem)] font-bold tracking-[-0.048em] leading-[0.96]">
+            {user ? "Your opportunities are waiting." : "More partnerships. Faster growth."}
+          </h2>
+          <p className="mt-7 text-[1.0625rem] leading-[1.82] font-light max-w-sm mx-auto" style={bodyStyle}>
+            {user
+              ? "Brands are looking for creators like you. Browse live campaigns now."
+              : "Join creators building their brand and business with MRKT. Free during beta."}
+          </p>
+          <Link
+            to={user ? "/opportunities" : "/login"}
+            className="btn-primary mt-9 inline-flex items-center gap-2 rounded-full px-10 h-14 text-base font-medium"
+          >
+            {user ? "Browse campaigns" : "Join as a creator — free"} <ArrowUpRight className="h-5 w-5" />
+          </Link>
         </div>
       </section>
 

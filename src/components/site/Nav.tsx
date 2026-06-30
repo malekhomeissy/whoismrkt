@@ -3,26 +3,43 @@ import { Logo } from "./Logo";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { fetchUnreadCount } from "@/lib/messaging";
 
 type NavLink = {
   to: string;
   label: string;
   exactMatch?: boolean;
   noActive?: boolean;
+  connectBadge?: boolean; // shows unread count badge
 };
 
-const LINKS: NavLink[] = [
-  { to: "/connect",        label: "MRKT Connect"   },
-  { to: "/globe",          label: "MRKT Globe"     },
-  { to: "/for-creators",   label: "For Creators"   },
-  { to: "/for-businesses", label: "For Businesses" },
+const LINKS_AUTHED: NavLink[] = [
+  { to: "/messages",        label: "MRKT Connect", connectBadge: true },
+  { to: "/globe",           label: "MRKT Globe"      },
+  { to: "/content-planner", label: "Content Planner" },
+];
+
+const LINKS_PUBLIC: NavLink[] = [
+  { to: "/for-creators",    label: "For Creators"    },
+  { to: "/for-businesses",  label: "For Businesses"  },
+  { to: "/ai",              label: "AI"              },
+  { to: "/studio",          label: "Studio"          },
+  { to: "/pricing",         label: "Pricing"         },
+  { to: "/about",           label: "About"           },
 ];
 
 export function Nav() {
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const loc = useLocation();
+  const [open,        setOpen]        = useState(false);
+  const [scrolled,    setScrolled]    = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const loc  = useLocation();
   const { user } = useAuth();
+
+  // Fetch unread message count for the MRKT Connect badge
+  useEffect(() => {
+    if (!user) return;
+    fetchUnreadCount(user.id).then(setUnreadCount).catch(() => {});
+  }, [user, loc.pathname]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -39,6 +56,7 @@ export function Nav() {
     return loc.pathname === l.to || loc.pathname.startsWith(l.to + "/");
   };
 
+  const LINKS = user ? LINKS_AUTHED : LINKS_PUBLIC;
   const solid = scrolled || open;
 
   return (
@@ -54,7 +72,7 @@ export function Nav() {
         {/* ── Logo ──────────────────────────────────── */}
         <Link
           to="/"
-          aria-label="whoismrkt home"
+          aria-label="MRKT home"
           className="shrink-0 opacity-85 hover:opacity-100 transition-opacity duration-200"
           onClick={() => setOpen(false)}
         >
@@ -65,17 +83,26 @@ export function Nav() {
         <nav className="hidden lg:flex items-center gap-7 flex-1 justify-center" aria-label="Main">
           {LINKS.map((l) => {
             const active = isActive(l);
+            const badge  = l.connectBadge && unreadCount > 0 ? unreadCount : 0;
             return (
               <Link
                 key={l.label}
                 to={l.to}
-                className={`relative py-1.5 text-[0.8125rem] whitespace-nowrap transition-colors duration-200 ${
+                className={`relative py-1.5 text-[0.8125rem] whitespace-nowrap transition-colors duration-200 flex items-center gap-0 ${
                   active
                     ? "text-foreground/90 font-medium"
                     : "text-muted-foreground/48 hover:text-foreground/75 font-normal"
                 }`}
               >
                 {l.label}
+                {badge > 0 && (
+                  <span
+                    className="ml-1.5 text-[0.75rem] tabular-nums"
+                    style={{ color: "oklch(1 0 0 / 38%)" }}
+                  >
+                    · {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
                 {active && (
                   <span
                     aria-hidden
@@ -143,18 +170,27 @@ export function Nav() {
           <nav className="flex flex-col" aria-label="Mobile main">
             {LINKS.map((l) => {
               const active = isActive(l);
+              const badge  = l.connectBadge && unreadCount > 0 ? unreadCount : 0;
               return (
                 <Link
                   key={l.label}
                   to={l.to}
                   onClick={() => setOpen(false)}
-                  className={`py-[1.125rem] text-[1.0625rem] border-b border-white/[0.04] last:border-b-0 transition-colors duration-150 ${
+                  className={`py-[1.125rem] text-[1.0625rem] border-b border-white/[0.04] last:border-b-0 transition-colors duration-150 flex items-center gap-0 ${
                     active
                       ? "text-foreground/90 font-medium"
                       : "text-muted-foreground/48 hover:text-foreground/80"
                   }`}
                 >
                   {l.label}
+                  {badge > 0 && (
+                    <span
+                      className="ml-2 text-[0.875rem] tabular-nums"
+                      style={{ color: "oklch(1 0 0 / 38%)" }}
+                    >
+                      · {badge > 99 ? "99+" : badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

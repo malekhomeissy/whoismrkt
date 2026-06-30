@@ -5,6 +5,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { BetaPioneerBadge } from "@/components/app/VerifiedBadge";
 import {
   ArrowUpRight, ExternalLink, Instagram, Youtube, MapPin,
   FileText, Users, Bookmark, BookmarkCheck, Sparkles,
@@ -33,23 +34,7 @@ export const Route = createFileRoute("/creators/$creatorId")({
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
-const C = {
-  canvas:         "#000",
-  surface:        "oklch(0.11 0 0)",
-  raised:         "oklch(0.15 0 0)",
-  high:           "oklch(0.19 0 0)",
-  borderSubtle:   "oklch(1 0 0 / 9%)",
-  borderNormal:   "oklch(1 0 0 / 13%)",
-  borderStrong:   "oklch(1 0 0 / 20%)",
-  shadowCard:     "inset 0 1px 0 oklch(1 0 0 / 11%), 0 2px 8px oklch(0 0 0 / 55%), 0 1px 2px oklch(0 0 0 / 40%)",
-  shadowModal:    "inset 0 1px 0 oklch(1 0 0 / 14%), 0 8px 40px oklch(0 0 0 / 60%), 0 2px 8px oklch(0 0 0 / 45%)",
-  textPrimary:    "oklch(1 0 0 / 92%)",
-  textSecondary:  "oklch(1 0 0 / 68%)",
-  textTertiary:   "oklch(1 0 0 / 46%)",
-  textQuaternary: "oklch(1 0 0 / 30%)",
-  textMuted:      "oklch(1 0 0 / 20%)",
-  accent:         "oklch(0.72 0.14 152)",
-} as const;
+import { C } from "@/lib/theme";
 
 const AVATAR_COLORS = [
   "oklch(0.68 0.12 25)",  "oklch(0.66 0.09 250)",
@@ -136,7 +121,7 @@ function SaveCreatorModal({ profile, onClose, onSaved }: {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
       <div
-        className="relative w-full max-w-sm rounded-2xl p-5 space-y-4"
+        className="relative w-full max-w-sm rounded-2xl p-5 space-y-4 modal-in"
         style={{ background: C.high, border: `1px solid ${C.borderStrong}`, boxShadow: C.shadowModal }}
         onClick={e => e.stopPropagation()}
       >
@@ -318,7 +303,7 @@ function OutreachModal({ profile, bizCtx, onClose }: {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
       <div
-        className="relative w-full max-w-lg rounded-2xl flex flex-col"
+        className="relative w-full max-w-lg rounded-2xl flex flex-col modal-in"
         style={{ background: C.high, border: `1px solid ${C.borderStrong}`, boxShadow: C.shadowModal, maxHeight: "85vh" }}
         onClick={e => e.stopPropagation()}
       >
@@ -499,7 +484,7 @@ function ProfileSkeleton() {
   );
   return (
     <div className="mx-auto max-w-[1200px] px-6">
-      <div style={{ height: 280, background: "oklch(0.11 0 0)" }} />
+      <div style={{ height: 280, background: "oklch(0.10 0 0)" }} />
       <div className="-mt-24 pb-8">
         <div className="flex items-end gap-5 mb-6">
           <div className="h-24 w-24 rounded-[1.5rem] shrink-0 animate-pulse" style={{ background: "oklch(1 0 0 / 10%)" }} />
@@ -513,12 +498,12 @@ function ProfileSkeleton() {
       <div className="grid lg:grid-cols-[340px_1fr] gap-8 pb-24">
         <div className="space-y-4">
           {[160, 130, 110].map(h => (
-            <div key={h} className="rounded-2xl animate-pulse" style={{ height: h, background: "oklch(0.11 0 0)" }} />
+            <div key={h} className="rounded-2xl animate-pulse" style={{ height: h, background: "oklch(0.10 0 0)" }} />
           ))}
         </div>
         <div className="space-y-5">
           {[140, 100, 90].map(h => (
-            <div key={h} className="rounded-2xl animate-pulse" style={{ height: h, background: "oklch(0.11 0 0)" }} />
+            <div key={h} className="rounded-2xl animate-pulse" style={{ height: h, background: "oklch(0.10 0 0)" }} />
           ))}
         </div>
       </div>
@@ -594,6 +579,16 @@ function CreatorProfilePage() {
         }
       });
   }, [user, profile]);
+
+  // Auto-open OutreachModal when arriving from Globe "Invite to Campaign"
+  useEffect(() => {
+    if (!profile || !isBusiness(viewerProf)) return;
+    const inviteId = localStorage.getItem("mrkt_invite_creator");
+    if (inviteId === profile.id) {
+      localStorage.removeItem("mrkt_invite_creator");
+      setTimeout(() => setShowOutreach(true), 600);
+    }
+  }, [profile, viewerProf]);
 
   // Track profile view — fires once per page load when a different authenticated user views this profile
   useEffect(() => {
@@ -686,7 +681,7 @@ function CreatorProfilePage() {
           style={{ background: "radial-gradient(ellipse 80% 55% at 50% -10%, oklch(0.55 0.10 152 / 18%) 0%, transparent 65%)" }} />
         {/* Fade to page background */}
         <div className="absolute inset-0"
-          style={{ background: "linear-gradient(to bottom, transparent 45%, oklch(0.04 0 0) 100%)" }} />
+          style={{ background: "linear-gradient(to bottom, transparent 45%, oklch(0 0 0) 100%)" }} />
       </div>
 
       <div className="mx-auto max-w-[1200px] px-6">
@@ -700,17 +695,18 @@ function CreatorProfilePage() {
               {/* Avatar */}
               {profile.profile_image_url ? (
                 <img src={profile.profile_image_url} alt={profile.display_name}
-                  className="h-24 w-24 rounded-[1.5rem] shrink-0 object-cover"
+                  className="h-24 w-24 rounded-[1.5rem] shrink-0 object-cover img-fade"
                   style={{
-                    border: "3px solid oklch(0.04 0 0)",
+                    border: "3px solid oklch(0 0 0)",
                     boxShadow: "0 12px 40px oklch(0 0 0 / 60%), 0 0 0 1px oklch(1 0 0 / 8%)",
-                  }} />
+                  }}
+                  onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "1"; }} />
               ) : (
                 <div className="h-24 w-24 rounded-[1.5rem] shrink-0 flex items-center justify-center text-3xl font-bold"
                   style={{
                     background: avatarBg(profile.display_name),
-                    color: "oklch(0.08 0 0)",
-                    border: "3px solid oklch(0.04 0 0)",
+                    color: "oklch(0.065 0 0)",
+                    border: "3px solid oklch(0 0 0)",
                     boxShadow: "0 12px 40px oklch(0 0 0 / 60%), 0 0 0 1px oklch(1 0 0 / 8%)",
                   }}>
                   {profile.display_name[0].toUpperCase()}
@@ -725,6 +721,16 @@ function CreatorProfilePage() {
                     style={{ color: C.textPrimary, lineHeight: 1.1 }}>
                     {profile.display_name}
                   </h1>
+                  {profile.is_beta_pioneer && (
+                    <span
+                      className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] rounded-full px-2.5 py-1 font-semibold"
+                      style={{ background: "oklch(0.78 0.14 76 / 14%)", color: "oklch(0.78 0.14 76)", border: "1px solid oklch(0.78 0.14 76 / 28%)" }}
+                      title="Beta Pioneer — one of MRKT's first creators"
+                    >
+                      <BetaPioneerBadge size="xs" />
+                      Beta Pioneer
+                    </span>
+                  )}
                   {profile.status === "active" && (
                     <span className="text-[9px] uppercase tracking-[0.22em] rounded-full px-2.5 py-1 font-semibold"
                       style={{ background: "oklch(0.72 0.14 152 / 14%)", color: C.accent, border: "1px solid oklch(0.72 0.14 152 / 28%)" }}>
@@ -797,7 +803,7 @@ function CreatorProfilePage() {
                 <button onClick={() => setShowOutreach(true)}
                   className="inline-flex items-center gap-2 rounded-full px-5 h-9 text-[12.5px] font-medium transition-all duration-150"
                   style={{ background: "oklch(1 0 0 / 5%)", border: `1px solid ${C.borderNormal}`, color: C.textSecondary }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 9%)"; (e.currentTarget as HTMLElement).style.color = C.textPrimary; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 8%)"; (e.currentTarget as HTMLElement).style.color = C.textPrimary; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 5%)"; (e.currentTarget as HTMLElement).style.color = C.textSecondary; }}>
                   <Sparkles className="h-3.5 w-3.5" /> Generate Outreach
                 </button>
@@ -808,12 +814,12 @@ function CreatorProfilePage() {
                 <button onClick={() => setShowSave(true)}
                   className="inline-flex items-center gap-2 rounded-full px-5 h-9 text-[12.5px] font-medium transition-all duration-150"
                   style={{
-                    background: isSaved ? "oklch(0.72 0.14 152 / 12%)" : "oklch(1 0 0 / 9%)",
+                    background: isSaved ? "oklch(0.72 0.14 152 / 12%)" : "oklch(1 0 0 / 8%)",
                     border: `1px solid ${isSaved ? "oklch(0.72 0.14 152 / 35%)" : C.borderNormal}`,
                     color: isSaved ? C.accent : C.textPrimary,
                   }}
-                  onMouseEnter={e => { if (!isSaved) (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 13%)"; }}
-                  onMouseLeave={e => { if (!isSaved) (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 9%)"; }}>
+                  onMouseEnter={e => { if (!isSaved) (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 12%)"; }}
+                  onMouseLeave={e => { if (!isSaved) (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 8%)"; }}>
                   {isSaved ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
                   {isSaved ? "Saved" : "Save to Project"}
                 </button>
@@ -1104,6 +1110,23 @@ function CreatorProfilePage() {
                 <div className="space-y-2.5">
                   {featuredLinks.map((url, i) => <PortfolioLink key={i} url={url} index={i} />)}
                 </div>
+              ) : profile.creator_stage === "beginner" ? (
+                /* Emerging creator — intentional, not broken */
+                <div className="rounded-2xl px-5 py-5 flex items-center gap-4"
+                  style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "oklch(1 0 0 / 6%)" }}>
+                    <span className="text-[15px]">✦</span>
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-medium" style={{ color: C.textSecondary }}>
+                      Emerging Creator
+                    </div>
+                    <div className="text-[11.5px] mt-0.5 leading-relaxed" style={{ color: C.textTertiary }}>
+                      Building their portfolio — follow their journey on MRKT.
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <EmptyCard
                   icon={<ExternalLink className="h-5 w-5" />}
@@ -1114,6 +1137,7 @@ function CreatorProfilePage() {
             </section>
 
             {/* Previous Collaborations */}
+            {profile.creator_stage !== "beginner" && (
             <section>
               <div className="text-[9.5px] uppercase tracking-[0.28em] font-semibold mb-4"
                 style={{ color: C.textQuaternary }}>Previous Collaborations</div>
@@ -1132,6 +1156,7 @@ function CreatorProfilePage() {
                 />
               )}
             </section>
+            )}
 
             {/* Content Types */}
             {profile.preferred_content_types.length > 0 && (

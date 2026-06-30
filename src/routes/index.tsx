@@ -1,1018 +1,815 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { useAuth } from "@/lib/auth";
 import {
-  ArrowUpRight, Sparkles, CalendarDays,
-  Users, Zap, Home,
-  Settings, Plus, ChevronRight,
+  ArrowUpRight, Sparkles, CalendarDays, Globe2,
+  Zap, Users, BarChart3, ShieldCheck, Megaphone,
+  TrendingUp, FileText, MapPin, Layers,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MRKT — AI marketing operating system" },
-      { name: "description", content: "One workspace for strategy, content, campaigns, and creator partnerships. The AI marketing operating system for creators and businesses." },
-      { property: "og:title", content: "MRKT — AI marketing operating system" },
-      { property: "og:description", content: "One workspace for strategy, content, campaigns, and creator partnerships." },
+      { title: "MRKT — Creator Collaboration Operating System" },
+      { name: "description", content: "MRKT helps creators and businesses discover opportunities, manage collaborations, plan content, use AI strategically, and grow faster. Built for MENA." },
+      { property: "og:title", content: "MRKT — Creator Collaboration Operating System" },
+      { property: "og:description", content: "From first brief to final delivery. One operating system for creators and businesses in MENA." },
     ],
   }),
   component: Landing,
 });
 
-// ─────────────────────────────────────────────────────────────
-// Design tokens — same material system as the app interior
-// ─────────────────────────────────────────────────────────────
-//   canvas   L ≈ 04%   page background
-//   base     L ≈ 09%   window outer / panel frames
-//   sidebar  L ≈ 07%   sidebar panels (slightly darker than base — correct)
-//   surface  L ≈ 14%   cards on canvas
-//   raised   L ≈ 18%   nested / elevated items
-//   high     L ≈ 22%   highest elevation
-//
-// Shadow formula:  inset 0 1px 0 {top-edge-highlight}, drop shadow
+// ─── Shared design helpers ────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────
-// Sparkline
-// ─────────────────────────────────────────────────────────────
-function Sparkline({ d }: { d: string }) {
+const EYEBROW = "text-[9.5px] uppercase tracking-[0.35em] font-semibold";
+const eyebrowStyle = { color: "oklch(1 0 0 / 28%)" };
+const fadeStyle    = { color: "oklch(1 0 0 / 32%)" };
+const bodyStyle    = { color: "oklch(1 0 0 / 46%)" };
+const cardStyle    = { background: "oklch(1 0 0 / 2.5%)", border: "1px solid oklch(1 0 0 / 8%)" };
+const raisedStyle  = { background: "oklch(1 0 0 / 4%)",   border: "1px solid oklch(1 0 0 / 10%)" };
+
+// ─── Problem section — broken infrastructure tools ────────────────────────────
+
+const CREATOR_TOOLS = ["WhatsApp", "Google Docs", "Notes", "Email threads", "Instagram DMs", "Spreadsheets"];
+const BUSINESS_TOOLS = ["Excel", "Agency emails", "Random lists", "WhatsApp groups", "PDF decks", "Separate invoices"];
+
+// ─── OS node flow ─────────────────────────────────────────────────────────────
+
+const OS_NODES = [
+  { label: "Creator",      sub: "Profile + Trust",     color: "oklch(0.72 0.10 224)" },
+  { label: "Opportunity",  sub: "AI-matched briefs",   color: "oklch(0.62 0.12 158)" },
+  { label: "Campaign",     sub: "Brief → contract",    color: "oklch(0.72 0.10 224)" },
+  { label: "AI Strategist",sub: "Strategy + content",  color: "oklch(0.78 0.14 60)"  },
+  { label: "Studio",       sub: "Assets + production", color: "oklch(0.72 0.10 224)" },
+  { label: "Deliverables", sub: "Review + approval",   color: "oklch(0.62 0.12 158)" },
+  { label: "Growth",       sub: "Analytics + repeat",  color: "oklch(0.72 0.10 224)" },
+];
+
+// ─── AI capabilities ──────────────────────────────────────────────────────────
+
+const AI_CAPS = [
+  { icon: Megaphone,   label: "Campaign strategy",       desc: "Full briefs, channel plans, and creator recommendations — in seconds." },
+  { icon: TrendingUp,  label: "Growth recommendations",  desc: "Visibility scores, profile improvements, and audience-building actions." },
+  { icon: Zap,         label: "Opportunity guidance",    desc: "Match analysis, application drafts, and fit explanations." },
+  { icon: Users,       label: "Creator recommendations", desc: "AI-ranked suggestions based on niche, audience, and campaign history." },
+  { icon: CalendarDays,label: "Calendar intelligence",   desc: "Optimal posting times, MENA event hooks, trend-aligned scheduling." },
+  { icon: BarChart3,   label: "Business planning",       desc: "Market analysis, budget allocation, and performance forecasting." },
+];
+
+// ─── MENA countries ───────────────────────────────────────────────────────────
+
+const MENA_MARKETS = [
+  { name: "UAE",          flag: "🇦🇪" },
+  { name: "Saudi Arabia", flag: "🇸🇦" },
+  { name: "Lebanon",      flag: "🇱🇧" },
+  { name: "Qatar",        flag: "🇶🇦" },
+  { name: "Kuwait",       flag: "🇰🇼" },
+  { name: "Bahrain",      flag: "🇧🇭" },
+  { name: "Jordan",       flag: "🇯🇴" },
+  { name: "Egypt",        flag: "🇪🇬" },
+];
+
+// ─── AI chat mockup ───────────────────────────────────────────────────────────
+
+function AIChatMockup() {
   return (
-    <svg className="w-full" style={{ height: 18 }} viewBox="0 0 80 18" fill="none" preserveAspectRatio="none">
-      <path d={d} stroke="oklch(1 0 0 / 32%)" strokeWidth="1.5" fill="none" />
-    </svg>
+    <div
+      className="rounded-2xl overflow-hidden w-full"
+      style={{ background: "oklch(0.08 0 0)", border: "1px solid oklch(1 0 0 / 10%)", boxShadow: "0 32px 80px -20px oklch(0 0 0 / 60%)" }}
+    >
+      {/* Topbar */}
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: "oklch(0.055 0 0)" }}>
+        <Sparkles className="h-3.5 w-3.5" style={{ color: "oklch(0.72 0.10 224)" }} />
+        <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>MRKT AI</span>
+        <span className="ml-auto text-[9px] rounded-full px-2 py-0.5 font-medium" style={{ background: "oklch(0.72 0.10 224 / 12%)", color: "oklch(0.72 0.10 224)" }}>
+          Active
+        </span>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {/* User message */}
+        <div className="flex justify-end">
+          <div className="max-w-[80%] rounded-[14px] rounded-br-[4px] px-4 py-3 text-[12px] leading-relaxed" style={{ background: "oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 75%)" }}>
+            Build a campaign strategy for our Ramadan launch in UAE — fashion brand, IG + TikTok.
+          </div>
+        </div>
+
+        {/* AI response */}
+        <div className="space-y-2">
+          {[
+            { label: "Strategy",  text: "Lead with aspirational styling content 10 days before Ramadan, transition to offer-driven reels in the final week. UAE audiences peak 8–10 PM during Ramadan evenings." },
+            { label: "Creators",  text: "Target 3–5 UAE-based modest fashion creators with 50K–500K followers. Prioritise creators with >4.5% engagement and Arabic-speaking audiences." },
+            { label: "Timeline",  text: "Teasers from March 18 → Product reveal March 25 → Offer push April 1 → Community UGC through April 10." },
+          ].map((r) => (
+            <div key={r.label} className="rounded-xl px-4 py-3 text-[12px] leading-[1.65]" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 6%)" }}>
+              <span className="text-[8.5px] uppercase tracking-[0.24em] font-semibold block mb-1" style={{ color: "oklch(0.72 0.10 224 / 80%)" }}>{r.label}</span>
+              <span style={{ color: "oklch(1 0 0 / 65%)" }}>{r.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Dashboard data
-// ─────────────────────────────────────────────────────────────
-const STATS = [
-  { label: "Content Scheduled", value: "24",   change: "+12%", spark: "M0,15 C13,13 26,11 40,8 C53,5 66,4 80,2"   },
-  { label: "Campaigns Active",  value: "7",    change: "+3",   spark: "M0,13 C13,12 26,10 40,8 C53,6 66,4 80,1"   },
-  { label: "Total Reach",       value: "1.2M", change: "+18%", spark: "M0,15 C13,12 26,9  40,7 C53,5 66,3 80,1"   },
-  { label: "Engagement Rate",   value: "8.6%", change: "+4%",  spark: "M0,14 C13,13 26,10 40,8 C53,6 66,3 80,0.5" },
-];
+// ─── Growth hub mockup ────────────────────────────────────────────────────────
 
-const DASHBOARD_CREATORS = [
-  { initial: "A", name: "Alexandra Silva",  role: "Lifestyle Creator", followers: "523K", bg: "oklch(0.72 0.1 25)"  },
-  { initial: "D", name: "Darnell Brooks",   role: "Fitness Creator",   followers: "287K", bg: "oklch(0.62 0.08 250)" },
-  { initial: "S", name: "Sophie Kim",       role: "UGC Creator",       followers: "134K", bg: "oklch(0.66 0.09 160)" },
-];
-
-const CALENDAR_POSTS = [
-  { day: "Mon", date: "26", post: "Instagram Reel",  time: "10:00 AM", dot: "oklch(0.72 0.16 300)" },
-  { day: "Tue", date: "27", post: "TikTok Video",    time: "12:00 PM", dot: "oklch(0.88 0 0)"      },
-  { day: "Wed", date: "28", post: null, time: null, dot: null },
-  { day: "Thu", date: "29", post: "Carousel Post",   time: "9:00 AM",  dot: "oklch(0.65 0.14 250)" },
-  { day: "Fri", date: "30", post: "YouTube Short",   time: "11:00 AM", dot: "oklch(0.65 0.18 25)"  },
-  { day: "Sat", date: "31", post: "Blog Post",       time: "2:00 PM",  dot: "oklch(0.55 0 0)"      },
-  { day: "Sun", date: "1",  post: null, time: null, dot: null },
-];
-
-const SIDEBAR_NAV = [
-  { Icon: Home,     label: "Home",          active: true  },
-  { Icon: Sparkles, label: "AI Strategist", active: false },
-  { Icon: Zap,      label: "Opportunities", active: false },
-  { Icon: Users,    label: "MRKT Connect",  active: false },
-  { Icon: Settings, label: "Settings",      active: false },
-];
-
-const AVATAR_STACK = [
-  "oklch(0.72 0.1 25)",
-  "oklch(0.62 0.08 250)",
-  "oklch(0.66 0.09 160)",
-  "oklch(0.68 0.11 310)",
-];
-
-// macOS traffic light colors
-const DOTS = [
-  "oklch(0.63 0.20 25)",   // red
-  "oklch(0.74 0.17 65)",   // amber
-  "oklch(0.63 0.18 140)",  // green
-];
-
-// ─────────────────────────────────────────────────────────────
-// Flagship dashboard window
-// ─────────────────────────────────────────────────────────────
-function FlagshipWindow() {
+function GrowthMockup() {
+  const bars = [
+    { label: "Profile strength",  pct: 78, color: "oklch(0.72 0.10 224)" },
+    { label: "Niche clarity",     pct: 91, color: "oklch(0.62 0.12 158)" },
+    { label: "Match readiness",   pct: 65, color: "oklch(0.78 0.14 60)"  },
+    { label: "Visibility score",  pct: 54, color: "oklch(0.72 0.10 224)" },
+  ];
   return (
-    <div
-      className="relative w-full max-w-[1120px] mx-auto mt-14 rounded-[20px] overflow-hidden"
-      style={{
-        background: "oklch(0.10 0 0)",
-        border: "1px solid oklch(1 0 0 / 16%)",
-        boxShadow: [
-          "inset 0 1px 0 oklch(1 0 0 / 14%)",   // top-edge chrome highlight
-          "0 0 0 1px oklch(1 0 0 / 6%)",          // faint outer ring
-          "0 32px 64px -12px oklch(0 0 0 / 75%)", // main drop shadow
-          "0 64px 120px -24px oklch(0 0 0 / 55%)", // deep ambient
-        ].join(", "),
-      }}
-    >
-      {/* Browser chrome */}
-      <div
-        className="flex items-center gap-2 px-4 h-10 shrink-0"
-        style={{ background: "oklch(0.075 0 0)", borderBottom: "1px solid oklch(1 0 0 / 12%)" }}
-      >
-        {/* macOS-style traffic lights */}
-        <div className="flex items-center gap-1.5">
-          {DOTS.map((bg, i) => (
-            <div
-              key={i}
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ background: bg, boxShadow: `0 0 4px ${bg}40` }}
-            />
-          ))}
+    <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(0.08 0 0)", border: "1px solid oklch(1 0 0 / 10%)" }}>
+      <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: "oklch(0.055 0 0)" }}>
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-3.5 w-3.5" style={{ color: "oklch(0.62 0.12 158)" }} />
+          <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>Growth Hub</span>
         </div>
-        {/* URL bar — correct branding: whoismrkt.com */}
-        <div
-          className="flex-1 mx-4 h-[22px] rounded-md flex items-center justify-center text-[10px] tracking-wider"
-          style={{
-            background: "oklch(0.06 0 0)",
-            border: "1px solid oklch(1 0 0 / 10%)",
-            color: "oklch(1 0 0 / 38%)",
-          }}
-        >
-          whoismrkt.com
+        <span className="text-[9px] font-medium rounded-full px-2 py-0.5" style={{ background: "oklch(0.62 0.12 158 / 12%)", color: "oklch(0.62 0.12 158)" }}>
+          Score: 72 / 100
+        </span>
+      </div>
+      <div className="p-4 space-y-3.5">
+        {bars.map((b) => (
+          <div key={b.label}>
+            <div className="flex justify-between mb-1.5">
+              <span className="text-[11px]" style={{ color: "oklch(1 0 0 / 55%)" }}>{b.label}</span>
+              <span className="text-[11px] font-semibold tabular-nums" style={{ color: b.color }}>{b.pct}%</span>
+            </div>
+            <div className="h-[3px] rounded-full overflow-hidden" style={{ background: "oklch(1 0 0 / 6%)" }}>
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${b.pct}%`, background: b.color }} />
+            </div>
+          </div>
+        ))}
+        <div className="mt-4 p-3 rounded-xl text-[11px] leading-relaxed" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 6%)" }}>
+          <span className="font-semibold block mb-0.5" style={{ color: "oklch(0.72 0.10 224)" }}>AI recommendation</span>
+          <span style={{ color: "oklch(1 0 0 / 50%)" }}>Add your TikTok engagement rate to unlock 14 more campaign matches this week.</span>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Three-panel app layout */}
-      <div className="flex" style={{ height: 560 }}>
+// ─── Calendar mockup ──────────────────────────────────────────────────────────
 
-        {/* ── Left sidebar ─────────────────────── */}
-        <div
-          className="hidden md:flex w-[196px] flex-col shrink-0 py-4"
-          style={{
-            background: "oklch(0.08 0 0)",
-            borderRight: "1px solid oklch(1 0 0 / 12%)",
-          }}
-        >
-          <div className="px-4 mb-5">
-            <span
-              className="font-display text-[13px] font-bold tracking-[0.12em] uppercase"
-              style={{ color: "oklch(1 0 0 / 90%)" }}
-            >
-              MRKT
+function CalendarMockup() {
+  const days = [
+    { d: "Sat", n: "1",  post: null,              time: null,         dot: null                      },
+    { d: "Sun", n: "2",  post: "Instagram Reel",  time: "8:00 PM",    dot: "oklch(0.72 0.10 224)"    },
+    { d: "Mon", n: "3",  post: "TikTok",          time: "9:30 PM",    dot: "oklch(0.62 0.12 158)"    },
+    { d: "Tue", n: "4",  post: null,              time: null,         dot: null                      },
+    { d: "Wed", n: "5",  post: "YouTube Short",   time: "7:00 PM",    dot: "oklch(0.78 0.14 60)"     },
+    { d: "Thu", n: "6",  post: "Carousel",        time: "8:00 PM",    dot: "oklch(0.72 0.10 224)"    },
+    { d: "Fri", n: "7",  post: null,              time: null,         dot: null                      },
+  ];
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(0.08 0 0)", border: "1px solid oklch(1 0 0 / 10%)" }}>
+      <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: "oklch(0.055 0 0)" }}>
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-3.5 w-3.5" style={{ color: "oklch(0.78 0.14 60)" }} />
+          <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>Content Calendar</span>
+        </div>
+        <span className="text-[9px] font-medium" style={{ color: "oklch(1 0 0 / 28%)" }}>Ramadan 2026</span>
+      </div>
+      <div className="p-4">
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day) => (
+            <div key={day.d} className="flex flex-col items-center">
+              <div className="text-[8.5px] mb-1.5" style={{ color: "oklch(1 0 0 / 26%)" }}>{day.d}</div>
+              <div
+                className="w-full aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 relative"
+                style={{
+                  background: day.post ? "oklch(1 0 0 / 5%)" : "oklch(1 0 0 / 2%)",
+                  border: day.post ? "1px solid oklch(1 0 0 / 10%)" : "1px solid oklch(1 0 0 / 5%)",
+                }}
+              >
+                <span className="text-[10px] font-semibold" style={{ color: day.post ? "oklch(1 0 0 / 80%)" : "oklch(1 0 0 / 28%)" }}>{day.n}</span>
+                {day.dot && (
+                  <span className="h-[5px] w-[5px] rounded-full absolute bottom-1.5" style={{ background: day.dot }} />
+                )}
+              </div>
+              {day.post && (
+                <div className="mt-1 text-[7.5px] text-center leading-tight px-0.5" style={{ color: "oklch(1 0 0 / 34%)" }}>{day.time}</div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 p-2.5 rounded-xl text-[10.5px]" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 6%)" }}>
+          <span style={{ color: "oklch(0.78 0.14 60)" }}>AI insight: </span>
+          <span style={{ color: "oklch(1 0 0 / 46%)" }}>UAE audiences are most active 8–10 PM during Ramadan. Scheduled accordingly.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Pipeline mockup ──────────────────────────────────────────────────────────
+
+function PipelineMockup() {
+  const stages = [
+    { label: "Discovered", count: 12, color: "oklch(1 0 0 / 28%)" },
+    { label: "Contacted",  count: 5,  color: "oklch(0.72 0.10 224)" },
+    { label: "Negotiating",count: 3,  color: "oklch(0.78 0.14 60)"  },
+    { label: "Booked",     count: 2,  color: "oklch(0.62 0.12 158)" },
+  ];
+  const creators = [
+    { init: "S", name: "Sara Al-Khatib",  niche: "Fashion · UAE",    bg: "oklch(0.72 0.09 20)",  stage: "Contacted" },
+    { init: "M", name: "Mohamad Fakhoury",niche: "Lifestyle · LB",   bg: "oklch(0.62 0.08 250)", stage: "Negotiating" },
+    { init: "L", name: "Layla Mansouri",  niche: "Beauty · KSA",     bg: "oklch(0.66 0.09 160)", stage: "Booked" },
+  ];
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(0.08 0 0)", border: "1px solid oklch(1 0 0 / 10%)" }}>
+      <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: "oklch(0.055 0 0)" }}>
+        <div className="flex items-center gap-2">
+          <Layers className="h-3.5 w-3.5" style={{ color: "oklch(0.72 0.10 224)" }} />
+          <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>Pipeline</span>
+        </div>
+      </div>
+      <div className="p-4 space-y-2">
+        <div className="grid grid-cols-4 gap-1 mb-3">
+          {stages.map((s) => (
+            <div key={s.label} className="rounded-lg px-2 py-2 text-center" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 6%)" }}>
+              <div className="text-[14px] font-bold tabular-nums" style={{ color: s.color }}>{s.count}</div>
+              <div className="text-[8px] mt-0.5" style={{ color: "oklch(1 0 0 / 28%)" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        {creators.map((c) => (
+          <div key={c.name} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 6%)" }}>
+            <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold" style={{ background: c.bg, color: "oklch(0.1 0 0)" }}>{c.init}</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] font-medium truncate" style={{ color: "oklch(1 0 0 / 80%)" }}>{c.name}</div>
+              <div className="text-[10px]" style={{ color: "oklch(1 0 0 / 34%)" }}>{c.niche}</div>
+            </div>
+            <span className="text-[9px] font-medium rounded-full px-2 py-0.5" style={{ color: c.stage === "Booked" ? "oklch(0.62 0.12 158)" : c.stage === "Negotiating" ? "oklch(0.78 0.14 60)" : "oklch(0.72 0.10 224)", background: c.stage === "Booked" ? "oklch(0.62 0.12 158 / 12%)" : c.stage === "Negotiating" ? "oklch(0.78 0.14 60 / 12%)" : "oklch(0.72 0.10 224 / 12%)" }}>
+              {c.stage}
             </span>
           </div>
-
-          <div className="px-2 space-y-0.5">
-            {SIDEBAR_NAV.map(({ Icon, label, active }) => (
-              <div
-                key={label}
-                className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[11.5px]"
-                style={{
-                  background: active ? "oklch(1 0 0 / 12%)" : "transparent",
-                  color: active ? "oklch(1 0 0 / 92%)" : "oklch(1 0 0 / 42%)",
-                  boxShadow: active ? "inset 0 1px 0 oklch(1 0 0 / 14%)" : "none",
-                }}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                {label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Main content ─────────────────────── */}
-        <div
-          className="flex-1 flex flex-col min-w-0 overflow-hidden p-4 gap-3"
-          style={{ borderRight: "1px solid oklch(1 0 0 / 10%)" }}
-        >
-          {/* Stat cards */}
-          <div className="grid grid-cols-4 gap-2.5 shrink-0">
-            {STATS.map((s) => (
-              <div
-                key={s.label}
-                className="rounded-xl p-3"
-                style={{
-                  background: "oklch(0.15 0 0)",
-                  border: "1px solid oklch(1 0 0 / 14%)",
-                  boxShadow: "inset 0 1px 0 oklch(1 0 0 / 12%), 0 2px 6px oklch(0 0 0 / 50%)",
-                }}
-              >
-                <div className="text-[9.5px] truncate" style={{ color: "oklch(1 0 0 / 48%)" }}>
-                  {s.label}
-                </div>
-                <div className="flex items-end justify-between mt-1.5">
-                  <div
-                    className="font-display text-[1.2rem] font-semibold tracking-tight leading-none"
-                    style={{ color: "oklch(1 0 0 / 92%)" }}
-                  >
-                    {s.value}
-                  </div>
-                  <div
-                    className="text-[8.5px] rounded px-1 py-0.5 font-medium"
-                    style={{
-                      color: "oklch(0.72 0.14 152)",
-                      background: "oklch(0.72 0.14 152 / 16%)",
-                    }}
-                  >
-                    {s.change}
-                  </div>
-                </div>
-                <Sparkline d={s.spark} />
-              </div>
-            ))}
-          </div>
-
-          {/* AI Strategist prompt — the centerpiece */}
-          <div
-            className="rounded-xl p-3.5 shrink-0"
-            style={{
-              background: "oklch(0.15 0 0)",
-              border: "1px solid oklch(1 0 0 / 14%)",
-              boxShadow: "inset 0 1px 0 oklch(1 0 0 / 14%), 0 4px 12px oklch(0 0 0 / 55%)",
-            }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div
-                className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center"
-                style={{
-                  background: "radial-gradient(circle at 35% 30%, oklch(0.55 0 0), oklch(0.18 0 0))",
-                  boxShadow: "0 0 0 1px oklch(1 0 0 / 16%), 0 2px 10px oklch(0 0 0 / 60%)",
-                }}
-              >
-                <Sparkles className="h-3.5 w-3.5" style={{ color: "oklch(1 0 0 / 86%)" }} />
-              </div>
-              <div>
-                <div className="text-[12px] font-semibold" style={{ color: "oklch(1 0 0 / 90%)" }}>
-                  AI Strategist
-                </div>
-                <div className="text-[9.5px]" style={{ color: "oklch(1 0 0 / 42%)" }}>
-                  Your AI marketing partner
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="flex items-center gap-2 px-3 h-8 rounded-lg mb-2.5"
-              style={{
-                background: "oklch(0.11 0 0)",
-                border: "1px solid oklch(1 0 0 / 14%)",
-                boxShadow: "inset 0 1px 0 oklch(1 0 0 / 6%)",
-              }}
-            >
-              <span className="flex-1 text-[10.5px]" style={{ color: "oklch(1 0 0 / 28%)" }}>
-                What would you like to work on today?
-              </span>
-              <div
-                className="h-5 w-5 rounded-md flex items-center justify-center"
-                style={{ background: "oklch(0.94 0 0)", boxShadow: "0 1px 4px oklch(0 0 0 / 40%)" }}
-              >
-                <ArrowUpRight className="h-2.5 w-2.5" style={{ color: "oklch(0.1 0 0)" }} />
-              </div>
-            </div>
-
-            <div className="flex gap-1.5 flex-wrap">
-              {["Campaign ideas", "Content hooks", "Ad angles", "Audience insights"].map((chip) => (
-                <div
-                  key={chip}
-                  className="px-2.5 py-[3px] rounded-full text-[9.5px]"
-                  style={{
-                    background: "oklch(0.20 0 0)",
-                    border: "1px solid oklch(1 0 0 / 16%)",
-                    color: "oklch(1 0 0 / 60%)",
-                    boxShadow: "inset 0 1px 0 oklch(1 0 0 / 10%)",
-                  }}
-                >
-                  {chip}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Content Calendar */}
-          <div
-            className="flex-1 flex flex-col rounded-xl overflow-hidden"
-            style={{
-              background: "oklch(0.15 0 0)",
-              border: "1px solid oklch(1 0 0 / 14%)",
-              boxShadow: "inset 0 1px 0 oklch(1 0 0 / 12%), 0 2px 6px oklch(0 0 0 / 50%)",
-              minHeight: 0,
-            }}
-          >
-            <div
-              className="flex items-center justify-between px-3.5 py-2 shrink-0"
-              style={{ borderBottom: "1px solid oklch(1 0 0 / 10%)" }}
-            >
-              <div className="flex items-center gap-1.5">
-                <CalendarDays className="h-3 w-3" style={{ color: "oklch(1 0 0 / 48%)" }} />
-                <span className="text-[11px] font-medium" style={{ color: "oklch(1 0 0 / 78%)" }}>
-                  Content Calendar
-                </span>
-              </div>
-              <div className="flex items-center gap-0.5">
-                {["Week", "Month"].map((v, i) => (
-                  <div
-                    key={v}
-                    className="px-2 py-0.5 rounded text-[9.5px]"
-                    style={{
-                      background: i === 0 ? "oklch(1 0 0 / 12%)" : "transparent",
-                      color: i === 0 ? "oklch(1 0 0 / 78%)" : "oklch(1 0 0 / 34%)",
-                      boxShadow: i === 0 ? "inset 0 1px 0 oklch(1 0 0 / 12%)" : "none",
-                    }}
-                  >
-                    {v}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 flex-1" style={{ minHeight: 0 }}>
-              {CALENDAR_POSTS.map((d, idx) => (
-                <div
-                  key={d.date}
-                  className="flex flex-col p-2 text-[9px]"
-                  style={{
-                    borderRight: idx < 6 ? "1px solid oklch(1 0 0 / 8%)" : "none",
-                  }}
-                >
-                  <div className="mb-1.5">
-                    <span style={{ color: "oklch(1 0 0 / 35%)" }}>{d.day}</span>
-                    <br />
-                    <span className="text-[10.5px] font-medium" style={{ color: "oklch(1 0 0 / 65%)" }}>
-                      {d.date}
-                    </span>
-                  </div>
-                  {d.post && (
-                    <div
-                      className="rounded-md p-1.5"
-                      style={{
-                        background: "oklch(0.20 0 0)",
-                        border: "1px solid oklch(1 0 0 / 14%)",
-                        boxShadow: "inset 0 1px 0 oklch(1 0 0 / 10%)",
-                      }}
-                    >
-                      <div className="h-1.5 w-1.5 rounded-full mb-1" style={{ background: d.dot! }} />
-                      <div className="leading-tight" style={{ color: "oklch(1 0 0 / 68%)" }}>
-                        {d.post}
-                      </div>
-                      <div className="mt-0.5" style={{ color: "oklch(1 0 0 / 36%)" }}>
-                        {d.time}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Right panel — MRKT Connect ──────── */}
-        <div
-          className="hidden lg:flex w-[256px] flex-col shrink-0 py-4 px-4"
-          style={{ background: "oklch(0.08 0 0)" }}
-        >
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-0.5">
-              <Users className="h-3.5 w-3.5" style={{ color: "oklch(1 0 0 / 55%)" }} />
-              <span className="text-[12px] font-semibold" style={{ color: "oklch(1 0 0 / 88%)" }}>
-                MRKT Connect
-              </span>
-            </div>
-            <div className="text-[9.5px]" style={{ color: "oklch(1 0 0 / 38%)" }}>
-              Connect. Collaborate. Grow.
-            </div>
-          </div>
-
-          <div
-            className="flex gap-0.5 mb-4 p-[3px] rounded-lg"
-            style={{
-              background: "oklch(0.13 0 0)",
-              border: "1px solid oklch(1 0 0 / 12%)",
-            }}
-          >
-            {["Creators", "Businesses"].map((tab, i) => (
-              <div
-                key={tab}
-                className="flex-1 text-center py-1.5 rounded-md text-[10px] font-medium"
-                style={{
-                  background: i === 0 ? "oklch(0.20 0 0)" : "transparent",
-                  color: i === 0 ? "oklch(1 0 0 / 88%)" : "oklch(1 0 0 / 40%)",
-                  boxShadow: i === 0 ? "inset 0 1px 0 oklch(1 0 0 / 14%)" : "none",
-                }}
-              >
-                {tab}
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-2 mb-3">
-            {DASHBOARD_CREATORS.map((c) => (
-              <div
-                key={c.name}
-                className="flex items-center gap-2.5 p-2.5 rounded-xl"
-                style={{
-                  background: "oklch(0.13 0 0)",
-                  border: "1px solid oklch(1 0 0 / 12%)",
-                  boxShadow: "inset 0 1px 0 oklch(1 0 0 / 10%)",
-                }}
-              >
-                <div
-                  className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold"
-                  style={{ background: c.bg, color: "oklch(0.1 0 0)" }}
-                >
-                  {c.initial}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium truncate" style={{ color: "oklch(1 0 0 / 82%)" }}>
-                    {c.name}
-                  </div>
-                  <div className="text-[9.5px]" style={{ color: "oklch(1 0 0 / 40%)" }}>
-                    {c.role} · {c.followers}
-                  </div>
-                </div>
-                <div
-                  className="h-6 w-6 rounded-full flex items-center justify-center shrink-0"
-                  style={{
-                    background: "oklch(0.20 0 0)",
-                    border: "1px solid oklch(1 0 0 / 14%)",
-                    color: "oklch(1 0 0 / 55%)",
-                  }}
-                >
-                  <Plus className="h-3 w-3" />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1 text-[10px] mb-4" style={{ color: "oklch(1 0 0 / 45%)" }}>
-            View all creators <ArrowUpRight className="h-2.5 w-2.5" />
-          </div>
-
-          <div
-            className="mt-auto rounded-xl p-3.5"
-            style={{
-              background: "oklch(0.13 0 0)",
-              border: "1px solid oklch(1 0 0 / 14%)",
-              boxShadow: "inset 0 1px 0 oklch(1 0 0 / 12%), 0 2px 8px oklch(0 0 0 / 50%)",
-            }}
-          >
-            <div className="text-[11px] font-medium mb-1" style={{ color: "oklch(1 0 0 / 82%)" }}>
-              Collaboration opportunities
-            </div>
-            <div className="text-[9.5px] mb-3" style={{ color: "oklch(1 0 0 / 40%)" }}>
-              12 new matches found
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex -space-x-2">
-                {AVATAR_STACK.map((bg, i) => (
-                  <div
-                    key={i}
-                    className="h-6 w-6 rounded-full border-[2px] flex items-center justify-center text-[7px] font-bold"
-                    style={{ background: bg, borderColor: "oklch(0.08 0 0)", color: "oklch(0.1 0 0)" }}
-                  >
-                    {["A", "D", "S", "K"][i]}
-                  </div>
-                ))}
-                <div
-                  className="h-6 w-6 rounded-full border-[2px] flex items-center justify-center text-[7px]"
-                  style={{
-                    background: "oklch(0.20 0 0)",
-                    borderColor: "oklch(0.08 0 0)",
-                    color: "oklch(1 0 0 / 50%)",
-                  }}
-                >
-                  +8
-                </div>
-              </div>
-              <div className="flex items-center gap-0.5 text-[9.5px]" style={{ color: "oklch(1 0 0 / 50%)" }}>
-                Review <ArrowUpRight className="h-2.5 w-2.5" />
-              </div>
-            </div>
-          </div>
-        </div>
-
+        ))}
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// MRKT Connect marketplace showcase
-// ─────────────────────────────────────────────────────────────
+// ─── OS Node ──────────────────────────────────────────────────────────────────
 
-const CONNECT_CREATORS = [
-  { initial: "S", name: "Sofia Marlowe",  niche: "Sustainable fashion", followers: "280K", score: 94, bg: "oklch(0.72 0.09 20)"  },
-  { initial: "A", name: "Aisha Chen",     niche: "Beauty & skincare",   followers: "180K", score: 88, bg: "oklch(0.68 0.09 300)" },
-  { initial: "L", name: "Lucas Ferreira", niche: "Fitness & wellness",  followers: "420K", score: 85, bg: "oklch(0.62 0.08 250)" },
-];
-
-const CONNECT_CAMPAIGNS = [
-  { brand: "Lumière Studio", platform: "Instagram", brief: "Q4 skincare launch campaign",  budget: "$12,000", req: "Micro + nano creators"  },
-  { brand: "Helio Fit",      platform: "TikTok",    brief: "Fitness app — 6-post series",  budget: "$8,500",  req: "Health & wellness niche" },
-  { brand: "Maison Aurum",   platform: "Instagram", brief: "SS26 fashion editorial drop",   budget: "$24,000", req: "Fashion & luxury"        },
-];
-
-function ConnectShowcase() {
+function OSNode({ label, sub, color, isLast }: { label: string; sub: string; color: string; isLast?: boolean }) {
   return (
-    <div
-      className="w-full mt-14 rounded-2xl overflow-hidden"
-      style={{
-        background: "oklch(0.10 0 0)",
-        border: "1px solid oklch(1 0 0 / 14%)",
-        boxShadow: [
-          "inset 0 1px 0 oklch(1 0 0 / 12%)",
-          "0 24px 64px -16px oklch(0 0 0 / 65%)",
-          "0 48px 96px -24px oklch(0 0 0 / 45%)",
-        ].join(", "),
-      }}
-    >
-      {/* Header bar */}
-      <div
-        className="flex items-center gap-3 px-5 py-3.5"
-        style={{ background: "oklch(0.08 0 0)", borderBottom: "1px solid oklch(1 0 0 / 12%)" }}
-      >
-        <Users className="h-3.5 w-3.5 shrink-0" style={{ color: "oklch(0.72 0.005 250)" }} />
-        <span className="text-[9.5px] font-semibold uppercase tracking-[0.28em]" style={{ color: "oklch(1 0 0 / 38%)" }}>
-          MRKT Connect
-        </span>
-        <div className="ml-auto flex gap-1">
-          {["Creators", "Campaigns", "Partnerships"].map((tab, i) => (
-            <div
-              key={tab}
-              className="px-3 py-1 rounded-full text-[10px]"
-              style={{
-                background: i === 0 ? "oklch(0.18 0 0)" : "transparent",
-                border: i === 0 ? "1px solid oklch(1 0 0 / 14%)" : "none",
-                color: i === 0 ? "oklch(1 0 0 / 78%)" : "oklch(1 0 0 / 32%)",
-                boxShadow: i === 0 ? "inset 0 1px 0 oklch(1 0 0 / 12%)" : "none",
-              }}
-            >
-              {tab}
-            </div>
-          ))}
+    <div className="flex items-center gap-3 flex-col sm:flex-row">
+      <div className="flex flex-col items-center sm:items-start">
+        <div
+          className="rounded-2xl px-4 py-3 min-w-[120px] text-center sm:text-left"
+          style={{ background: "oklch(1 0 0 / 3.5%)", border: `1px solid ${color}33` }}
+        >
+          <div className="text-[13px] font-semibold" style={{ color: "oklch(1 0 0 / 85%)" }}>{label}</div>
+          <div className="text-[10.5px] mt-0.5" style={{ color: "oklch(1 0 0 / 36%)" }}>{sub}</div>
         </div>
       </div>
-
-      {/* Two-column marketplace */}
-      <div className="grid md:grid-cols-2" style={{ borderBottom: "1px solid oklch(1 0 0 / 10%)" }}>
-
-        {/* Left: Creator profiles */}
-        <div className="p-5" style={{ borderRight: "1px solid oklch(1 0 0 / 10%)" }}>
-          <div className="text-[9px] uppercase tracking-[0.3em] font-medium mb-4" style={{ color: "oklch(1 0 0 / 32%)" }}>
-            Featured Creators
-          </div>
-          <div className="space-y-2.5">
-            {CONNECT_CREATORS.map((c) => (
-              <div
-                key={c.name}
-                className="flex items-center gap-3 p-3.5 rounded-xl"
-                style={{
-                  background: "oklch(0.14 0 0)",
-                  border: "1px solid oklch(1 0 0 / 13%)",
-                  boxShadow: "inset 0 1px 0 oklch(1 0 0 / 10%), 0 2px 6px oklch(0 0 0 / 40%)",
-                }}
-              >
-                <div
-                  className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold"
-                  style={{ background: c.bg, color: "oklch(0.1 0 0)" }}
-                >
-                  {c.initial}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12.5px] font-medium" style={{ color: "oklch(1 0 0 / 88%)" }}>
-                    {c.name}
-                  </div>
-                  <div className="text-[10.5px] mt-0.5" style={{ color: "oklch(1 0 0 / 44%)" }}>
-                    {c.niche} · {c.followers} followers
-                  </div>
-                </div>
-                <div
-                  className="shrink-0 text-[10.5px] font-semibold rounded-full px-2.5 py-0.5"
-                  style={{
-                    color: "oklch(0.72 0.14 152)",
-                    background: "oklch(0.72 0.14 152 / 16%)",
-                    border: "1px solid oklch(0.72 0.14 152 / 28%)",
-                  }}
-                >
-                  {c.score}% match
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex items-center gap-1 text-[10.5px]" style={{ color: "oklch(1 0 0 / 42%)" }}>
-            View all creators <ArrowUpRight className="h-2.5 w-2.5" />
-          </div>
-        </div>
-
-        {/* Right: Campaign opportunities */}
-        <div className="p-5">
-          <div className="text-[9px] uppercase tracking-[0.3em] font-medium mb-4" style={{ color: "oklch(1 0 0 / 32%)" }}>
-            Open Campaigns
-          </div>
-          <div className="space-y-2.5">
-            {CONNECT_CAMPAIGNS.map((c) => (
-              <div
-                key={c.brand}
-                className="p-3.5 rounded-xl"
-                style={{
-                  background: "oklch(0.14 0 0)",
-                  border: "1px solid oklch(1 0 0 / 13%)",
-                  boxShadow: "inset 0 1px 0 oklch(1 0 0 / 10%), 0 2px 6px oklch(0 0 0 / 40%)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="text-[12.5px] font-medium" style={{ color: "oklch(1 0 0 / 88%)" }}>
-                    {c.brand}
-                  </div>
-                  <span
-                    className="text-[9px] uppercase tracking-[0.18em] rounded-full px-2 py-0.5 font-medium"
-                    style={{
-                      background: "oklch(0.20 0 0)",
-                      border: "1px solid oklch(1 0 0 / 12%)",
-                      color: "oklch(1 0 0 / 45%)",
-                    }}
-                  >
-                    {c.platform}
-                  </span>
-                </div>
-                <div className="text-[11px] mb-2" style={{ color: "oklch(1 0 0 / 60%)" }}>
-                  {c.brief}
-                </div>
-                <div className="flex items-center justify-between text-[10px]">
-                  <span style={{ color: "oklch(1 0 0 / 65%)" }}>{c.budget}</span>
-                  <span style={{ color: "oklch(1 0 0 / 38%)" }}>{c.req}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex items-center gap-1 text-[10.5px]" style={{ color: "oklch(1 0 0 / 42%)" }}>
-            Browse all campaigns <ArrowUpRight className="h-2.5 w-2.5" />
-          </div>
-        </div>
-
-      </div>
-
-      {/* AI match footer strip */}
-      <div className="flex items-center gap-2.5 px-5 py-3" style={{ background: "oklch(0.085 0 0)" }}>
-        <Sparkles className="h-3 w-3 shrink-0" style={{ color: "oklch(0.72 0.005 250)" }} />
-        <span className="text-[10.5px]" style={{ color: "oklch(1 0 0 / 38%)" }}>
-          AI matched · 12 new opportunities found this week ·{" "}
-          <span style={{ color: "oklch(1 0 0 / 65%)" }}>Review matches →</span>
-        </span>
-      </div>
+      {!isLast && (
+        <div className="h-8 w-px sm:h-px sm:w-8 shrink-0" style={{ background: `linear-gradient(${color}55, ${color}11)` }} />
+      )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Hook examples
-// ─────────────────────────────────────────────────────────────
-const HOOKS = [
-  { type: "Problem",  text: "You don't have 2 hours. Here's the 20-minute routine that actually works." },
-  { type: "Myth",     text: "The gym isn't the bottleneck. Your schedule is — and here's how to fix it." },
-  { type: "Identity", text: "High performers don't find time to work out. They make it non-negotiable." },
-];
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────
-// Paths
-// ─────────────────────────────────────────────────────────────
-const PATHS = [
-  {
-    label: "Creator",
-    tag: null,
-    desc: "AI content strategy, brand partnership tools, and a MRKT Connect profile that puts you in front of the right brands.",
-    cta: "Start as a Creator",
-    to: "/for-creators",
-  },
-  {
-    label: "Business",
-    tag: null,
-    desc: "Build marketing strategies, find and brief creators, manage campaigns, and grow your brand — from one intelligent workspace.",
-    cta: "Start as a Business",
-    to: "/for-businesses",
-  },
-];
-
-// ─────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────
 function Landing() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) navigate({ to: "/home" });
+  }, [user, navigate]);
+
+  if (user) return null;
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <Nav />
 
-      {/* ── HERO ───────────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-0 px-6 text-center overflow-x-hidden">
+      {/* ══ 01 HERO ══════════════════════════════════════════════════════════════ */}
+      <section className="relative pt-36 pb-28 px-6 overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background: "radial-gradient(ellipse 85% 55% at 50% -5%, oklch(0.17 0 0) 0%, oklch(0.04 0 0) 58%)",
-          }}
+          style={{ background: "radial-gradient(ellipse 70% 45% at 50% -6%, oklch(0.14 0 0) 0%, oklch(0 0 0) 62%)" }}
         />
 
-        {/* Badge */}
-        <div
-          className="hero-animate hero-d1 inline-flex items-center gap-2 rounded-full px-3.5 py-1 mb-8"
-          style={{
-            background: "oklch(0.10 0 0)",
-            border: "1px solid oklch(1 0 0 / 14%)",
-            boxShadow: "inset 0 1px 0 oklch(1 0 0 / 10%)",
-          }}
-        >
-          <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.72 0.14 152)", boxShadow: "0 0 6px oklch(0.72 0.14 152 / 60%)" }} />
-          <span className="text-[9px] font-medium uppercase tracking-[0.32em]" style={{ color: "oklch(1 0 0 / 50%)" }}>
-            AI Marketing Operating System
-          </span>
-        </div>
+        <div className="mx-auto max-w-5xl text-center">
+          {/* Eyebrow */}
+          <div
+            className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 mb-10"
+            style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 9%)" }}
+          >
+            <span className="h-[5px] w-[5px] rounded-full animate-pulse" style={{ background: "oklch(0.72 0.10 224)" }} />
+            <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>
+              Creator Collaboration OS · Now in Beta
+            </span>
+          </div>
 
-        <h1 className="hero-animate hero-d2 font-display text-[clamp(2.75rem,6.5vw,5.5rem)] font-bold leading-[1.12] max-w-3xl mx-auto" style={{ letterSpacing: '0.02em', fontFeatureSettings: '"ss01" 1, "cv01" 1, "cv11" 1, "calt" 0' }}>
-          Marketing, organized<br />
-          <span style={{ color: "oklch(1 0 0 / 35%)" }}>by intelligence.</span>
-        </h1>
+          {/* Headline */}
+          <h1 className="font-display text-[clamp(3rem,8vw,6.5rem)] font-bold tracking-[-0.048em] leading-[0.94]">
+            Your Creator Business.
+            <br />
+            <span style={fadeStyle}>One Operating System.</span>
+          </h1>
 
-        <p
-          className="hero-animate hero-d3 mt-6 mx-auto max-w-[32rem] text-[1.0625rem] leading-[1.75] font-light"
-          style={{ color: "oklch(1 0 0 / 46%)" }}
-        >
-          MRKT helps creators and businesses plan content, build campaigns,
-          discover collaborations, and grow from one intelligent workspace.
-        </p>
+          {/* Subheadline */}
+          <p className="mt-8 mx-auto max-w-[34rem] text-[1.125rem] leading-[1.82] font-light" style={bodyStyle}>
+            MRKT helps creators and businesses discover opportunities, manage collaborations,
+            plan content, use AI strategically, and grow faster — all in one workspace.
+          </p>
 
-        <div className="hero-animate hero-d4 mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-          {user ? (
-            /* ── Returning user: send them straight into the product ── */
-            <Link
-              to="/chat"
-              className="btn-primary inline-flex items-center gap-2 rounded-full px-8 h-12 text-sm font-medium"
-            >
-              Open Workspace <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          ) : (
-            /* ── New visitor: acquisition CTA ── */
+          {/* CTAs */}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/login"
-              className="btn-primary inline-flex items-center gap-2 rounded-full px-8 h-12 text-sm font-medium"
+              className="btn-primary inline-flex items-center gap-2 rounded-full px-9 h-13 text-[0.9375rem] font-medium"
             >
-              Get started free <ArrowUpRight className="h-4 w-4" />
+              Get started — free <ArrowUpRight className="h-4 w-4" />
             </Link>
-          )}
-          <Link
-            to="/connect"
-            className="btn-ghost inline-flex items-center gap-2 rounded-full px-8 h-12 text-sm"
-          >
-            Explore MRKT Connect <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="hero-animate hero-d5">
-          <FlagshipWindow />
-        </div>
-
-        <div
-          aria-hidden
-          className="pointer-events-none absolute bottom-0 inset-x-0 h-52"
-          style={{ background: "linear-gradient(to top, var(--color-background) 30%, transparent)" }}
-        />
-      </section>
-
-      {/* ── AI STRATEGIST ──────────────────────────────────────── */}
-      <section className="px-6 py-32 hairline-t">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-
-            <div>
-              <div className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium" style={{ color: "oklch(1 0 0 / 34%)" }}>
-                AI Strategist
-              </div>
-              <h2 className="font-display text-4xl md:text-[3.25rem] font-bold tracking-[-0.04em] leading-[1.07]">
-                Instant strategy,<br />
-                <span style={{ color: "oklch(1 0 0 / 35%)" }}>for anything.</span>
-              </h2>
-              <p className="mt-6 text-[1.0625rem] leading-[1.8] font-light" style={{ color: "oklch(1 0 0 / 46%)" }}>
-                Ask MRKT to plan campaigns, write content, build calendars, or
-                analyse your brand. Structured, actionable output — in seconds.
-              </p>
-              <Link
-                to={user ? "/chat" : "/login"}
-                className="btn-primary mt-10 inline-flex items-center gap-2 rounded-full px-7 h-11 text-sm"
-              >
-                {user ? "Open AI Strategist" : "Try the AI Strategist"} <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            {/* AI chat panel — the hero mockup */}
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{
-                background: "oklch(0.11 0 0)",
-                border: "1px solid oklch(1 0 0 / 16%)",
-                boxShadow: [
-                  "inset 0 1px 0 oklch(1 0 0 / 14%)",
-                  "0 8px 40px oklch(0 0 0 / 65%)",
-                  "0 2px 8px oklch(0 0 0 / 45%)",
-                ].join(", "),
-              }}
+            <Link
+              to="/for-creators"
+              className="btn-ghost inline-flex items-center gap-2 rounded-full px-7 h-13 text-sm"
             >
-              {/* Header */}
-              <div
-                className="px-5 py-3.5 flex items-center gap-2"
-                style={{ background: "oklch(0.09 0 0)", borderBottom: "1px solid oklch(1 0 0 / 12%)" }}
-              >
-                <div
-                  className="h-6 w-6 rounded-full flex items-center justify-center"
-                  style={{
-                    background: "radial-gradient(circle at 35% 30%, oklch(0.55 0 0), oklch(0.15 0 0))",
-                    border: "1px solid oklch(1 0 0 / 18%)",
-                    boxShadow: "0 0 8px oklch(1 0 0 / 12%)",
-                  }}
-                >
-                  <Sparkles className="h-3 w-3" style={{ color: "oklch(1 0 0 / 82%)" }} />
-                </div>
-                <span className="text-[9px] font-semibold uppercase tracking-[0.28em]" style={{ color: "oklch(1 0 0 / 40%)" }}>
-                  MRKT
-                </span>
-              </div>
-
-              <div className="p-5 space-y-4">
-                {/* User message */}
-                <div className="flex justify-end">
-                  <div
-                    className="max-w-[88%] rounded-[14px] rounded-br-[4px] px-4 py-3 text-[0.8125rem] leading-relaxed"
-                    style={{
-                      background: "oklch(0.20 0 0)",
-                      border: "1px solid oklch(1 0 0 / 18%)",
-                      boxShadow: "inset 0 1px 0 oklch(1 0 0 / 14%), 0 2px 6px oklch(0 0 0 / 45%)",
-                      color: "oklch(1 0 0 / 84%)",
-                    }}
-                  >
-                    Write 3 hooks for a fitness app targeting busy professionals.
-                  </div>
-                </div>
-
-                {/* Hook response cards */}
-                <div className="space-y-2.5">
-                  {HOOKS.map((h) => (
-                    <div
-                      key={h.type}
-                      className="rounded-xl px-4 py-3 text-[0.8125rem] leading-[1.65]"
-                      style={{
-                        background: "oklch(0.16 0 0)",
-                        border: "1px solid oklch(1 0 0 / 14%)",
-                        boxShadow: "inset 0 1px 0 oklch(1 0 0 / 11%)",
-                      }}
-                    >
-                      <span
-                        className="text-[8.5px] uppercase tracking-[0.24em] font-medium block mb-1"
-                        style={{ color: "oklch(1 0 0 / 38%)" }}
-                      >
-                        {h.type}
-                      </span>
-                      <span style={{ color: "oklch(1 0 0 / 72%)" }}>{h.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── MRKT CONNECT ───────────────────────────────────────── */}
-      <section className="px-6 py-32 hairline-t">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center">
-            <div className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium" style={{ color: "oklch(1 0 0 / 34%)" }}>
-              MRKT Connect
-            </div>
-            <h2 className="font-display text-4xl md:text-[3.25rem] font-bold tracking-[-0.04em] leading-[1.07]">
-              The right creators.<br />
-              <span style={{ color: "oklch(1 0 0 / 35%)" }}>The right businesses.</span>
-            </h2>
-            <p className="mt-6 text-[1.0625rem] leading-[1.8] font-light mx-auto max-w-[38rem]" style={{ color: "oklch(1 0 0 / 46%)" }}>
-              MRKT Connect matches creators and brands based on audience fit, goals,
-              content style, and campaign requirements — intelligently.
-            </p>
-            <Link to="/connect" className="btn-primary mt-8 inline-flex items-center gap-2 rounded-full px-7 h-11 text-sm">
-              Explore MRKT Connect <ArrowUpRight className="h-4 w-4" />
+              For creators
+            </Link>
+            <Link
+              to="/for-businesses"
+              className="btn-ghost inline-flex items-center gap-2 rounded-full px-7 h-13 text-sm"
+            >
+              For businesses
             </Link>
           </div>
-          <ConnectShowcase />
-        </div>
-      </section>
 
-      {/* ── TWO WORKSPACES ─────────────────────────────────────── */}
-      <section className="px-6 py-32 hairline-t">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <div className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium" style={{ color: "oklch(1 0 0 / 34%)" }}>
-              Who it's for
-            </div>
-            <h2 className="font-display text-4xl md:text-[3.25rem] font-bold tracking-[-0.04em] leading-[1.07]">
-              Two workspaces.<br />
-              <span style={{ color: "oklch(1 0 0 / 35%)" }}>One platform.</span>
-            </h2>
-            <p className="mt-5 text-[1rem] font-light max-w-lg mx-auto" style={{ color: "oklch(1 0 0 / 44%)" }}>
-              MRKT adapts to your role — creator or brand. The tools, language, and experience change based on who you are.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
-            {PATHS.map((p, i) => (
-              <Link
-                key={i}
-                to={p.to as "/for-creators" | "/for-businesses"}
-                className="group flex flex-col rounded-2xl p-7 transition-all duration-250"
-                style={{
-                  background: "oklch(0.09 0 0)",
-                  border: "1px solid oklch(1 0 0 / 13%)",
-                  boxShadow: "inset 0 1px 0 oklch(1 0 0 / 9%), 0 4px 16px oklch(0 0 0 / 45%)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "oklch(0.12 0 0)";
-                  e.currentTarget.style.borderColor = "oklch(1 0 0 / 22%)";
-                  e.currentTarget.style.boxShadow = "inset 0 1px 0 oklch(1 0 0 / 14%), 0 8px 28px oklch(0 0 0 / 55%), 0 2px 8px oklch(0 0 0 / 40%)";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "oklch(0.09 0 0)";
-                  e.currentTarget.style.borderColor = "oklch(1 0 0 / 13%)";
-                  e.currentTarget.style.boxShadow = "inset 0 1px 0 oklch(1 0 0 / 9%), 0 4px 16px oklch(0 0 0 / 45%)";
-                  e.currentTarget.style.transform = "";
-                }}
-              >
-                <div className="mb-4">
-                  <div className="font-display text-xl font-semibold leading-tight">
-                    {p.label}
-                    {p.tag && (
-                      <span
-                        className="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[8.5px] uppercase tracking-[0.18em] font-medium align-middle"
-                        style={{ background: "oklch(0.16 0 0)", border: "1px solid oklch(1 0 0 / 12%)", color: "oklch(1 0 0 / 45%)" }}
-                      >
-                        {p.tag}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <p className="text-sm leading-relaxed flex-1 mb-7" style={{ color: "oklch(1 0 0 / 46%)" }}>
-                  {p.desc}
-                </p>
-
-                <div
-                  className="flex items-center gap-1.5 text-[0.8125rem] font-medium"
-                  style={{ color: "oklch(1 0 0 / 45%)" }}
-                >
-                  {p.cta}
-                  <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </div>
-              </Link>
+          {/* Proof line */}
+          <div className="mt-10 flex items-center justify-center gap-6 flex-wrap">
+            {[
+              "Free during beta",
+              "English + Arabic (RTL)",
+              "Built for MENA",
+            ].map((t) => (
+              <div key={t} className="flex items-center gap-2">
+                <ShieldCheck className="h-3.5 w-3.5" style={{ color: "oklch(0.62 0.12 158)" }} />
+                <span className="text-[12px]" style={{ color: "oklch(1 0 0 / 36%)" }}>{t}</span>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ──────────────────────────────────────────── */}
-      <section className="px-6 py-40 hairline-t">
+      {/* ══ 02 THE PROBLEM ═══════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-14">
+            <div className={EYEBROW} style={eyebrowStyle}>The problem</div>
+            <h2 className="mt-5 font-display text-[clamp(2rem,5vw,3.75rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+              Creator collaborations run on
+              <br />
+              <span style={fadeStyle}>broken infrastructure.</span>
+            </h2>
+            <p className="mt-6 text-[1.0625rem] leading-[1.8] font-light max-w-xl mx-auto" style={bodyStyle}>
+              Today, creators use WhatsApp for deals, Google Docs for briefs, spreadsheets for tracking,
+              and DMs for everything else. Businesses aren't better — agencies, email chains, and random
+              lists held together by luck. Everything is fragmented.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Creator side */}
+            <div className="rounded-2xl p-6 md:p-8" style={cardStyle}>
+              <div className={`${EYEBROW} text-[9px] mb-5`} style={eyebrowStyle}>Creators today</div>
+              <div className="grid grid-cols-2 gap-2">
+                {CREATOR_TOOLS.map((t) => (
+                  <div
+                    key={t}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5"
+                    style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 7%)" }}
+                  >
+                    <span className="h-[3px] w-[3px] rounded-full shrink-0" style={{ background: "oklch(0.52 0.15 24 / 60%)" }} />
+                    <span className="text-[12px]" style={{ color: "oklch(1 0 0 / 44%)" }}>{t}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-5 text-[12.5px] leading-relaxed" style={{ color: "oklch(1 0 0 / 36%)" }}>
+                6 tools. No single source of truth. Deals fall through. Growth is guesswork.
+              </p>
+            </div>
+
+            {/* Business side */}
+            <div className="rounded-2xl p-6 md:p-8" style={cardStyle}>
+              <div className={`${EYEBROW} text-[9px] mb-5`} style={eyebrowStyle}>Businesses today</div>
+              <div className="grid grid-cols-2 gap-2">
+                {BUSINESS_TOOLS.map((t) => (
+                  <div
+                    key={t}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5"
+                    style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 7%)" }}
+                  >
+                    <span className="h-[3px] w-[3px] rounded-full shrink-0" style={{ background: "oklch(0.52 0.15 24 / 60%)" }} />
+                    <span className="text-[12px]" style={{ color: "oklch(1 0 0 / 44%)" }}>{t}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-5 text-[12.5px] leading-relaxed" style={{ color: "oklch(1 0 0 / 36%)" }}>
+                Campaigns launched by spreadsheet. Results impossible to measure. Relationships forgotten.
+              </p>
+            </div>
+          </div>
+
+          {/* Connector */}
+          <div className="mt-8 rounded-2xl p-6 md:p-8 text-center" style={{ background: "oklch(0.72 0.10 224 / 6%)", border: "1px solid oklch(0.72 0.10 224 / 18%)" }}>
+            <div className="text-[1.125rem] font-semibold mb-2" style={{ color: "oklch(1 0 0 / 88%)" }}>MRKT brings it all together.</div>
+            <p className="text-[13.5px] font-light" style={{ color: "oklch(1 0 0 / 44%)" }}>
+              One workspace. Every tool. Intelligent by default.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 03 THE OPERATING SYSTEM ══════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div>
+              <div className={EYEBROW} style={eyebrowStyle}>The operating system</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                Everything connected.
+                <br />
+                <span style={fadeStyle}>From brief to growth.</span>
+              </h2>
+              <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                MRKT is not a feature. It's a system. Creator profiles, opportunities, campaigns,
+                AI strategy, content production, deliverable approval, and growth analytics —
+                all connected, all aware of each other.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-2">
+                {["Opportunities", "Pipeline", "AI Strategist", "Calendar", "Studio", "Analytics"].map((f) => (
+                  <span
+                    key={f}
+                    className="text-[11px] font-medium rounded-full px-3 py-1"
+                    style={{ background: "oklch(1 0 0 / 4%)", border: "1px solid oklch(1 0 0 / 10%)", color: "oklch(1 0 0 / 52%)" }}
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* OS flow visualization */}
+            <div className="flex flex-col items-start gap-0">
+              {OS_NODES.map((node, i) => (
+                <OSNode key={node.label} {...node} isLast={i === OS_NODES.length - 1} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 04 MRKT AI ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div>
+              <div className={EYEBROW} style={eyebrowStyle}>Intelligence</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                Meet MRKT AI.
+                <br />
+                <span style={fadeStyle}>Not a chatbot. A strategist.</span>
+              </h2>
+              <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                MRKT AI understands your profile, your market, your campaigns, and your goals.
+                It doesn't give generic advice — it gives you a specific plan for your specific situation.
+              </p>
+              <div className="mt-8 grid grid-cols-2 gap-2">
+                {AI_CAPS.map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={raisedStyle}>
+                    <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: "oklch(0.72 0.10 224 / 70%)" }} />
+                    <span className="text-[12px]" style={{ color: "oklch(1 0 0 / 58%)" }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+              <Link
+                to="/ai"
+                className="mt-8 inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors duration-150"
+                style={{ color: "oklch(0.72 0.10 224)" }}
+              >
+                Learn about MRKT AI <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <AIChatMockup />
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 05 GROWTH HUB ════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="order-2 md:order-1">
+              <GrowthMockup />
+            </div>
+            <div className="order-1 md:order-2">
+              <div className={EYEBROW} style={eyebrowStyle}>Growth Hub</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                Know exactly what's
+                <br />
+                <span style={fadeStyle}>holding you back.</span>
+              </h2>
+              <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                The Growth Hub gives every creator a real-time score across profile strength, niche clarity,
+                match readiness, and visibility — with specific AI actions to improve each one.
+                Not vanity metrics. Actionable intelligence.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {[
+                  "Visibility score updated in real time",
+                  "AI-driven improvement recommendations",
+                  "Profile strength diagnostics",
+                  "Match quality tracking across campaigns",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-[13.5px]" style={{ color: "oklch(1 0 0 / 52%)" }}>
+                    <span className="h-[5px] w-[5px] rounded-full shrink-0" style={{ background: "oklch(0.62 0.12 158)" }} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 06 CALENDAR ══════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div>
+              <div className={EYEBROW} style={eyebrowStyle}>Content Calendar</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                Not a scheduler.
+                <br />
+                <span style={fadeStyle}>An intelligence engine.</span>
+              </h2>
+              <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                The Calendar knows when your audience is active in your specific market, which
+                regional events to hook content around, and what trending formats are working
+                for your niche — this week, not last quarter.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {[
+                  "AI-generated posting schedule by region",
+                  "MENA cultural events and Ramadan calendar",
+                  "Trend recommendations by niche",
+                  "Campaign deadline integration",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-[13.5px]" style={{ color: "oklch(1 0 0 / 52%)" }}>
+                    <span className="h-[5px] w-[5px] rounded-full shrink-0" style={{ background: "oklch(0.78 0.14 60)" }} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <CalendarMockup />
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 07 STUDIO ════════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(0.06 0 0)", border: "1px solid oklch(1 0 0 / 8%)" }}>
+            <div className="p-8 md:p-12">
+              <div className="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                  <div
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-6"
+                    style={{ background: "oklch(0.72 0.10 224 / 10%)", border: "1px solid oklch(0.72 0.10 224 / 22%)" }}
+                  >
+                    <Sparkles className="h-3 w-3" style={{ color: "oklch(0.72 0.10 224)" }} />
+                    <span className={`${EYEBROW} text-[8.5px]`} style={{ color: "oklch(0.72 0.10 224)" }}>Coming soon</span>
+                  </div>
+                  <h2 className="font-display text-[clamp(2rem,4vw,3.25rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                    MRKT Studio
+                  </h2>
+                  <p className="mt-5 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                    The future of content creation inside MRKT. Generate campaign assets, ad creatives,
+                    content concepts, and video production — all connected to live campaigns. No file
+                    transfers. No brief-to-agency lag.
+                  </p>
+                  <Link
+                    to="/studio"
+                    className="mt-8 inline-flex items-center gap-2 text-[13px] font-medium transition-colors duration-150"
+                    style={{ color: "oklch(0.72 0.10 224)" }}
+                  >
+                    See the Studio vision <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { icon: FileText,  label: "Campaign briefs",    sub: "AI-drafted in seconds"  },
+                    { icon: Sparkles,  label: "Content concepts",   sub: "Hooks, captions, ideas" },
+                    { icon: Megaphone, label: "Ad creatives",       sub: "Ready for Meta & TikTok"},
+                    { icon: Zap,       label: "Video generation",   sub: "Wave 3 — launching 2026"},
+                  ].map(({ icon: Icon, label, sub }) => (
+                    <div key={label} className="rounded-xl p-4" style={{ background: "oklch(1 0 0 / 4%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+                      <Icon className="h-4 w-4 mb-3" style={{ color: "oklch(1 0 0 / 36%)" }} />
+                      <div className="text-[12.5px] font-semibold mb-0.5" style={{ color: "oklch(1 0 0 / 78%)" }}>{label}</div>
+                      <div className="text-[10.5px]" style={{ color: "oklch(1 0 0 / 34%)" }}>{sub}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 08 GLOBE ═════════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="order-2 md:order-1">
+              <PipelineMockup />
+            </div>
+            <div className="order-1 md:order-2">
+              <div className={EYEBROW} style={eyebrowStyle}>Creator Discovery</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                Discover creators
+                <br />
+                <span style={fadeStyle}>across the region.</span>
+              </h2>
+              <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                The MRKT Globe shows you exactly where creators are — and where they're going.
+                Find creators in Dubai who are traveling to Riyadh next month. Discover the niche
+                talent your competitors haven't found yet. See the creator map in real time.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {[
+                  "Live creator map across MENA",
+                  "Travel plans and market availability",
+                  "AI-matched by niche, audience, and location",
+                  "Invite directly from the Globe",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-[13.5px]" style={{ color: "oklch(1 0 0 / 52%)" }}>
+                    <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: "oklch(0.72 0.10 224 / 60%)" }} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 09 WHY MENA ══════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-start">
+            <div>
+              <div className={EYEBROW} style={eyebrowStyle}>Why MENA</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold tracking-[-0.04em] leading-[1.05]">
+                Built here.
+                <br />
+                <span style={fadeStyle}>For here.</span>
+              </h2>
+              <p className="mt-6 text-[1.0625rem] leading-[1.82] font-light" style={bodyStyle}>
+                Every tool in MRKT was built with MENA creators and brands in mind.
+                Arabic RTL interface. Ramadan calendar intelligence. Regional market data.
+                Creator profiles in English and Arabic. This is not an afterthought — it's the foundation.
+              </p>
+
+              <div className="mt-8 space-y-4">
+                {[
+                  { label: "Arabic + English",        desc: "Full RTL interface support — switch language at any time."      },
+                  { label: "Regional calendar",        desc: "Ramadan, Eid, National Days, and local event hooks built in."   },
+                  { label: "MENA market intelligence", desc: "Creator discovery filtered by GCC, Levant, and North Africa."  },
+                  { label: "Local currency context",   desc: "Campaign budgets and creator rates in regional context."        },
+                ].map((item) => (
+                  <div key={item.label} className="flex gap-4">
+                    <div className="h-[5px] w-[5px] rounded-full shrink-0 mt-2" style={{ background: "oklch(0.72 0.10 224)" }} />
+                    <div>
+                      <div className="text-[13.5px] font-semibold" style={{ color: "oklch(1 0 0 / 80%)" }}>{item.label}</div>
+                      <div className="text-[12.5px] mt-0.5" style={{ color: "oklch(1 0 0 / 40%)" }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* MENA markets grid */}
+            <div>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {MENA_MARKETS.map((m) => (
+                  <div
+                    key={m.name}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
+                    style={raisedStyle}
+                  >
+                    <span className="text-xl">{m.flag}</span>
+                    <span className="text-[13.5px] font-medium" style={{ color: "oklch(1 0 0 / 72%)" }}>{m.name}</span>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="rounded-2xl px-5 py-4 text-[12.5px] leading-relaxed"
+                style={{ background: "oklch(0.72 0.10 224 / 6%)", border: "1px solid oklch(0.72 0.10 224 / 16%)", color: "oklch(1 0 0 / 50%)" }}
+              >
+                MRKT is the first creator collaboration OS built specifically for the Arab world and MENA.
+                Not localized. Native.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 10 FOUNDER STORY ═════════════════════════════════════════════════════ */}
+      <section className="px-6 py-24 hairline-t">
+        <div className="mx-auto max-w-5xl">
+          <div className="grid md:grid-cols-2 gap-16 items-start">
+            <div>
+              <div className={EYEBROW} style={eyebrowStyle}>Why we built this</div>
+              <h2 className="mt-5 font-display text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.04em] leading-[1.06]">
+                A real problem deserves
+                <br />
+                <span style={fadeStyle}>a real solution.</span>
+              </h2>
+            </div>
+            <div className="space-y-5">
+              <p className="text-[1.0625rem] leading-[1.85] font-light" style={bodyStyle}>
+                We watched talented creators in Dubai, Beirut, and Cairo manage brand deals through
+                WhatsApp voice notes and Google Sheets. We watched brands in Riyadh and Kuwait spend
+                weeks searching for the right creator, then lose the deal to miscommunication.
+              </p>
+              <p className="text-[1.0625rem] leading-[1.85] font-light" style={bodyStyle}>
+                The infrastructure for creator collaboration in MENA didn't exist. So we built it.
+                Not a marketplace. Not an agency tool. An operating system — where everything
+                from first contact to final delivery lives in one place.
+              </p>
+              <p className="text-[1.0625rem] leading-[1.85] font-light" style={bodyStyle}>
+                We're in beta. We're building in public. And we're obsessed with getting this right.
+              </p>
+              <Link
+                to="/about"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium mt-2 transition-colors duration-150"
+                style={{ color: "oklch(1 0 0 / 44%)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 72%)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 44%)"; }}
+              >
+                Read the full story <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 11 BETA CTA ══════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-32 hairline-t">
         <div className="mx-auto max-w-2xl text-center">
-          {user ? (
-            /* ── Logged-in: welcome back ── */
-            <>
-              <h2 className="font-display text-[clamp(2.75rem,6vw,4.75rem)] font-bold leading-[1.1]" style={{ letterSpacing: '-0.02em' }}>
-                Your workspace<br />
-                <span style={{ color: "oklch(1 0 0 / 34%)" }}>is ready.</span>
-              </h2>
-              <p
-                className="mt-6 font-light max-w-sm mx-auto leading-relaxed"
-                style={{ color: "oklch(1 0 0 / 42%)", fontSize: "1.0625rem" }}
-              >
-                Pick up where you left off. Your strategies, sessions, and saved work are waiting.
-              </p>
-              <Link
-                to="/chat"
-                className="btn-primary mt-10 inline-flex items-center gap-2 rounded-full px-10 h-14 text-base"
-              >
-                Open Workspace <ArrowUpRight className="h-5 w-5" />
-              </Link>
-            </>
-          ) : (
-            /* ── Logged-out: acquisition ── */
-            <>
-              <h2 className="font-display text-[clamp(2.75rem,6vw,4.75rem)] font-bold leading-[1.1]" style={{ letterSpacing: '-0.02em' }}>
-                Your marketing team,<br />
-                <span style={{ color: "oklch(1 0 0 / 34%)" }}>built with AI.</span>
-              </h2>
-              <p
-                className="mt-6 font-light max-w-sm mx-auto leading-relaxed"
-                style={{ color: "oklch(1 0 0 / 42%)", fontSize: "1.0625rem" }}
-              >
-                Strategy, content, partnerships, and growth — from one workspace designed for how marketing works today.
-              </p>
-              <Link
-                to="/login"
-                className="btn-primary mt-10 inline-flex items-center gap-2 rounded-full px-10 h-14 text-base"
-              >
-                Get started free <ArrowUpRight className="h-5 w-5" />
-              </Link>
-            </>
-          )}
+          <div
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8"
+            style={{ background: "oklch(0.62 0.12 158 / 10%)", border: "1px solid oklch(0.62 0.12 158 / 24%)" }}
+          >
+            <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.62 0.12 158)" }} />
+            <span className={`${EYEBROW} text-[9px]`} style={{ color: "oklch(0.62 0.12 158)" }}>
+              Free during beta
+            </span>
+          </div>
+
+          <h2 className="font-display text-[clamp(2.75rem,7vw,5.5rem)] font-bold tracking-[-0.048em] leading-[0.96]">
+            Where collaborations
+            <br />
+            <span style={fadeStyle}>get done.</span>
+          </h2>
+
+          <p className="mt-8 text-[1.0625rem] leading-[1.82] font-light max-w-md mx-auto" style={bodyStyle}>
+            Join MRKT during beta. Free, no credit card required. The creator collaboration
+            OS for MENA — from first brief to final delivery.
+          </p>
+
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/login"
+              className="btn-primary inline-flex items-center gap-2 rounded-full px-10 h-14 text-base font-medium"
+            >
+              Get started — free <ArrowUpRight className="h-5 w-5" />
+            </Link>
+            <Link
+              to="/pricing"
+              className="btn-ghost inline-flex items-center gap-2 rounded-full px-8 h-14 text-sm"
+            >
+              See pricing
+            </Link>
+          </div>
+
+          <p className="mt-8 text-[12px]" style={{ color: "oklch(1 0 0 / 24%)" }}>
+            Beta access is free. Paid plans launch after the beta period.
+          </p>
         </div>
       </section>
 

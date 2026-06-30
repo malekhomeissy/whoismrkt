@@ -58,6 +58,7 @@ export interface Campaign {
   // Status
   status: CampaignStatus;
   is_published: boolean;
+  is_beta_campaign?: boolean;
   created_at: string;
   updated_at: string;
   // Joined relations
@@ -205,10 +206,10 @@ export function formatBudget(campaign: Campaign): string {
 
 export function compensationColor(type: CompensationType): { text: string; bg: string; border: string } {
   switch (type) {
-    case "paid":          return { text: "oklch(0.72 0.14 152)", bg: "oklch(0.72 0.14 152 / 12%)", border: "oklch(0.72 0.14 152 / 30%)" };
-    case "gifted":        return { text: "oklch(0.78 0.12 60)",  bg: "oklch(0.78 0.12 60 / 12%)",  border: "oklch(0.78 0.12 60 / 30%)"  };
-    case "affiliate":     return { text: "oklch(0.72 0.1 250)",  bg: "oklch(0.72 0.1 250 / 12%)",  border: "oklch(0.72 0.1 250 / 30%)"  };
-    case "revenue_share": return { text: "oklch(0.72 0.1 290)",  bg: "oklch(0.72 0.1 290 / 12%)",  border: "oklch(0.72 0.1 290 / 30%)"  };
-    case "unpaid":        return { text: "oklch(1 0 0 / 40%)",   bg: "oklch(1 0 0 / 5%)",          border: "oklch(1 0 0 / 12%)"         };
+    case "paid":          return { text: "oklch(1 0 0 / 88%)",  bg: "oklch(1 0 0 / 7%)",   border: "oklch(1 0 0 / 18%)"  };
+    case "gifted":        return { text: "oklch(0.80 0.005 0)", bg: "oklch(1 0 0 / 5%)",   border: "oklch(1 0 0 / 14%)"  };
+    case "affiliate":     return { text: "oklch(0.78 0.005 0)", bg: "oklch(1 0 0 / 5%)",   border: "oklch(1 0 0 / 14%)"  };
+    case "revenue_share": return { text: "oklch(0.78 0.005 0)", bg: "oklch(1 0 0 / 5%)",   border: "oklch(1 0 0 / 14%)"  };
+    case "unpaid":        return { text: "oklch(1 0 0 / 36%)",  bg: "oklch(1 0 0 / 4%)",   border: "oklch(1 0 0 / 10%)"  };
   }
 }

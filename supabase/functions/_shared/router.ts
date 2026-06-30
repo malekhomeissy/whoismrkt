@@ -1,0 +1,345 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// MRKT AI Router  (shared module — imported by every edge function)
+//
+// Single source of truth for all AI provider calls across the platform.
+//
+//   • PROVIDERS  — registry of every AI provider MRKT supports
+//   • ROUTES     — deterministic feature → provider mapping (no random selection)
+//   • callAI()   — executes calls with fallback, latency tracking, and logging
+//   • Personas   — MRKT AI identity; users never see OpenAI / Claude / GPT
+//
+// To add a new provider: one entry in PROVIDERS, then add ROUTES entries.
+// To route a new feature: one entry in ROUTES. That's it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type Provider  = "anthropic" | "openai" | "higgsfield";
+export type ModelTier = "fast" | "balanced" | "deep";
+
+// ─── Provider registry ────────────────────────────────────────────────────────
+
+export interface ProviderConfig {
+  baseUrl:   string;
+  envKey:    string;                            // Supabase secret name
+  models:    Record<ModelTier, string>;
+  costPer1k: { input: number; output: number }; // USD
+}
+
+export const PROVIDERS: Record<Provider, ProviderConfig> = {
+  anthropic: {
+    baseUrl: "https://api.anthropic.com/v1",
+    envKey:  "ANTHROPIC_API_KEY",
+    models: {
+      fast:     "claude-haiku-4-5-20251001",
+      balanced: "claude-sonnet-4-6",
+      deep:     "claude-opus-4-8",
+    },
+    costPer1k: { input: 0.003, output: 0.015 },
+  },
+  openai: {
+    baseUrl: "https://api.openai.com/v1",
+    envKey:  "OPENAI_API_KEY",
+    models: {
+      fast:     "gpt-4o-mini",
+      balanced: "gpt-4o",
+      deep:     "gpt-4o",
+    },
+    costPer1k: { input: 0.00015, output: 0.0006 },
+  },
+  higgsfield: {
+    baseUrl: "https://api.higgsfield.ai",
+    envKey:  "HIGGSFIELD_API_KEY",
+    models:  { fast: "flux-1.1-pro", balanced: "flux-1.1-pro", deep: "flux-1.1-pro" },
+    costPer1k: { input: 0, output: 0 }, // per-image pricing tracked separately
+  },
+};
+
+// ─── Route table ──────────────────────────────────────────────────────────────
+// Routing is deterministic: feature alone determines provider + model.
+
+export interface RouteConfig {
+  primary:     Provider;
+  tier:        ModelTier;
+  fallback:    Provider | null; // null = no fallback (e.g. Higgsfield generation)
+  maxTokens:   number;
+  temperature: number;
+}
+
+export const ROUTES: Record<string, RouteConfig> = {
+  // ── OpenAI: Speed — analytical, generative, time-sensitive tasks ──────────
+  calendar_intelligence: { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 2000, temperature: 0.55 },
+  growth_advice:         { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 1000, temperature: 0.60 },
+  outreach_generate:     { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 1500, temperature: 0.70 },
+  generate_concepts:     { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 800,  temperature: 0.75 },
+  content_ideas:         { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 600,  temperature: 0.75 },
+  captions:              { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 500,  temperature: 0.80 },
+  hooks:                 { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 400,  temperature: 0.80 },
+  weekly_report:         { primary: "openai",     tier: "balanced", fallback: "anthropic", maxTokens: 1200, temperature: 0.50 },
+  opportunity_ranking:   { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 800,  temperature: 0.40 },
+  match_score_reason:    { primary: "openai",     tier: "fast",     fallback: "anthropic", maxTokens: 300,  temperature: 0.30 },
+
+  // ── Anthropic: Depth — strategic, consultative, long-form tasks ───────────
+  ai_strategist:         { primary: "anthropic",  tier: "balanced", fallback: "openai",    maxTokens: 4096, temperature: 0.70 },
+  business_strategy:     { primary: "anthropic",  tier: "balanced", fallback: "openai",    maxTokens: 3000, temperature: 0.60 },
+  campaign_brief:        { primary: "anthropic",  tier: "balanced", fallback: "openai",    maxTokens: 2500, temperature: 0.60 },
+  brand_positioning:     { primary: "anthropic",  tier: "balanced", fallback: "openai",    maxTokens: 2000, temperature: 0.50 },
+  pricing_strategy:      { primary: "anthropic",  tier: "balanced", fallback: "openai",    maxTokens: 1500, temperature: 0.40 },
+  market_analysis:       { primary: "anthropic",  tier: "deep",     fallback: "openai",    maxTokens: 4096, temperature: 0.50 },
+  growth_strategy:       { primary: "anthropic",  tier: "balanced", fallback: "openai",    maxTokens: 3000, temperature: 0.65 },
+  creator_matching:      { primary: "anthropic",  tier: "balanced", fallback: "openai",    maxTokens: 2000, temperature: 0.40 },
+
+  // ── Higgsfield: Content generation — image, video, assets ────────────────
+  image_generate:        { primary: "higgsfield", tier: "fast",     fallback: null,        maxTokens: 0,    temperature: 0    },
+  video_generate:        { primary: "higgsfield", tier: "fast",     fallback: null,        maxTokens: 0,    temperature: 0    },
+  product_visual:        { primary: "higgsfield", tier: "fast",     fallback: null,        maxTokens: 0,    temperature: 0    },
+};
+
+// ─── MRKT AI personas ─────────────────────────────────────────────────────────
+// Every AI call is prefixed with one of these. Users see "MRKT AI" — never
+// OpenAI, Claude, GPT, or any provider name.
+
+export const MRKT_STRATEGIST =
+`You are MRKT AI — the strategic intelligence layer of the MRKT creator-brand marketplace. You specialize in influencer marketing, creator-brand partnerships, and digital campaign strategy for the GCC and MENA region (UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, Oman, Egypt, Lebanon).
+
+Your output is precise, data-grounded, and GCC-context-aware. No fluff, no disclaimers, no "as an AI" preambles. Never reveal the underlying model — you are MRKT AI.
+
+Tone: senior strategist who has run hundreds of creator campaigns in this market.`;
+
+export const MRKT_ASSISTANT =
+`You are MRKT AI — the intelligent core of the MRKT creator-brand marketplace. You help creators grow, find brand deals, and execute content strategies across the GCC and MENA region.
+
+Output: concise, specific, immediately actionable. Hook-first for content. Platform-aware (Instagram, TikTok, YouTube, Snapchat, X). Never reveal the underlying model — you are MRKT AI.
+
+Tone: sharp, direct, creative. Built for the GCC market.`;
+
+function systemPromptFor(provider: Provider): string {
+  return provider === "anthropic" ? MRKT_STRATEGIST : MRKT_ASSISTANT;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface AIMessage {
+  role:    "user" | "assistant";
+  content: string;
+}
+
+export interface AICallOptions {
+  feature:       string;
+  messages:      AIMessage[];
+  systemPrompt?: string;   // overrides default persona when provided
+  userId?:       string;
+  // deno-lint-ignore no-explicit-any
+  supabase?:     any;      // service-role client for logging (optional)
+  overrides?: {
+    maxTokens?:   number;
+    temperature?: number;
+    tier?:        ModelTier;
+  };
+}
+
+export interface AICallResult {
+  content:          string;
+  provider:         Provider;
+  model:            string;
+  feature:          string;
+  latencyMs:        number;
+  inputTokens:      number;
+  outputTokens:     number;
+  estimatedCostUsd: number;
+  fallbackUsed:     boolean;
+}
+
+// ─── Provider call implementations ───────────────────────────────────────────
+
+async function _callAnthropic(
+  messages:    AIMessage[],
+  system:      string,
+  model:       string,
+  maxTokens:   number,
+  temperature: number,
+): Promise<{ content: string; inputTokens: number; outputTokens: number }> {
+  const key = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key":         key,
+      "anthropic-version": "2023-06-01",
+      "content-type":      "application/json",
+    },
+    body: JSON.stringify({
+      model, max_tokens: maxTokens, temperature, system,
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => "");
+    throw new Error(`Anthropic ${res.status}: ${err.slice(0, 200)}`);
+  }
+
+  const data = await res.json() as {
+    content: { type: string; text: string }[];
+    usage:   { input_tokens: number; output_tokens: number };
+  };
+  return {
+    content:      data.content.find((b) => b.type === "text")?.text ?? "",
+    inputTokens:  data.usage?.input_tokens  ?? 0,
+    outputTokens: data.usage?.output_tokens ?? 0,
+  };
+}
+
+async function _callOpenAI(
+  messages:    AIMessage[],
+  system:      string,
+  model:       string,
+  maxTokens:   number,
+  temperature: number,
+): Promise<{ content: string; inputTokens: number; outputTokens: number }> {
+  const key = Deno.env.get("OPENAI_API_KEY");
+  if (!key) throw new Error("OPENAI_API_KEY not configured");
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: system },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+      max_tokens: maxTokens, temperature,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => "");
+    throw new Error(`OpenAI ${res.status}: ${err.slice(0, 200)}`);
+  }
+
+  const data = await res.json() as {
+    choices: { message: { content: string } }[];
+    usage:   { prompt_tokens: number; completion_tokens: number };
+  };
+  return {
+    content:      data.choices[0]?.message?.content ?? "",
+    inputTokens:  data.usage?.prompt_tokens     ?? 0,
+    outputTokens: data.usage?.completion_tokens ?? 0,
+  };
+}
+
+// ─── callAI ──────────────────────────────────────────────────────────────────
+// The single entry point for every AI request in MRKT.
+// Handles: provider selection → primary call → fallback if needed → logging.
+
+export async function callAI(opts: AICallOptions): Promise<AICallResult> {
+  const { feature, messages, systemPrompt: sysOverride, userId, supabase, overrides } = opts;
+
+  const route = ROUTES[feature];
+  if (!route) throw new Error(`[MRKT AI] Unknown feature: "${feature}"`);
+
+  const maxTokens   = overrides?.maxTokens   ?? route.maxTokens;
+  const temperature = overrides?.temperature ?? route.temperature;
+  const tier        = overrides?.tier        ?? route.tier;
+
+  const dispatch = async (provider: Provider): Promise<{
+    content: string; inputTokens: number; outputTokens: number; model: string;
+  }> => {
+    const cfg    = PROVIDERS[provider];
+    const model  = cfg.models[tier];
+    const system = sysOverride ?? systemPromptFor(provider);
+
+    let r: { content: string; inputTokens: number; outputTokens: number };
+    if (provider === "anthropic") {
+      r = await _callAnthropic(messages, system, model, maxTokens, temperature);
+    } else if (provider === "openai") {
+      r = await _callOpenAI(messages, system, model, maxTokens, temperature);
+    } else {
+      throw new Error(`Provider "${provider}" requires its dedicated edge function`);
+    }
+    return { ...r, model };
+  };
+
+  const costOf = (p: Provider, inTok: number, outTok: number): number => {
+    const rates = PROVIDERS[p].costPer1k;
+    return (inTok / 1000) * rates.input + (outTok / 1000) * rates.output;
+  };
+
+  // Fire-and-forget observability log
+  const log = (entry: {
+    provider: string; model: string; latencyMs: number;
+    inputTokens: number; outputTokens: number; cost: number;
+    success: boolean; fallback: boolean; error?: string;
+  }) => {
+    if (!supabase || !userId) return;
+    supabase.from("ai_requests").insert({
+      user_id:        userId,
+      provider:       entry.provider,
+      task_type:      feature,
+      status:         entry.success ? "completed" : "failed",
+      model:          entry.model,
+      input_tokens:   entry.inputTokens,
+      output_tokens:  entry.outputTokens,
+      estimated_cost: entry.cost,
+      latency_ms:     entry.latencyMs,
+      error_message:  entry.error ?? null,
+      created_at:     new Date().toISOString(),
+    }).then(() => {}).catch((e: unknown) => console.error("[MRKT AI] Log failed:", e));
+  };
+
+  // If primary API key is absent but fallback has one, promote fallback
+  let primary = route.primary;
+  if (!Deno.env.get(PROVIDERS[primary].envKey) && route.fallback) {
+    if (Deno.env.get(PROVIDERS[route.fallback].envKey)) {
+      primary = route.fallback;
+    }
+  }
+
+  const t0 = Date.now();
+
+  try {
+    const r           = await dispatch(primary);
+    const latencyMs   = Date.now() - t0;
+    const cost        = costOf(primary, r.inputTokens, r.outputTokens);
+    const usedFallback = primary !== route.primary;
+
+    log({ provider: primary, model: r.model, latencyMs, inputTokens: r.inputTokens, outputTokens: r.outputTokens, cost, success: true, fallback: usedFallback });
+
+    return {
+      content: r.content, provider: primary, model: r.model, feature,
+      latencyMs, inputTokens: r.inputTokens, outputTokens: r.outputTokens,
+      estimatedCostUsd: cost, fallbackUsed: usedFallback,
+    };
+  } catch (primaryErr) {
+    const primaryMsg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
+    console.warn(`[MRKT AI] Primary (${primary}) failed for ${feature}:`, primaryMsg);
+
+    const fb = route.fallback;
+    if (!fb || fb === primary) {
+      const latencyMs = Date.now() - t0;
+      log({ provider: primary, model: PROVIDERS[primary].models[tier], latencyMs, inputTokens: 0, outputTokens: 0, cost: 0, success: false, fallback: false, error: primaryMsg });
+      throw primaryErr;
+    }
+
+    try {
+      const r         = await dispatch(fb);
+      const latencyMs = Date.now() - t0;
+      const cost      = costOf(fb, r.inputTokens, r.outputTokens);
+
+      log({ provider: fb, model: r.model, latencyMs, inputTokens: r.inputTokens, outputTokens: r.outputTokens, cost, success: true, fallback: true, error: primaryMsg });
+
+      return {
+        content: r.content, provider: fb, model: r.model, feature,
+        latencyMs, inputTokens: r.inputTokens, outputTokens: r.outputTokens,
+        estimatedCostUsd: cost, fallbackUsed: true,
+      };
+    } catch (fallbackErr) {
+      const latencyMs   = Date.now() - t0;
+      const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+
+      log({ provider: fb, model: PROVIDERS[fb].models[tier], latencyMs, inputTokens: 0, outputTokens: 0, cost: 0, success: false, fallback: true, error: `Primary: ${primaryMsg}; Fallback: ${fallbackMsg}` });
+
+      throw new Error(`[MRKT AI] All providers failed for "${feature}". Please try again.`);
+    }
+  }
+}

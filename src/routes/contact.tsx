@@ -49,7 +49,7 @@ function Contact() {
       source: "contact",
     });
     setLoading(false);
-    if (error) return toast.error("Something went wrong. Please email hello@whoismrkt.com.");
+    if (error) return toast.error("Something went wrong. Please email hello@usemrkt.app.");
     setDone(true);
     toast.success("Message received — we'll reply within one business day.");
   };
@@ -64,7 +64,7 @@ function Contact() {
           className="pointer-events-none absolute inset-0 -z-10"
           style={{
             background:
-              "radial-gradient(ellipse 80% 50% at 50% -8%, oklch(0.17 0 0) 0%, oklch(0.04 0 0) 60%)",
+              "radial-gradient(ellipse 80% 50% at 50% -8%, oklch(0.17 0 0) 0%, oklch(0 0 0) 60%)",
           }}
         />
 
@@ -91,12 +91,12 @@ function Contact() {
             </p>
 
             <a
-              href="mailto:hello@whoismrkt.com"
+              href="mailto:hello@usemrkt.app"
               className="mt-10 flex items-center gap-3 group"
             >
               <div
                 className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-150"
-                style={{ background: "oklch(1 0 0 / 6%)", border: "1px solid oklch(1 0 0 / 9%)" }}
+                style={{ background: "oklch(1 0 0 / 6%)", border: "1px solid oklch(1 0 0 / 8%)" }}
               >
                 <Mail className="h-4 w-4" style={{ color: "oklch(1 0 0 / 55%)" }} />
               </div>
@@ -106,7 +106,7 @@ function Contact() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 85%)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 55%)"; }}
               >
-                hello@whoismrkt.com
+                hello@usemrkt.app
               </span>
             </a>
 
@@ -132,7 +132,7 @@ function Contact() {
           <div className="lg:col-span-7">
             <div
               className="rounded-2xl p-8 md:p-10"
-              style={{ background: "oklch(0.07 0 0)", border: "1px solid oklch(1 0 0 / 9%)" }}
+              style={{ background: "oklch(0.07 0 0)", border: "1px solid oklch(1 0 0 / 8%)" }}
             >
               {done ? (
                 <div className="py-16 text-center">
@@ -194,9 +194,9 @@ function Field({ label, ...props }: { label: string } & React.InputHTMLAttribute
       <input
         {...props}
         className="mt-2 w-full h-11 rounded-xl outline-none px-4 text-[13.5px] transition-all duration-150"
-        style={{ background: "oklch(0.065 0 0)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 84%)" }}
+        style={{ background: "oklch(0.065 0 0)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 84%)" }}
         onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "oklch(1 0 0 / 26%)"; props.onFocus?.(e); }}
-        onBlur={(e)  => { (e.currentTarget as HTMLInputElement).style.borderColor = "oklch(1 0 0 / 9%)";  props.onBlur?.(e);  }}
+        onBlur={(e)  => { (e.currentTarget as HTMLInputElement).style.borderColor = "oklch(1 0 0 / 8%)";  props.onBlur?.(e);  }}
       />
     </label>
   );
@@ -211,9 +211,9 @@ function TextAreaField({ label, ...props }: { label: string } & React.TextareaHT
       <textarea
         {...props}
         className="mt-2 w-full rounded-xl outline-none px-4 py-3 text-[13.5px] transition-all duration-150 resize-none"
-        style={{ background: "oklch(0.065 0 0)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 84%)" }}
+        style={{ background: "oklch(0.065 0 0)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 84%)" }}
         onFocus={(e) => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = "oklch(1 0 0 / 26%)"; }}
-        onBlur={(e)  => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = "oklch(1 0 0 / 9%)";  }}
+        onBlur={(e)  => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = "oklch(1 0 0 / 8%)";  }}
       />
     </label>
   );
@@ -228,9 +228,9 @@ function SelectField({ label, children, ...props }: { label: string; children: R
       <select
         {...props}
         className="mt-2 w-full h-11 rounded-xl outline-none px-4 text-[13.5px] transition-all duration-150 appearance-none"
-        style={{ background: "oklch(0.065 0 0)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 84%)" }}
+        style={{ background: "oklch(0.065 0 0)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 84%)" }}
         onFocus={(e) => { (e.currentTarget as HTMLSelectElement).style.borderColor = "oklch(1 0 0 / 26%)"; }}
-        onBlur={(e)  => { (e.currentTarget as HTMLSelectElement).style.borderColor = "oklch(1 0 0 / 9%)";  }}
+        onBlur={(e)  => { (e.currentTarget as HTMLSelectElement).style.borderColor = "oklch(1 0 0 / 8%)";  }}
       >
         {children}
       </select>

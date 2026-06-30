@@ -59,7 +59,9 @@ export const getRouter = () => {
     routeTree,
     context: {},
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    defaultPreload: "intent",       // preload JS bundle on link hover/touch → near-instant nav
+    defaultPreloadDelay: 0,         // no delay — start preloading immediately on intent
+    defaultPreloadStaleTime: 30_000, // cached preload is valid for 30s (avoids redundant re-fetches)
     defaultErrorComponent: DefaultErrorComponent,
   });
 

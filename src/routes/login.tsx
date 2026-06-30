@@ -12,18 +12,9 @@ import { Logo } from "@/components/site/Logo";
 import { ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — whoismrkt" }] }),
+  head: () => ({ meta: [{ title: "Sign in — MRKT" }] }),
   component: LoginPage,
 });
-
-// ── Apple logo SVG ────────────────────────────────────────────────────────────
-function AppleLogo({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 814 1000" className={className} fill="currentColor">
-      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.5-167.2-41.8c-5.8-.3-16.5-1.6-29-1.6-35.5 0-95.7 16.2-108 43.2-6.7 14.8-7.7 29.9-7.7 35.2 0 46.5 36.8 92.9 75.8 113.2 57.6 29.3 76.9 36.8 120.3 36.8 28.9 0 93.7-15.6 124.2-37.6 30.5-21.9 116.5-38.9 164.8-38.9 50.5 0 129.4 18.1 162.3 38.9 44.3 28 92.8 37.6 130.8 37.6 41.2 0 75.5-12.1 115.5-35.8 52.8-30.6 95.4-83.2 95.4-126.7 0-8.3-.9-18.7-3.3-28.3-25.3-92.4-76.3-146.5-91-156.7-21.3-15.9-54.5-25.9-90.8-25.9-55.6 0-115.1 27.3-142.4 57.4-26.3 28.9-63.8 51.6-115.1 51.6-46.7 0-86.5-16.2-112.8-45.1C280.9 486.6 241 396.6 241 310.4c0-109.5 56.2-224.4 154.8-295.3 57.2-40.6 127.6-65 196.4-65 104.7 0 188.9 48.5 230.1 135.5 4.8 10.2 7.7 20.1 7.7 30.1 0 12.8-4.5 25.3-13.5 34.5-10.6 10.8-25.6 16.5-42.6 16.5-17.4 0-33.4-7.1-44.8-19.5-36.5-39.7-89.7-63.2-148.4-63.2-82.3 0-151.9 56.2-179.1 139.3-.9 2.9-1.7 5.8-2.5 8.7-.3 1.2-.5 2.5-.8 3.7-.8 3.5-1.5 7-2.2 10.5-4.4 24.2-6.7 49-6.7 74.1 0 13.3.7 26.5 2 39.5.4 3.9.9 7.7 1.4 11.6.4 2.9.8 5.8 1.3 8.7 8.3 50.8 28.9 97.1 59.5 133.2 38.7 45.5 93.6 72 154.4 72 36.9 0 72.3-11.6 99.3-32.6 28.5-22 64.2-39.8 108.4-39.8z" />
-    </svg>
-  );
-}
 
 // ── Google logo SVG ───────────────────────────────────────────────────────────
 function GoogleIcon() {
@@ -47,9 +38,9 @@ function Field({ label, ...props }: { label: string } & React.InputHTMLAttribute
       <input
         {...props}
         className="mt-2 w-full h-11 rounded-xl outline-none px-4 text-[13.5px] transition-all duration-150"
-        style={{ background: "oklch(0.07 0 0)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 85%)" }}
+        style={{ background: "oklch(0.07 0 0)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 85%)" }}
         onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "oklch(1 0 0 / 28%)"; props.onFocus?.(e); }}
-        onBlur={(e)  => { (e.currentTarget as HTMLInputElement).style.borderColor = "oklch(1 0 0 / 9%)";  props.onBlur?.(e);  }}
+        onBlur={(e)  => { (e.currentTarget as HTMLInputElement).style.borderColor = "oklch(1 0 0 / 8%)";  props.onBlur?.(e);  }}
       />
     </label>
   );
@@ -67,19 +58,7 @@ function LoginPage() {
   const [name,      setName]      = useState("");
   const [loading,   setLoading]   = useState(false);
 
-  useEffect(() => { if (user) nav({ to: "/chat" }); }, [user, nav]);
-
-  // ── Apple ──────────────────────────────────────────────────────────────────
-  async function apple() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: "name email",
-      },
-    });
-    if (error) toast.error("Apple sign-in didn't complete. Please try again.");
-  }
+  useEffect(() => { if (user) nav({ to: "/home" }); }, [user, nav]);
 
   // ── Google ─────────────────────────────────────────────────────────────────
   async function google() {
@@ -125,7 +104,7 @@ function LoginPage() {
           } catch { /* non-fatal */ }
         }
       }
-      nav({ to: "/chat" });
+      nav({ to: "/home" });
     }
   }
 
@@ -169,10 +148,10 @@ function LoginPage() {
             Personalized for creators and brands.
           </p>
 
-          {/* ── Continue with Apple (PRIMARY) ── */}
+          {/* ── Continue with Google (PRIMARY) ── */}
           <button
-            onClick={apple}
-            className="w-full h-[54px] rounded-2xl flex items-center justify-center gap-3 text-[14.5px] font-semibold transition-all duration-200 mb-3 relative overflow-hidden group"
+            onClick={google}
+            className="w-full h-[54px] rounded-2xl flex items-center justify-center gap-3 text-[14.5px] font-semibold transition-all duration-200 relative overflow-hidden"
             style={{
               background: "oklch(0.97 0 0)",
               color: "oklch(0.06 0 0)",
@@ -189,32 +168,6 @@ function LoginPage() {
             }}
             onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
             onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
-          >
-            <AppleLogo className="h-5 w-5 shrink-0" />
-            Continue with Apple
-          </button>
-
-          {/* ── Continue with Google (SECONDARY) ── */}
-          <button
-            onClick={google}
-            className="w-full h-[54px] rounded-2xl flex items-center justify-center gap-3 text-[14px] font-medium transition-all duration-200"
-            style={{
-              background: "oklch(0.07 0 0)",
-              border: "1px solid oklch(1 0 0 / 10%)",
-              color: "oklch(1 0 0 / 75%)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "oklch(0.1 0 0)";
-              (e.currentTarget as HTMLElement).style.borderColor = "oklch(1 0 0 / 18%)";
-              (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 92%)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "oklch(0.07 0 0)";
-              (e.currentTarget as HTMLElement).style.borderColor = "oklch(1 0 0 / 10%)";
-              (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 75%)";
-              (e.currentTarget as HTMLElement).style.transform = "";
-            }}
           >
             <GoogleIcon />
             Continue with Google

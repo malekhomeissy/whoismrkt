@@ -37,25 +37,7 @@ type ProjectWithCounts = Project & {
 // Design tokens
 // ─────────────────────────────────────────────────────────────
 
-const C = {
-  canvas:       "#000",
-  base:         "oklch(0.075 0 0)",
-  surface:      "oklch(0.11 0 0)",
-  raised:       "oklch(0.15 0 0)",
-  high:         "oklch(0.19 0 0)",
-  borderSubtle: "oklch(1 0 0 / 9%)",
-  borderNormal: "oklch(1 0 0 / 13%)",
-  borderStrong: "oklch(1 0 0 / 20%)",
-  shadowCard:   "inset 0 1px 0 oklch(1 0 0 / 11%), 0 2px 8px oklch(0 0 0 / 55%), 0 1px 2px oklch(0 0 0 / 40%)",
-  shadowModal:  "inset 0 1px 0 oklch(1 0 0 / 14%), 0 8px 40px oklch(0 0 0 / 60%), 0 2px 8px oklch(0 0 0 / 45%)",
-  textPrimary:    "oklch(1 0 0 / 92%)",
-  textSecondary:  "oklch(1 0 0 / 68%)",
-  textTertiary:   "oklch(1 0 0 / 46%)",
-  textQuaternary: "oklch(1 0 0 / 30%)",
-  textMuted:      "oklch(1 0 0 / 20%)",
-  chrome:   "oklch(0.82 0.005 250)",
-  accent:   "oklch(0.72 0.14 152)",
-} as const;
+import { C } from "@/lib/theme";
 
 function relativeTime(iso: string): string {
   const d = Date.now() - new Date(iso).getTime();
@@ -112,7 +94,7 @@ function NewProjectModal({ onClose, onCreated }: {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
       <div
-        className="relative w-full max-w-md rounded-2xl p-6 space-y-5"
+        className="relative w-full max-w-md rounded-2xl p-6 space-y-5 modal-in"
         style={{ background: C.high, border: `1px solid ${C.borderStrong}`, boxShadow: C.shadowModal }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -215,9 +197,9 @@ function ProjectCard({ project }: { project: ProjectWithCounts }) {
       <div className="flex items-start justify-between gap-3 mb-3">
         <div
           className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: C.raised, border: `1px solid ${C.borderStrong}`, boxShadow: "inset 0 1px 0 oklch(1 0 0 / 12%)" }}
+          style={{ background: C.accentMuted, border: `1px solid ${C.aiBlueBorder}` }}
         >
-          <Folder className="h-4 w-4" style={{ color: C.chrome }} />
+          <Folder className="h-4 w-4" style={{ color: C.aiBlue }} />
         </div>
         <ChevronRight
           className="h-4 w-4 mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -345,74 +327,70 @@ function ProjectsPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={{ background: C.canvas, color: C.textPrimary }}>
+    <div style={{ minHeight: "100vh", background: C.canvas, color: C.textPrimary, overflowY: "auto" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "44px 36px 80px" }}>
 
-      {/* Page top bar */}
-      <div className="h-[52px] px-6 flex items-center justify-between shrink-0" style={{ borderBottom: `1px solid ${C.borderSubtle}` }}>
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] font-medium" style={{ color: C.textSecondary }}>Projects</span>
-          {projects.length > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "oklch(1 0 0 / 8%)", color: C.textMuted }}>
-              {projects.length}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="btn-primary inline-flex items-center gap-2 rounded-full px-4 h-8 text-[12.5px]"
-        >
-          <Plus className="h-3.5 w-3.5" /> New Project
-        </button>
-      </div>
-
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-6 py-12">
-
-          <div className="mb-10">
-            <div className="text-[9.5px] uppercase tracking-[0.35em] mb-5 font-medium" style={{ color: C.textQuaternary }}>
-              MRKT Workspace
+        {/* ── Page header ── */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 12,
+                background: C.accentMuted, border: `1px solid ${C.aiBlueBorder}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Folder size={17} style={{ color: C.aiBlue }} />
+              </div>
+              <h1 style={{
+                fontSize: "clamp(1.8rem, 2.5vw, 2.25rem)", fontWeight: 700,
+                color: C.textPrimary, letterSpacing: "-0.04em", lineHeight: 1.05,
+                fontFamily: "'Inter Tight', 'Inter', sans-serif",
+              }}>Projects</h1>
             </div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold tracking-[-0.04em] leading-[1.06] mb-3" style={{ color: C.textPrimary }}>
-              Your projects.
-            </h1>
-            <p className="text-[1rem] font-light leading-relaxed" style={{ color: C.textTertiary }}>
-              Organize campaigns, creators, AI strategies, and saved outputs in one workspace.
-            </p>
+            <button
+              onClick={() => setShowNew(true)}
+              className="btn-primary inline-flex items-center gap-2 rounded-full px-4 h-8 text-[12.5px]"
+            >
+              <Plus className="h-3.5 w-3.5" /> New Project
+            </button>
           </div>
-
-          {projects.length === 0 ? (
-            <EmptyProjects onNew={() => setShowNew(true)} />
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {projects.map((p) => (
-                <ProjectCard key={p.id} project={p} />
-              ))}
-              <button
-                onClick={() => setShowNew(true)}
-                className="rounded-[18px] p-5 flex flex-col items-center justify-center gap-3 transition-all duration-200 text-center"
-                style={{
-                  background: "oklch(1 0 0 / 2%)",
-                  border: `1px dashed ${C.borderSubtle}`,
-                  minHeight: 160,
-                  color: C.textMuted,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = C.borderNormal;
-                  (e.currentTarget as HTMLElement).style.color = C.textTertiary;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = C.borderSubtle;
-                  (e.currentTarget as HTMLElement).style.color = C.textMuted;
-                }}
-              >
-                <Plus className="h-5 w-5" />
-                <span className="text-[12.5px] font-medium">New Project</span>
-              </button>
-            </div>
-          )}
-
+          <p style={{ fontSize: 14, color: C.textTertiary }}>
+            Organize campaigns, creators, AI strategies, and saved outputs in one workspace.
+          </p>
         </div>
-      </main>
+
+        {projects.length === 0 ? (
+          <EmptyProjects onNew={() => setShowNew(true)} />
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {projects.map((p) => (
+              <ProjectCard key={p.id} project={p} />
+            ))}
+            <button
+              onClick={() => setShowNew(true)}
+              className="rounded-[18px] p-5 flex flex-col items-center justify-center gap-3 transition-all duration-200 text-center"
+              style={{
+                background: "oklch(1 0 0 / 2%)",
+                border: `1px dashed ${C.borderSubtle}`,
+                minHeight: 160,
+                color: C.textMuted,
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = C.borderNormal;
+                (e.currentTarget as HTMLElement).style.color = C.textTertiary;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = C.borderSubtle;
+                (e.currentTarget as HTMLElement).style.color = C.textMuted;
+              }}
+            >
+              <Plus className="h-5 w-5" />
+              <span className="text-[12.5px] font-medium">New Project</span>
+            </button>
+          </div>
+        )}
+
+      </div>
 
       {showNew && (
         <NewProjectModal onClose={() => setShowNew(false)} onCreated={handleCreated} />

@@ -188,7 +188,7 @@ function CampaignPage() {
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10"
           style={{
-            background: "radial-gradient(ellipse 85% 55% at 50% -5%, oklch(0.14 0 0) 0%, oklch(0.04 0 0) 58%)",
+            background: "radial-gradient(ellipse 85% 55% at 50% -5%, oklch(0.14 0 0) 0%, oklch(0 0 0) 58%)",
           }}
         />
 
@@ -226,7 +226,7 @@ function CampaignPage() {
                   <span
                     key={p}
                     className="text-[10px] uppercase tracking-[0.18em] rounded-full px-2.5 py-1 font-medium"
-                    style={{ background: "oklch(1 0 0 / 6%)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 40%)" }}
+                    style={{ background: "oklch(1 0 0 / 6%)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 40%)" }}
                   >
                     {p}
                   </span>
@@ -303,7 +303,7 @@ function CampaignPage() {
                   params={{ campaignId }}
                   className="w-full h-12 rounded-full flex items-center justify-center gap-2 text-sm font-medium transition-colors duration-150"
                   style={{ background: "oklch(1 0 0 / 5%)", border: "1px solid oklch(1 0 0 / 12%)", color: "oklch(1 0 0 / 55%)" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 9%)"; (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 75%)"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 8%)"; (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 75%)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 5%)"; (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 55%)"; }}
                 >
                   Edit Campaign
@@ -467,7 +467,7 @@ function CampaignPage() {
                         <span
                           key={n}
                           className="text-[11.5px] rounded-full px-3 py-1"
-                          style={{ background: "oklch(1 0 0 / 5%)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 55%)" }}
+                          style={{ background: "oklch(1 0 0 / 5%)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 55%)" }}
                         >
                           {CATEGORY_LABELS[n as keyof typeof CATEGORY_LABELS] ?? n}
                         </span>
@@ -527,16 +527,28 @@ function CampaignPage() {
               <CompensationBadge campaign={campaign} />
 
               {isOwner && (
-                <Link
-                  to="/campaigns/$campaignId/edit"
-                  params={{ campaignId }}
-                  className="w-full h-12 rounded-full flex items-center justify-center gap-2 text-sm font-medium transition-colors duration-150"
-                  style={{ background: "oklch(1 0 0 / 5%)", border: "1px solid oklch(1 0 0 / 12%)", color: "oklch(1 0 0 / 55%)" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 9%)"; (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 75%)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 5%)"; (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 55%)"; }}
-                >
-                  Edit Campaign
-                </Link>
+                <div className="space-y-2.5">
+                  <Link
+                    to="/campaigns/$campaignId/applicants"
+                    params={{ campaignId }}
+                    className="w-full h-12 rounded-full flex items-center justify-center gap-2 text-sm font-medium transition-colors duration-150"
+                    style={{ background: "oklch(0.72 0.14 152 / 10%)", border: "1px solid oklch(0.72 0.14 152 / 28%)", color: "oklch(0.72 0.14 152)" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.72 0.14 152 / 16%)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.72 0.14 152 / 10%)"; }}
+                  >
+                    View Applicants
+                  </Link>
+                  <Link
+                    to="/campaigns/$campaignId/edit"
+                    params={{ campaignId }}
+                    className="w-full h-10 rounded-full flex items-center justify-center gap-2 text-sm font-medium transition-colors duration-150"
+                    style={{ background: "oklch(1 0 0 / 5%)", border: "1px solid oklch(1 0 0 / 12%)", color: "oklch(1 0 0 / 55%)" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 8%)"; (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 75%)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 5%)"; (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 55%)"; }}
+                  >
+                    Edit Campaign
+                  </Link>
+                </div>
               )}
 
               {!isOwner && (

@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/site/Logo";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import {
   ArrowUpRight, Folder, MessageSquare,
   Bookmark, Clock, Sparkles, Trash2, ChevronRight,
@@ -88,7 +89,7 @@ type BriefFormState = {
   additional_notes: string;
 };
 
-type CreatorStatus = "discovered" | "saved" | "contacted" | "negotiating" | "booked" | "completed" | "rejected";
+type CreatorStatus = "saved" | "shortlisted" | "contacted" | "interested" | "negotiating" | "confirmed" | "rejected";
 type CreatorPriority = "high" | "medium" | "low";
 
 type SavedCreator = {
@@ -170,42 +171,22 @@ type MatchResult = {
 // Design tokens
 // ─────────────────────────────────────────────────────────────
 
-const C = {
-  canvas:         "#000",
-  surface:        "oklch(0.11 0 0)",
-  raised:         "oklch(0.15 0 0)",
-  high:           "oklch(0.19 0 0)",
-  borderSubtle:   "oklch(1 0 0 / 9%)",
-  borderNormal:   "oklch(1 0 0 / 13%)",
-  borderStrong:   "oklch(1 0 0 / 20%)",
-  shadowCard:     "inset 0 1px 0 oklch(1 0 0 / 11%), 0 2px 8px oklch(0 0 0 / 55%), 0 1px 2px oklch(0 0 0 / 40%)",
-  shadowModal:    "inset 0 1px 0 oklch(1 0 0 / 14%), 0 8px 40px oklch(0 0 0 / 60%), 0 2px 8px oklch(0 0 0 / 45%)",
-  textPrimary:    "oklch(1 0 0 / 92%)",
-  textSecondary:  "oklch(1 0 0 / 68%)",
-  textTertiary:   "oklch(1 0 0 / 46%)",
-  textQuaternary: "oklch(1 0 0 / 30%)",
-  textMuted:      "oklch(1 0 0 / 20%)",
-  chrome:         "oklch(0.82 0.005 250)",
-  accent:         "oklch(0.72 0.14 152)",
-} as const;
+import { C } from "@/lib/theme";
 
 const TYPE_COLORS: Record<string, string> = {
-  strategy:       "oklch(0.65 0.14 250)",
-  content_plan:   "oklch(0.72 0.14 152)",
-  campaign_brief: "oklch(0.78 0.12 60)",
-  hooks:          "oklch(0.72 0.1 290)",
-  captions:       "oklch(0.68 0.12 20)",
-  calendar:       "oklch(0.65 0.1 200)",
+  strategy:       "oklch(0.75 0.005 0)",
+  content_plan:   "oklch(0.84 0 0)",
+  campaign_brief: "oklch(0.78 0.005 0)",
+  hooks:          "oklch(0.78 0.005 0)",
+  captions:       "oklch(0.72 0.005 0)",
+  calendar:       "oklch(0.72 0.005 0)",
   other:          "oklch(1 0 0 / 35%)",
 };
 
 const AVATAR_COLORS = [
-  "oklch(0.68 0.12 25)",
-  "oklch(0.66 0.09 250)",
-  "oklch(0.64 0.11 160)",
-  "oklch(0.70 0.10 300)",
-  "oklch(0.72 0.09 60)",
-  "oklch(0.65 0.10 190)",
+  "oklch(0.78 0.005 0)",  "oklch(0.75 0.005 0)",
+  "oklch(0.32 0 0)", "oklch(0.35 0 0)",
+  "oklch(0.60 0.005 0)",  "oklch(0.30 0 0)",
 ];
 function avatarColor(name: string) {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
@@ -228,18 +209,18 @@ function relativeTime(iso: string): string {
 // ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<CreatorStatus, { label: string; color: string; bg: string; border: string }> = {
-  saved:       { label: "Saved",       color: "oklch(0.82 0.005 250)", bg: "oklch(0.82 0.005 250 / 10%)", border: "oklch(0.82 0.005 250 / 25%)" },
-  shortlisted: { label: "Shortlisted", color: "oklch(0.72 0.1 290)",   bg: "oklch(0.72 0.1 290 / 12%)",   border: "oklch(0.72 0.1 290 / 30%)"   },
-  contacted:   { label: "Contacted",   color: "oklch(0.65 0.14 250)",  bg: "oklch(0.65 0.14 250 / 12%)",  border: "oklch(0.65 0.14 250 / 30%)"  },
-  interested:  { label: "Interested",  color: "oklch(0.78 0.12 60)",   bg: "oklch(0.78 0.12 60 / 12%)",   border: "oklch(0.78 0.12 60 / 30%)"   },
-  negotiating: { label: "Negotiating", color: "oklch(0.72 0.14 152)",  bg: "oklch(0.72 0.14 152 / 12%)",  border: "oklch(0.72 0.14 152 / 30%)"  },
-  confirmed:   { label: "Confirmed",   color: "oklch(0.68 0.15 152)",  bg: "oklch(0.68 0.15 152 / 14%)",  border: "oklch(0.68 0.15 152 / 35%)"  },
-  rejected:    { label: "Rejected",    color: "oklch(0.65 0.18 25)",   bg: "oklch(0.65 0.18 25 / 12%)",   border: "oklch(0.65 0.18 25 / 30%)"   },
+  saved:       { label: "Saved",       color: "oklch(1 0 0 / 46%)",    bg: "oklch(1 0 0 / 5%)",           border: "oklch(1 0 0 / 12%)"          },
+  shortlisted: { label: "Shortlisted", color: "oklch(0.72 0.10 224)",  bg: "oklch(0.62 0.10 224 / 12%)",  border: "oklch(0.62 0.10 224 / 26%)"  },
+  contacted:   { label: "Contacted",   color: "oklch(0.70 0.08 68)",   bg: "oklch(0.78 0.14 76 / 12%)",   border: "oklch(0.78 0.14 76 / 26%)"   },
+  interested:  { label: "Interested",  color: "oklch(0.72 0.10 224)",  bg: "oklch(0.62 0.10 224 / 12%)",  border: "oklch(0.62 0.10 224 / 26%)"  },
+  negotiating: { label: "Negotiating", color: "oklch(0.70 0.08 68)",   bg: "oklch(0.78 0.14 76 / 12%)",   border: "oklch(0.78 0.14 76 / 26%)"   },
+  confirmed:   { label: "Confirmed",   color: "oklch(0.62 0.12 158)",  bg: "oklch(0.72 0.18 152 / 14%)",  border: "oklch(0.72 0.18 152 / 30%)"  },
+  rejected:    { label: "Rejected",    color: "oklch(0.52 0.15 24)",   bg: "oklch(0.52 0.15 24 / 10%)",   border: "oklch(0.52 0.15 24 / 24%)"   },
 };
 
 const PRIORITY_CONFIG: Record<CreatorPriority, { label: string; color: string }> = {
-  high:   { label: "High",   color: "oklch(0.68 0.18 25)"  },
-  medium: { label: "Medium", color: "oklch(0.78 0.12 60)"  },
+  high:   { label: "High",   color: "oklch(0.52 0.15 24)"  },
+  medium: { label: "Medium", color: "oklch(0.78 0.005 0)"  },
   low:    { label: "Low",    color: "oklch(1 0 0 / 38%)"   },
 };
 
@@ -321,9 +302,9 @@ function briefToForm(b: CampaignBrief | null): BriefFormState {
 // ─────────────────────────────────────────────────────────────
 
 const MATCH_LABEL_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
-  "Best Fit":     { color: "oklch(0.72 0.14 152)", bg: "oklch(0.72 0.14 152 / 14%)", border: "oklch(0.72 0.14 152 / 35%)" },
-  "Strong Fit":   { color: "oklch(0.65 0.14 250)", bg: "oklch(0.65 0.14 250 / 14%)", border: "oklch(0.65 0.14 250 / 35%)" },
-  "Possible Fit": { color: "oklch(0.78 0.12 60)",  bg: "oklch(0.78 0.12 60 / 14%)",  border: "oklch(0.78 0.12 60 / 35%)"  },
+  "Best Fit":     { color: "oklch(0.84 0 0)", bg: "oklch(1 0 0 / 14%)", border: "oklch(1 0 0 / 35%)" },
+  "Strong Fit":   { color: "oklch(0.75 0.005 0)",  bg: "oklch(0.75 0.005 0 / 14%)",  border: "oklch(0.75 0.005 0 / 35%)"  },
+  "Possible Fit": { color: "oklch(0.68 0.005 0)",  bg: "oklch(0.68 0.005 0 / 14%)",  border: "oklch(0.68 0.005 0 / 35%)"  },
   "Low Fit":      { color: "oklch(1 0 0 / 42%)",   bg: "oklch(1 0 0 / 6%)",           border: "oklch(1 0 0 / 14%)"         },
 };
 
@@ -673,7 +654,7 @@ function ProjectDetailPage() {
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-3xl mx-auto px-6 py-12">
 
           {/* Project title */}
@@ -991,7 +972,7 @@ function OverviewTab({ project, campaignBrief, savedCreators, chatCount, savedCo
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {stats.map(({ label, value, icon: Icon }) => (
           <div key={label} className="rounded-[18px] p-4" style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}>
             <div className="flex items-center gap-1.5 mb-3">
@@ -1484,9 +1465,9 @@ function CampaignBriefTab({ brief, projectId, userId, onBriefSaved, pipelineCrea
           disabled={matchLoading}
           className="flex items-center gap-2 rounded-full px-6 h-10 text-[13px] font-medium transition-all duration-150"
           style={{
-            background: "oklch(0.72 0.14 152 / 14%)",
-            border: "1px solid oklch(0.72 0.14 152 / 35%)",
-            color: "oklch(0.72 0.14 152)",
+            background: "oklch(1 0 0 / 14%)",
+            border: "1px solid oklch(1 0 0 / 35%)",
+            color: "oklch(0.84 0 0)",
             opacity: matchLoading ? 0.7 : 1,
           }}
         >
@@ -1698,8 +1679,8 @@ function MatchResultCard({ result, inPipeline, onAddToPipeline }: {
           disabled={inPipeline || adding}
           className="ml-auto flex items-center gap-1.5 rounded-full px-3 h-7 text-[11.5px] font-medium transition-all duration-150"
           style={{
-            background: inPipeline ? "oklch(0.72 0.14 152 / 12%)" : "oklch(1 0 0 / 6%)",
-            border: `1px solid ${inPipeline ? "oklch(0.72 0.14 152 / 35%)" : C.borderNormal}`,
+            background: inPipeline ? "oklch(1 0 0 / 12%)" : "oklch(1 0 0 / 6%)",
+            border: `1px solid ${inPipeline ? "oklch(1 0 0 / 35%)" : C.borderNormal}`,
             color: inPipeline ? C.accent : C.textSecondary,
             opacity: adding ? 0.6 : 1,
           }}
@@ -1806,7 +1787,7 @@ function SavedTab({ saved, expandedId, onExpand }: {
             {isOpen && (
               <div className="px-4 pb-4" style={{ borderTop: `1px solid ${C.borderSubtle}` }}>
                 <div className="pt-4 prose prose-invert prose-sm max-w-none leading-[1.8] prose-headings:font-display prose-headings:tracking-tight prose-p:text-foreground/80 prose-li:text-foreground/80 prose-code:text-foreground/80 prose-code:bg-white/5 prose-code:rounded prose-code:px-1">
-                  <ReactMarkdown>{s.content}</ReactMarkdown>
+                  <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{s.content}</ReactMarkdown>
                 </div>
               </div>
             )}
@@ -2204,14 +2185,14 @@ FULL: [complete outreach message]`;
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
       <div
-        className="relative w-full max-w-xl rounded-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-xl rounded-2xl overflow-hidden flex flex-col modal-in"
         style={{ background: C.high, border: `1px solid ${C.borderStrong}`, boxShadow: C.shadowModal, maxHeight: "90vh" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-5 pt-5 pb-4 shrink-0" style={{ borderBottom: `1px solid ${C.borderSubtle}` }}>
           <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "oklch(0.72 0.14 152 / 14%)", border: "1px solid oklch(0.72 0.14 152 / 25%)" }}>
+            style={{ background: "oklch(1 0 0 / 14%)", border: "1px solid oklch(1 0 0 / 25%)" }}>
             <Mail className="h-3.5 w-3.5" style={{ color: C.accent }} />
           </div>
           <div className="flex-1 min-w-0">
@@ -2247,8 +2228,8 @@ FULL: [complete outreach message]`;
                   onClick={() => setDraftType(t.id)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-medium transition-all duration-150 whitespace-nowrap"
                   style={{
-                    background: active ? "oklch(0.72 0.14 152 / 16%)" : "oklch(1 0 0 / 5%)",
-                    border: `1px solid ${active ? "oklch(0.72 0.14 152 / 40%)" : C.borderSubtle}`,
+                    background: active ? "oklch(1 0 0 / 16%)" : "oklch(1 0 0 / 5%)",
+                    border: `1px solid ${active ? "oklch(1 0 0 / 40%)" : C.borderSubtle}`,
                     color: active ? C.accent : C.textTertiary,
                   }}
                 >
@@ -2260,7 +2241,7 @@ FULL: [complete outreach message]`;
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto min-h-0 p-5 space-y-4">
           {generating && !rawText ? (
             <div className="h-48 flex flex-col items-center justify-center gap-3">
               <div className="flex items-center gap-1.5">
@@ -2510,7 +2491,7 @@ function CreatorShortlistCard({ sc, businessProfile, projectName, projectId, use
           {(sc.outreach_draft || outreachCount > 0) && (
             <span
               className="flex items-center gap-1 text-[10px] rounded-full px-2 py-0.5"
-              style={{ background: "oklch(0.72 0.14 152 / 10%)", color: C.accent, border: "1px solid oklch(0.72 0.14 152 / 20%)" }}
+              style={{ background: "oklch(1 0 0 / 10%)", color: C.accent, border: "1px solid oklch(1 0 0 / 20%)" }}
             >
               <Send className="h-2.5 w-2.5" />
               {outreachCount > 0 ? `${outreachCount} draft${outreachCount > 1 ? "s" : ""}` : "Draft saved"}
@@ -2532,9 +2513,9 @@ function CreatorShortlistCard({ sc, businessProfile, projectName, projectId, use
             <button
               onClick={handleConfirm}
               className="flex items-center gap-1.5 rounded-full px-3 h-7 text-[11.5px] font-medium transition-all duration-150"
-              style={{ background: "oklch(0.72 0.14 152 / 12%)", border: "1px solid oklch(0.72 0.14 152 / 30%)", color: C.accent }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.72 0.14 152 / 18%)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.72 0.14 152 / 12%)"; }}
+              style={{ background: "oklch(1 0 0 / 12%)", border: "1px solid oklch(1 0 0 / 30%)", color: C.accent }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 18%)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 12%)"; }}
             >
               <Check className="h-3 w-3" />{nextAction.label}
             </button>
@@ -2555,7 +2536,7 @@ function CreatorShortlistCard({ sc, businessProfile, projectName, projectId, use
             onClick={() => onRemove(sc.id)}
             className="p-1.5 rounded-lg transition-all duration-150"
             style={{ color: C.textMuted }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.65 0.18 25)"; (e.currentTarget as HTMLElement).style.background = "oklch(0.65 0.18 25 / 8%)"; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.52 0.15 24)"; (e.currentTarget as HTMLElement).style.background = "oklch(0.52 0.15 24 / 8%)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = C.textMuted; (e.currentTarget as HTMLElement).style.background = ""; }}
             title="Remove from project"
           >
@@ -2842,7 +2823,7 @@ function OutreachTab({ drafts, savedCreators, onDelete, onNavigateCreators }: {
                   </span>
                   <span
                     className="text-[9.5px] uppercase tracking-[0.2em] rounded-full px-2 py-0.5 font-medium"
-                    style={{ background: "oklch(0.72 0.14 152 / 12%)", color: C.accent, border: "1px solid oklch(0.72 0.14 152 / 25%)" }}
+                    style={{ background: "oklch(1 0 0 / 12%)", color: C.accent, border: "1px solid oklch(1 0 0 / 25%)" }}
                   >
                     {typeLabel}
                   </span>
@@ -2925,7 +2906,7 @@ function OutreachTab({ drafts, savedCreators, onDelete, onNavigateCreators }: {
                     disabled={deleting === d.id}
                     className="ml-auto flex items-center gap-1.5 rounded-full px-3 h-7 text-[11.5px] transition-all duration-150"
                     style={{ color: C.textMuted }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.70 0.18 25)"; (e.currentTarget as HTMLElement).style.background = "oklch(0.65 0.18 25 / 8%)"; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.52 0.15 24)"; (e.currentTarget as HTMLElement).style.background = "oklch(0.52 0.15 24 / 8%)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = C.textMuted; (e.currentTarget as HTMLElement).style.background = ""; }}
                   >
                     <Trash2 className="h-3 w-3" />

@@ -6,9 +6,9 @@ import { ArrowUpRight } from "lucide-react";
 export const Route = createFileRoute("/manifesto")({
   head: () => ({
     meta: [
-      { title: "Manifesto — whoismrkt" },
-      { name: "description", content: "We do the ing. The whoismrkt manifesto on what marketing actually is in the AI era." },
-      { property: "og:title", content: "Manifesto — whoismrkt" },
+      { title: "Manifesto — MRKT" },
+      { name: "description", content: "We do the ing. The MRKT manifesto on what marketing actually is in the AI era." },
+      { property: "og:title", content: "Manifesto — MRKT" },
       { property: "og:description", content: "We do the ing." },
     ],
   }),
@@ -39,7 +39,7 @@ function Manifesto() {
             Everyone talks about post<span className="text-foreground">ing</span>, plann<span className="text-foreground">ing</span>, schedul<span className="text-foreground">ing</span>, edit<span className="text-foreground">ing</span>, optimiz<span className="text-foreground">ing</span>, report<span className="text-foreground">ing</span>. The verbs piled up. The brand got buried.
           </p>
           <p>
-            whoismrkt was built to take all of that off your desk. Not the strategy — the strategy is yours. Not the brand — that's why people fall in love with you in the first place.
+            MRKT was built to take all of that off your desk. Not the strategy — the strategy is yours. Not the brand — that's why people fall in love with you in the first place.
           </p>
           <p>
             We do the ing.

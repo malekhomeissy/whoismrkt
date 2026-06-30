@@ -10,40 +10,81 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkRouteImport } from './routes/work'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForCreatorsRouteImport } from './routes/for-creators'
 import { Route as ForBusinessesRouteImport } from './routes/for-businesses'
+import { Route as DmcaRouteImport } from './routes/dmca'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ConnectRouteImport } from './routes/connect'
+import { Route as AiDisclosureRouteImport } from './routes/ai-disclosure'
+import { Route as AiRouteImport } from './routes/ai'
+import { Route as AcceptableUseRouteImport } from './routes/acceptable-use'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as KUsernameRouteImport } from './routes/k.$username'
 import { Route as CreatorsCreatorIdRouteImport } from './routes/creators/$creatorId'
 import { Route as CampaignsCampaignIdRouteImport } from './routes/campaigns/$campaignId'
+import { Route as BusinessesBusinessIdRouteImport } from './routes/businesses/$businessId'
 import { Route as BusinessOnboardingRouteImport } from './routes/business/onboarding'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AuthenticatedVerificationRouteImport } from './routes/_authenticated/verification'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
+import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
+import { Route as AuthenticatedMatchesRouteImport } from './routes/_authenticated/matches'
+import { Route as AuthenticatedInstagramCallbackRouteImport } from './routes/_authenticated/instagram-callback'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedGrowthRouteImport } from './routes/_authenticated/growth'
 import { Route as AuthenticatedGlobeRouteImport } from './routes/_authenticated/globe'
 import { Route as AuthenticatedFindCreatorsRouteImport } from './routes/_authenticated/find-creators'
 import { Route as AuthenticatedCreatorOnboardingRouteImport } from './routes/_authenticated/creator-onboarding'
+import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
+import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedContentPlannerRouteImport } from './routes/_authenticated/content-planner'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedCampaignCreateRouteImport } from './routes/_authenticated/campaign-create'
+import { Route as AuthenticatedBrandKnowledgeRouteImport } from './routes/_authenticated/brand-knowledge'
+import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile.index'
+import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages.index'
+import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns.index'
+import { Route as BusinessProfileEditRouteImport } from './routes/business/profile.edit'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
+import { Route as AuthenticatedProfileEditRouteImport } from './routes/_authenticated/profile.edit'
+import { Route as AuthenticatedMessagesConversationIdRouteImport } from './routes/_authenticated/messages.$conversationId'
+import { Route as AuthenticatedDeliverablesApplicationIdRouteImport } from './routes/_authenticated/deliverables.$applicationId'
+import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns.$campaignId'
+import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns.$campaignId.index'
+import { Route as AuthenticatedCampaignsCampaignIdPreviewRouteImport } from './routes/_authenticated/campaigns.$campaignId.preview'
 import { Route as AuthenticatedCampaignsCampaignIdEditRouteImport } from './routes/_authenticated/campaigns.$campaignId.edit'
+import { Route as AuthenticatedCampaignsCampaignIdApplicantsRouteImport } from './routes/_authenticated/campaigns.$campaignId.applicants'
 
 const WorkRoute = WorkRouteImport.update({
   id: '/work',
   path: '/work',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudioRoute = StudioRouteImport.update({
@@ -54,6 +95,16 @@ const StudioRoute = StudioRouteImport.update({
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -81,6 +132,16 @@ const ForBusinessesRoute = ForBusinessesRouteImport.update({
   path: '/for-businesses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DmcaRoute = DmcaRouteImport.update({
+  id: '/dmca',
+  path: '/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -89,6 +150,21 @@ const ContactRoute = ContactRouteImport.update({
 const ConnectRoute = ConnectRouteImport.update({
   id: '/connect',
   path: '/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiDisclosureRoute = AiDisclosureRouteImport.update({
+  id: '/ai-disclosure',
+  path: '/ai-disclosure',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptableUseRoute = AcceptableUseRouteImport.update({
+  id: '/acceptable-use',
+  path: '/acceptable-use',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -105,6 +181,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KUsernameRoute = KUsernameRouteImport.update({
+  id: '/k/$username',
+  path: '/k/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorsCreatorIdRoute = CreatorsCreatorIdRouteImport.update({
   id: '/creators/$creatorId',
   path: '/creators/$creatorId',
@@ -113,6 +194,11 @@ const CreatorsCreatorIdRoute = CreatorsCreatorIdRouteImport.update({
 const CampaignsCampaignIdRoute = CampaignsCampaignIdRouteImport.update({
   id: '/campaigns/$campaignId',
   path: '/campaigns/$campaignId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BusinessesBusinessIdRoute = BusinessesBusinessIdRouteImport.update({
+  id: '/businesses/$businessId',
+  path: '/businesses/$businessId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BusinessOnboardingRoute = BusinessOnboardingRouteImport.update({
@@ -124,6 +210,22 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVerificationRoute =
+  AuthenticatedVerificationRouteImport.update({
+    id: '/verification',
+    path: '/verification',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   id: '/projects',
@@ -140,12 +242,49 @@ const AuthenticatedPipelineRoute = AuthenticatedPipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPaymentsRoute = AuthenticatedPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedOpportunitiesRoute =
   AuthenticatedOpportunitiesRouteImport.update({
     id: '/opportunities',
     path: '/opportunities',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMatchesRoute = AuthenticatedMatchesRouteImport.update({
+  id: '/matches',
+  path: '/matches',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedInstagramCallbackRoute =
+  AuthenticatedInstagramCallbackRouteImport.update({
+    id: '/instagram-callback',
+    path: '/instagram-callback',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedGrowthRoute = AuthenticatedGrowthRouteImport.update({
+  id: '/growth',
+  path: '/growth',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedGlobeRoute = AuthenticatedGlobeRouteImport.update({
   id: '/globe',
   path: '/globe',
@@ -163,6 +302,16 @@ const AuthenticatedCreatorOnboardingRoute =
     path: '/creator-onboarding',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedContentPlannerRoute =
   AuthenticatedContentPlannerRouteImport.update({
     id: '/content-planner',
@@ -180,9 +329,26 @@ const AuthenticatedCampaignCreateRoute =
     path: '/campaign-create',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedBrandKnowledgeRoute =
+  AuthenticatedBrandKnowledgeRouteImport.update({
+    id: '/brand-knowledge',
+    path: '/brand-knowledge',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedApplicationsRoute =
+  AuthenticatedApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProjectsIndexRoute =
@@ -191,233 +357,515 @@ const AuthenticatedProjectsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedProjectsRoute,
   } as any)
+const AuthenticatedProfileIndexRoute =
+  AuthenticatedProfileIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProfileRoute,
+  } as any)
+const AuthenticatedMessagesIndexRoute =
+  AuthenticatedMessagesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedMessagesRoute,
+  } as any)
+const AuthenticatedCampaignsIndexRoute =
+  AuthenticatedCampaignsIndexRouteImport.update({
+    id: '/campaigns/',
+    path: '/campaigns/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const BusinessProfileEditRoute = BusinessProfileEditRouteImport.update({
+  id: '/business/profile/edit',
+  path: '/business/profile/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
     id: '/$projectId',
     path: '/$projectId',
     getParentRoute: () => AuthenticatedProjectsRoute,
   } as any)
+const AuthenticatedProfileEditRoute =
+  AuthenticatedProfileEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedProfileRoute,
+  } as any)
+const AuthenticatedMessagesConversationIdRoute =
+  AuthenticatedMessagesConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => AuthenticatedMessagesRoute,
+  } as any)
+const AuthenticatedDeliverablesApplicationIdRoute =
+  AuthenticatedDeliverablesApplicationIdRouteImport.update({
+    id: '/deliverables/$applicationId',
+    path: '/deliverables/$applicationId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdRoute =
+  AuthenticatedCampaignsCampaignIdRouteImport.update({
+    id: '/campaigns/$campaignId',
+    path: '/campaigns/$campaignId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdIndexRoute =
+  AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdPreviewRoute =
+  AuthenticatedCampaignsCampaignIdPreviewRouteImport.update({
+    id: '/preview',
+    path: '/preview',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
 const AuthenticatedCampaignsCampaignIdEditRoute =
   AuthenticatedCampaignsCampaignIdEditRouteImport.update({
-    id: '/campaigns/$campaignId/edit',
-    path: '/campaigns/$campaignId/edit',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdApplicantsRoute =
+  AuthenticatedCampaignsCampaignIdApplicantsRouteImport.update({
+    id: '/applicants',
+    path: '/applicants',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/acceptable-use': typeof AcceptableUseRoute
+  '/ai': typeof AiRoute
+  '/ai-disclosure': typeof AiDisclosureRoute
   '/connect': typeof ConnectRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
+  '/dmca': typeof DmcaRoute
   '/for-businesses': typeof ForBusinessesRoute
   '/for-creators': typeof ForCreatorsRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/services': typeof ServicesRoute
   '/studio': typeof StudioRoute
+  '/terms': typeof TermsRoute
   '/work': typeof WorkRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/applications': typeof AuthenticatedApplicationsRoute
+  '/brand-knowledge': typeof AuthenticatedBrandKnowledgeRoute
   '/campaign-create': typeof AuthenticatedCampaignCreateRoute
   '/chat': typeof AuthenticatedChatRoute
   '/content-planner': typeof AuthenticatedContentPlannerRoute
+  '/contracts': typeof AuthenticatedContractsRoute
+  '/create': typeof AuthenticatedCreateRoute
   '/creator-onboarding': typeof AuthenticatedCreatorOnboardingRoute
   '/find-creators': typeof AuthenticatedFindCreatorsRoute
   '/globe': typeof AuthenticatedGlobeRoute
+  '/growth': typeof AuthenticatedGrowthRoute
+  '/home': typeof AuthenticatedHomeRoute
+  '/instagram-callback': typeof AuthenticatedInstagramCallbackRoute
+  '/matches': typeof AuthenticatedMatchesRoute
+  '/messages': typeof AuthenticatedMessagesRouteWithChildren
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
-  '/profile': typeof AuthenticatedProfileRoute
+  '/profile': typeof AuthenticatedProfileRouteWithChildren
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/saved': typeof AuthenticatedSavedRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/verification': typeof AuthenticatedVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/business/onboarding': typeof BusinessOnboardingRoute
-  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/businesses/$businessId': typeof BusinessesBusinessIdRoute
+  '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/creators/$creatorId': typeof CreatorsCreatorIdRoute
+  '/k/$username': typeof KUsernameRoute
+  '/deliverables/$applicationId': typeof AuthenticatedDeliverablesApplicationIdRoute
+  '/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
+  '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/business/profile/edit': typeof BusinessProfileEditRoute
+  '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
+  '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/profile/': typeof AuthenticatedProfileIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/campaigns/$campaignId/applicants': typeof AuthenticatedCampaignsCampaignIdApplicantsRoute
   '/campaigns/$campaignId/edit': typeof AuthenticatedCampaignsCampaignIdEditRoute
+  '/campaigns/$campaignId/preview': typeof AuthenticatedCampaignsCampaignIdPreviewRoute
+  '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/acceptable-use': typeof AcceptableUseRoute
+  '/ai': typeof AiRoute
+  '/ai-disclosure': typeof AiDisclosureRoute
   '/connect': typeof ConnectRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
+  '/dmca': typeof DmcaRoute
   '/for-businesses': typeof ForBusinessesRoute
   '/for-creators': typeof ForCreatorsRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/services': typeof ServicesRoute
   '/studio': typeof StudioRoute
+  '/terms': typeof TermsRoute
   '/work': typeof WorkRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/applications': typeof AuthenticatedApplicationsRoute
+  '/brand-knowledge': typeof AuthenticatedBrandKnowledgeRoute
   '/campaign-create': typeof AuthenticatedCampaignCreateRoute
   '/chat': typeof AuthenticatedChatRoute
   '/content-planner': typeof AuthenticatedContentPlannerRoute
+  '/contracts': typeof AuthenticatedContractsRoute
+  '/create': typeof AuthenticatedCreateRoute
   '/creator-onboarding': typeof AuthenticatedCreatorOnboardingRoute
   '/find-creators': typeof AuthenticatedFindCreatorsRoute
   '/globe': typeof AuthenticatedGlobeRoute
+  '/growth': typeof AuthenticatedGrowthRoute
+  '/home': typeof AuthenticatedHomeRoute
+  '/instagram-callback': typeof AuthenticatedInstagramCallbackRoute
+  '/matches': typeof AuthenticatedMatchesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
-  '/profile': typeof AuthenticatedProfileRoute
+  '/saved': typeof AuthenticatedSavedRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/verification': typeof AuthenticatedVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/business/onboarding': typeof BusinessOnboardingRoute
-  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/businesses/$businessId': typeof BusinessesBusinessIdRoute
+  '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
   '/creators/$creatorId': typeof CreatorsCreatorIdRoute
+  '/k/$username': typeof KUsernameRoute
+  '/deliverables/$applicationId': typeof AuthenticatedDeliverablesApplicationIdRoute
+  '/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
+  '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/business/profile/edit': typeof BusinessProfileEditRoute
+  '/campaigns': typeof AuthenticatedCampaignsIndexRoute
+  '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/profile': typeof AuthenticatedProfileIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/campaigns/$campaignId/applicants': typeof AuthenticatedCampaignsCampaignIdApplicantsRoute
   '/campaigns/$campaignId/edit': typeof AuthenticatedCampaignsCampaignIdEditRoute
+  '/campaigns/$campaignId/preview': typeof AuthenticatedCampaignsCampaignIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
+  '/acceptable-use': typeof AcceptableUseRoute
+  '/ai': typeof AiRoute
+  '/ai-disclosure': typeof AiDisclosureRoute
   '/connect': typeof ConnectRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
+  '/dmca': typeof DmcaRoute
   '/for-businesses': typeof ForBusinessesRoute
   '/for-creators': typeof ForCreatorsRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/services': typeof ServicesRoute
   '/studio': typeof StudioRoute
+  '/terms': typeof TermsRoute
   '/work': typeof WorkRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
+  '/_authenticated/brand-knowledge': typeof AuthenticatedBrandKnowledgeRoute
   '/_authenticated/campaign-create': typeof AuthenticatedCampaignCreateRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/content-planner': typeof AuthenticatedContentPlannerRoute
+  '/_authenticated/contracts': typeof AuthenticatedContractsRoute
+  '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/creator-onboarding': typeof AuthenticatedCreatorOnboardingRoute
   '/_authenticated/find-creators': typeof AuthenticatedFindCreatorsRoute
   '/_authenticated/globe': typeof AuthenticatedGlobeRoute
+  '/_authenticated/growth': typeof AuthenticatedGrowthRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/instagram-callback': typeof AuthenticatedInstagramCallbackRoute
+  '/_authenticated/matches': typeof AuthenticatedMatchesRoute
+  '/_authenticated/messages': typeof AuthenticatedMessagesRouteWithChildren
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
-  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRouteWithChildren
   '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/verification': typeof AuthenticatedVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/business/onboarding': typeof BusinessOnboardingRoute
+  '/businesses/$businessId': typeof BusinessesBusinessIdRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/creators/$creatorId': typeof CreatorsCreatorIdRoute
+  '/k/$username': typeof KUsernameRoute
+  '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
+  '/_authenticated/deliverables/$applicationId': typeof AuthenticatedDeliverablesApplicationIdRoute
+  '/_authenticated/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
+  '/_authenticated/profile/edit': typeof AuthenticatedProfileEditRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/business/profile/edit': typeof BusinessProfileEditRoute
+  '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
+  '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/campaigns/$campaignId/applicants': typeof AuthenticatedCampaignsCampaignIdApplicantsRoute
   '/_authenticated/campaigns/$campaignId/edit': typeof AuthenticatedCampaignsCampaignIdEditRoute
+  '/_authenticated/campaigns/$campaignId/preview': typeof AuthenticatedCampaignsCampaignIdPreviewRoute
+  '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/acceptable-use'
+    | '/ai'
+    | '/ai-disclosure'
     | '/connect'
     | '/contact'
+    | '/cookies'
+    | '/dmca'
     | '/for-businesses'
     | '/for-creators'
     | '/login'
     | '/manifesto'
     | '/onboarding'
+    | '/pricing'
+    | '/privacy'
     | '/services'
     | '/studio'
+    | '/terms'
     | '/work'
+    | '/admin'
     | '/analytics'
+    | '/applications'
+    | '/brand-knowledge'
     | '/campaign-create'
     | '/chat'
     | '/content-planner'
+    | '/contracts'
+    | '/create'
     | '/creator-onboarding'
     | '/find-creators'
     | '/globe'
+    | '/growth'
+    | '/home'
+    | '/instagram-callback'
+    | '/matches'
+    | '/messages'
+    | '/notifications'
     | '/opportunities'
+    | '/payments'
     | '/pipeline'
     | '/profile'
     | '/projects'
+    | '/saved'
+    | '/settings'
+    | '/verification'
     | '/auth/callback'
     | '/business/onboarding'
+    | '/businesses/$businessId'
     | '/campaigns/$campaignId'
     | '/creators/$creatorId'
+    | '/k/$username'
+    | '/deliverables/$applicationId'
+    | '/messages/$conversationId'
+    | '/profile/edit'
     | '/projects/$projectId'
+    | '/business/profile/edit'
+    | '/campaigns/'
+    | '/messages/'
+    | '/profile/'
     | '/projects/'
+    | '/campaigns/$campaignId/applicants'
     | '/campaigns/$campaignId/edit'
+    | '/campaigns/$campaignId/preview'
+    | '/campaigns/$campaignId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/acceptable-use'
+    | '/ai'
+    | '/ai-disclosure'
     | '/connect'
     | '/contact'
+    | '/cookies'
+    | '/dmca'
     | '/for-businesses'
     | '/for-creators'
     | '/login'
     | '/manifesto'
     | '/onboarding'
+    | '/pricing'
+    | '/privacy'
     | '/services'
     | '/studio'
+    | '/terms'
     | '/work'
+    | '/admin'
     | '/analytics'
+    | '/applications'
+    | '/brand-knowledge'
     | '/campaign-create'
     | '/chat'
     | '/content-planner'
+    | '/contracts'
+    | '/create'
     | '/creator-onboarding'
     | '/find-creators'
     | '/globe'
+    | '/growth'
+    | '/home'
+    | '/instagram-callback'
+    | '/matches'
+    | '/notifications'
     | '/opportunities'
+    | '/payments'
     | '/pipeline'
-    | '/profile'
+    | '/saved'
+    | '/settings'
+    | '/verification'
     | '/auth/callback'
     | '/business/onboarding'
+    | '/businesses/$businessId'
     | '/campaigns/$campaignId'
     | '/creators/$creatorId'
+    | '/k/$username'
+    | '/deliverables/$applicationId'
+    | '/messages/$conversationId'
+    | '/profile/edit'
     | '/projects/$projectId'
+    | '/business/profile/edit'
+    | '/campaigns'
+    | '/messages'
+    | '/profile'
     | '/projects'
+    | '/campaigns/$campaignId/applicants'
     | '/campaigns/$campaignId/edit'
+    | '/campaigns/$campaignId/preview'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/about'
+    | '/acceptable-use'
+    | '/ai'
+    | '/ai-disclosure'
     | '/connect'
     | '/contact'
+    | '/cookies'
+    | '/dmca'
     | '/for-businesses'
     | '/for-creators'
     | '/login'
     | '/manifesto'
     | '/onboarding'
+    | '/pricing'
+    | '/privacy'
     | '/services'
     | '/studio'
+    | '/terms'
     | '/work'
+    | '/_authenticated/admin'
     | '/_authenticated/analytics'
+    | '/_authenticated/applications'
+    | '/_authenticated/brand-knowledge'
     | '/_authenticated/campaign-create'
     | '/_authenticated/chat'
     | '/_authenticated/content-planner'
+    | '/_authenticated/contracts'
+    | '/_authenticated/create'
     | '/_authenticated/creator-onboarding'
     | '/_authenticated/find-creators'
     | '/_authenticated/globe'
+    | '/_authenticated/growth'
+    | '/_authenticated/home'
+    | '/_authenticated/instagram-callback'
+    | '/_authenticated/matches'
+    | '/_authenticated/messages'
+    | '/_authenticated/notifications'
     | '/_authenticated/opportunities'
+    | '/_authenticated/payments'
     | '/_authenticated/pipeline'
     | '/_authenticated/profile'
     | '/_authenticated/projects'
+    | '/_authenticated/saved'
+    | '/_authenticated/settings'
+    | '/_authenticated/verification'
     | '/auth/callback'
     | '/business/onboarding'
+    | '/businesses/$businessId'
     | '/campaigns/$campaignId'
     | '/creators/$creatorId'
+    | '/k/$username'
+    | '/_authenticated/campaigns/$campaignId'
+    | '/_authenticated/deliverables/$applicationId'
+    | '/_authenticated/messages/$conversationId'
+    | '/_authenticated/profile/edit'
     | '/_authenticated/projects/$projectId'
+    | '/business/profile/edit'
+    | '/_authenticated/campaigns/'
+    | '/_authenticated/messages/'
+    | '/_authenticated/profile/'
     | '/_authenticated/projects/'
+    | '/_authenticated/campaigns/$campaignId/applicants'
     | '/_authenticated/campaigns/$campaignId/edit'
+    | '/_authenticated/campaigns/$campaignId/preview'
+    | '/_authenticated/campaigns/$campaignId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AcceptableUseRoute: typeof AcceptableUseRoute
+  AiRoute: typeof AiRoute
+  AiDisclosureRoute: typeof AiDisclosureRoute
   ConnectRoute: typeof ConnectRoute
   ContactRoute: typeof ContactRoute
+  CookiesRoute: typeof CookiesRoute
+  DmcaRoute: typeof DmcaRoute
   ForBusinessesRoute: typeof ForBusinessesRoute
   ForCreatorsRoute: typeof ForCreatorsRoute
   LoginRoute: typeof LoginRoute
   ManifestoRoute: typeof ManifestoRoute
   OnboardingRoute: typeof OnboardingRoute
+  PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   ServicesRoute: typeof ServicesRoute
   StudioRoute: typeof StudioRoute
+  TermsRoute: typeof TermsRoute
   WorkRoute: typeof WorkRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   BusinessOnboardingRoute: typeof BusinessOnboardingRoute
+  BusinessesBusinessIdRoute: typeof BusinessesBusinessIdRoute
   CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
   CreatorsCreatorIdRoute: typeof CreatorsCreatorIdRoute
+  KUsernameRoute: typeof KUsernameRoute
+  BusinessProfileEditRoute: typeof BusinessProfileEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -427,6 +875,13 @@ declare module '@tanstack/react-router' {
       path: '/work'
       fullPath: '/work'
       preLoaderRoute: typeof WorkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/studio': {
@@ -441,6 +896,20 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -478,6 +947,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForBusinessesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dmca': {
+      id: '/dmca'
+      path: '/dmca'
+      fullPath: '/dmca'
+      preLoaderRoute: typeof DmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -490,6 +973,27 @@ declare module '@tanstack/react-router' {
       path: '/connect'
       fullPath: '/connect'
       preLoaderRoute: typeof ConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-disclosure': {
+      id: '/ai-disclosure'
+      path: '/ai-disclosure'
+      fullPath: '/ai-disclosure'
+      preLoaderRoute: typeof AiDisclosureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acceptable-use': {
+      id: '/acceptable-use'
+      path: '/acceptable-use'
+      fullPath: '/acceptable-use'
+      preLoaderRoute: typeof AcceptableUseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -513,6 +1017,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/k/$username': {
+      id: '/k/$username'
+      path: '/k/$username'
+      fullPath: '/k/$username'
+      preLoaderRoute: typeof KUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creators/$creatorId': {
       id: '/creators/$creatorId'
       path: '/creators/$creatorId'
@@ -525,6 +1036,13 @@ declare module '@tanstack/react-router' {
       path: '/campaigns/$campaignId'
       fullPath: '/campaigns/$campaignId'
       preLoaderRoute: typeof CampaignsCampaignIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/businesses/$businessId': {
+      id: '/businesses/$businessId'
+      path: '/businesses/$businessId'
+      fullPath: '/businesses/$businessId'
+      preLoaderRoute: typeof BusinessesBusinessIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/business/onboarding': {
@@ -540,6 +1058,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/verification': {
+      id: '/_authenticated/verification'
+      path: '/verification'
+      fullPath: '/verification'
+      preLoaderRoute: typeof AuthenticatedVerificationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/saved': {
+      id: '/_authenticated/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof AuthenticatedSavedRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/projects': {
       id: '/_authenticated/projects'
@@ -562,11 +1101,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPipelineRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/payments': {
+      id: '/_authenticated/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthenticatedPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/opportunities': {
       id: '/_authenticated/opportunities'
       path: '/opportunities'
       fullPath: '/opportunities'
       preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/messages': {
+      id: '/_authenticated/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/matches': {
+      id: '/_authenticated/matches'
+      path: '/matches'
+      fullPath: '/matches'
+      preLoaderRoute: typeof AuthenticatedMatchesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/instagram-callback': {
+      id: '/_authenticated/instagram-callback'
+      path: '/instagram-callback'
+      fullPath: '/instagram-callback'
+      preLoaderRoute: typeof AuthenticatedInstagramCallbackRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/growth': {
+      id: '/_authenticated/growth'
+      path: '/growth'
+      fullPath: '/growth'
+      preLoaderRoute: typeof AuthenticatedGrowthRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/globe': {
@@ -590,6 +1178,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCreatorOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/create': {
+      id: '/_authenticated/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof AuthenticatedCreateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contracts': {
+      id: '/_authenticated/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof AuthenticatedContractsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/content-planner': {
       id: '/_authenticated/content-planner'
       path: '/content-planner'
@@ -611,11 +1213,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignCreateRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/brand-knowledge': {
+      id: '/_authenticated/brand-knowledge'
+      path: '/brand-knowledge'
+      fullPath: '/brand-knowledge'
+      preLoaderRoute: typeof AuthenticatedBrandKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/applications': {
+      id: '/_authenticated/applications'
+      path: '/applications'
+      fullPath: '/applications'
+      preLoaderRoute: typeof AuthenticatedApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/analytics': {
       id: '/_authenticated/analytics'
       path: '/analytics'
       fullPath: '/analytics'
       preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/projects/': {
@@ -625,6 +1248,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedProjectsRoute
     }
+    '/_authenticated/profile/': {
+      id: '/_authenticated/profile/'
+      path: '/'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
+      parentRoute: typeof AuthenticatedProfileRoute
+    }
+    '/_authenticated/messages/': {
+      id: '/_authenticated/messages/'
+      path: '/'
+      fullPath: '/messages/'
+      preLoaderRoute: typeof AuthenticatedMessagesIndexRouteImport
+      parentRoute: typeof AuthenticatedMessagesRoute
+    }
+    '/_authenticated/campaigns/': {
+      id: '/_authenticated/campaigns/'
+      path: '/campaigns'
+      fullPath: '/campaigns/'
+      preLoaderRoute: typeof AuthenticatedCampaignsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/business/profile/edit': {
+      id: '/business/profile/edit'
+      path: '/business/profile/edit'
+      fullPath: '/business/profile/edit'
+      preLoaderRoute: typeof BusinessProfileEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/projects/$projectId': {
       id: '/_authenticated/projects/$projectId'
       path: '/$projectId'
@@ -632,15 +1283,93 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedProjectsRoute
     }
+    '/_authenticated/profile/edit': {
+      id: '/_authenticated/profile/edit'
+      path: '/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof AuthenticatedProfileEditRouteImport
+      parentRoute: typeof AuthenticatedProfileRoute
+    }
+    '/_authenticated/messages/$conversationId': {
+      id: '/_authenticated/messages/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/messages/$conversationId'
+      preLoaderRoute: typeof AuthenticatedMessagesConversationIdRouteImport
+      parentRoute: typeof AuthenticatedMessagesRoute
+    }
+    '/_authenticated/deliverables/$applicationId': {
+      id: '/_authenticated/deliverables/$applicationId'
+      path: '/deliverables/$applicationId'
+      fullPath: '/deliverables/$applicationId'
+      preLoaderRoute: typeof AuthenticatedDeliverablesApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/campaigns/$campaignId': {
+      id: '/_authenticated/campaigns/$campaignId'
+      path: '/campaigns/$campaignId'
+      fullPath: '/campaigns/$campaignId'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/campaigns/$campaignId/': {
+      id: '/_authenticated/campaigns/$campaignId/'
+      path: '/'
+      fullPath: '/campaigns/$campaignId/'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdIndexRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/preview': {
+      id: '/_authenticated/campaigns/$campaignId/preview'
+      path: '/preview'
+      fullPath: '/campaigns/$campaignId/preview'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdPreviewRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
     '/_authenticated/campaigns/$campaignId/edit': {
       id: '/_authenticated/campaigns/$campaignId/edit'
-      path: '/campaigns/$campaignId/edit'
+      path: '/edit'
       fullPath: '/campaigns/$campaignId/edit'
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdEditRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/applicants': {
+      id: '/_authenticated/campaigns/$campaignId/applicants'
+      path: '/applicants'
+      fullPath: '/campaigns/$campaignId/applicants'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdApplicantsRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
   }
 }
+
+interface AuthenticatedMessagesRouteChildren {
+  AuthenticatedMessagesConversationIdRoute: typeof AuthenticatedMessagesConversationIdRoute
+  AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
+}
+
+const AuthenticatedMessagesRouteChildren: AuthenticatedMessagesRouteChildren = {
+  AuthenticatedMessagesConversationIdRoute:
+    AuthenticatedMessagesConversationIdRoute,
+  AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
+}
+
+const AuthenticatedMessagesRouteWithChildren =
+  AuthenticatedMessagesRoute._addFileChildren(
+    AuthenticatedMessagesRouteChildren,
+  )
+
+interface AuthenticatedProfileRouteChildren {
+  AuthenticatedProfileEditRoute: typeof AuthenticatedProfileEditRoute
+  AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
+}
+
+const AuthenticatedProfileRouteChildren: AuthenticatedProfileRouteChildren = {
+  AuthenticatedProfileEditRoute: AuthenticatedProfileEditRoute,
+  AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
+}
+
+const AuthenticatedProfileRouteWithChildren =
+  AuthenticatedProfileRoute._addFileChildren(AuthenticatedProfileRouteChildren)
 
 interface AuthenticatedProjectsRouteChildren {
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
@@ -657,35 +1386,94 @@ const AuthenticatedProjectsRouteWithChildren =
     AuthenticatedProjectsRouteChildren,
   )
 
+interface AuthenticatedCampaignsCampaignIdRouteChildren {
+  AuthenticatedCampaignsCampaignIdApplicantsRoute: typeof AuthenticatedCampaignsCampaignIdApplicantsRoute
+  AuthenticatedCampaignsCampaignIdEditRoute: typeof AuthenticatedCampaignsCampaignIdEditRoute
+  AuthenticatedCampaignsCampaignIdPreviewRoute: typeof AuthenticatedCampaignsCampaignIdPreviewRoute
+  AuthenticatedCampaignsCampaignIdIndexRoute: typeof AuthenticatedCampaignsCampaignIdIndexRoute
+}
+
+const AuthenticatedCampaignsCampaignIdRouteChildren: AuthenticatedCampaignsCampaignIdRouteChildren =
+  {
+    AuthenticatedCampaignsCampaignIdApplicantsRoute:
+      AuthenticatedCampaignsCampaignIdApplicantsRoute,
+    AuthenticatedCampaignsCampaignIdEditRoute:
+      AuthenticatedCampaignsCampaignIdEditRoute,
+    AuthenticatedCampaignsCampaignIdPreviewRoute:
+      AuthenticatedCampaignsCampaignIdPreviewRoute,
+    AuthenticatedCampaignsCampaignIdIndexRoute:
+      AuthenticatedCampaignsCampaignIdIndexRoute,
+  }
+
+const AuthenticatedCampaignsCampaignIdRouteWithChildren =
+  AuthenticatedCampaignsCampaignIdRoute._addFileChildren(
+    AuthenticatedCampaignsCampaignIdRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRoute
+  AuthenticatedBrandKnowledgeRoute: typeof AuthenticatedBrandKnowledgeRoute
   AuthenticatedCampaignCreateRoute: typeof AuthenticatedCampaignCreateRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedContentPlannerRoute: typeof AuthenticatedContentPlannerRoute
+  AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
+  AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedCreatorOnboardingRoute: typeof AuthenticatedCreatorOnboardingRoute
   AuthenticatedFindCreatorsRoute: typeof AuthenticatedFindCreatorsRoute
   AuthenticatedGlobeRoute: typeof AuthenticatedGlobeRoute
+  AuthenticatedGrowthRoute: typeof AuthenticatedGrowthRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedInstagramCallbackRoute: typeof AuthenticatedInstagramCallbackRoute
+  AuthenticatedMatchesRoute: typeof AuthenticatedMatchesRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRouteWithChildren
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
-  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRouteWithChildren
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
-  AuthenticatedCampaignsCampaignIdEditRoute: typeof AuthenticatedCampaignsCampaignIdEditRoute
+  AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedVerificationRoute: typeof AuthenticatedVerificationRoute
+  AuthenticatedCampaignsCampaignIdRoute: typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
+  AuthenticatedDeliverablesApplicationIdRoute: typeof AuthenticatedDeliverablesApplicationIdRoute
+  AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedApplicationsRoute: AuthenticatedApplicationsRoute,
+  AuthenticatedBrandKnowledgeRoute: AuthenticatedBrandKnowledgeRoute,
   AuthenticatedCampaignCreateRoute: AuthenticatedCampaignCreateRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedContentPlannerRoute: AuthenticatedContentPlannerRoute,
+  AuthenticatedContractsRoute: AuthenticatedContractsRoute,
+  AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedCreatorOnboardingRoute: AuthenticatedCreatorOnboardingRoute,
   AuthenticatedFindCreatorsRoute: AuthenticatedFindCreatorsRoute,
   AuthenticatedGlobeRoute: AuthenticatedGlobeRoute,
+  AuthenticatedGrowthRoute: AuthenticatedGrowthRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedInstagramCallbackRoute: AuthenticatedInstagramCallbackRoute,
+  AuthenticatedMatchesRoute: AuthenticatedMatchesRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRouteWithChildren,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
-  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRouteWithChildren,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
-  AuthenticatedCampaignsCampaignIdEditRoute:
-    AuthenticatedCampaignsCampaignIdEditRoute,
+  AuthenticatedSavedRoute: AuthenticatedSavedRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedVerificationRoute: AuthenticatedVerificationRoute,
+  AuthenticatedCampaignsCampaignIdRoute:
+    AuthenticatedCampaignsCampaignIdRouteWithChildren,
+  AuthenticatedDeliverablesApplicationIdRoute:
+    AuthenticatedDeliverablesApplicationIdRoute,
+  AuthenticatedCampaignsIndexRoute: AuthenticatedCampaignsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -696,20 +1484,31 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
+  AcceptableUseRoute: AcceptableUseRoute,
+  AiRoute: AiRoute,
+  AiDisclosureRoute: AiDisclosureRoute,
   ConnectRoute: ConnectRoute,
   ContactRoute: ContactRoute,
+  CookiesRoute: CookiesRoute,
+  DmcaRoute: DmcaRoute,
   ForBusinessesRoute: ForBusinessesRoute,
   ForCreatorsRoute: ForCreatorsRoute,
   LoginRoute: LoginRoute,
   ManifestoRoute: ManifestoRoute,
   OnboardingRoute: OnboardingRoute,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   ServicesRoute: ServicesRoute,
   StudioRoute: StudioRoute,
+  TermsRoute: TermsRoute,
   WorkRoute: WorkRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   BusinessOnboardingRoute: BusinessOnboardingRoute,
+  BusinessesBusinessIdRoute: BusinessesBusinessIdRoute,
   CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
   CreatorsCreatorIdRoute: CreatorsCreatorIdRoute,
+  KUsernameRoute: KUsernameRoute,
+  BusinessProfileEditRoute: BusinessProfileEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

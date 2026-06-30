@@ -13,7 +13,7 @@ export function Footer() {
               className="text-sm font-light leading-relaxed max-w-xs"
               style={{ color: "oklch(1 0 0 / 38%)" }}
             >
-              The AI marketing operating system for creators and businesses.
+              The creator collaboration operating system for MENA.
             </p>
             <Link
               to="/login"
@@ -25,28 +25,35 @@ export function Footer() {
 
           <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-10">
             <FooterCol
-              h="Product"
+              h="Platform"
               links={[
-                { to: "/login",            label: "Get started"    },
-                { to: "/connect",         label: "MRKT Connect"   },
                 { to: "/for-creators",    label: "For Creators"   },
                 { to: "/for-businesses",  label: "For Businesses" },
+                { to: "/ai",              label: "MRKT AI"        },
+                { to: "/studio",          label: "Studio"         },
+                { to: "/pricing",         label: "Pricing"        },
               ]}
             />
             <FooterCol
               h="Company"
               links={[
-                { to: "/about",   label: "About" },
-                { to: "/contact", label: "Contact" },
+                { to: "/about",          label: "About"          },
+                { to: "/contact",        label: "Contact"        },
+                { to: "/terms",          label: "Terms"          },
+                { to: "/privacy",        label: "Privacy"        },
+                { to: "/cookies",        label: "Cookies"        },
+                { to: "/acceptable-use", label: "Acceptable Use" },
+                { to: "/dmca",           label: "DMCA"           },
+                { to: "/ai-disclosure",  label: "AI Disclosure"  },
               ]}
             />
             <FooterCol
-              h="Connect"
+              h="Get in touch"
               links={[
-                { href: "mailto:hello@whoismrkt.com", label: "hello@whoismrkt.com" },
-                { href: "https://instagram.com",      label: "Instagram" },
-                { href: "https://tiktok.com",         label: "TikTok" },
-                { href: "https://linkedin.com",       label: "LinkedIn" },
+                { href: "mailto:hello@usemrkt.app", label: "hello@usemrkt.app" },
+                { href: "https://instagram.com",    label: "Instagram"          },
+                { href: "https://tiktok.com",       label: "TikTok"             },
+                { href: "https://linkedin.com",     label: "LinkedIn"           },
               ]}
             />
           </div>
@@ -58,12 +65,23 @@ export function Footer() {
           className="mx-auto max-w-7xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
           style={{ color: "oklch(1 0 0 / 28%)" }}
         >
-          <div>© {new Date().getFullYear()} whoismrkt — All rights reserved.</div>
-          <div
-            className="font-display tracking-[0.2em] uppercase"
-            style={{ color: "oklch(1 0 0 / 18%)" }}
-          >
-            MRKT
+          <div>© {new Date().getFullYear()} MRKT — All rights reserved.</div>
+          <div className="flex items-center gap-4">
+            <Link to="/terms"   style={{ color: "oklch(1 0 0 / 28%)" }} className="hover:text-white/50 transition-colors">Terms</Link>
+            <Link to="/privacy" style={{ color: "oklch(1 0 0 / 28%)" }} className="hover:text-white/50 transition-colors">Privacy</Link>
+            <button
+              onClick={() => { localStorage.removeItem("mrkt_cookie_consent"); window.location.reload(); }}
+              style={{ color: "oklch(1 0 0 / 28%)", background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: "inherit" }}
+              className="hover:text-white/50 transition-colors"
+            >
+              Cookie Preferences
+            </button>
+            <div
+              className="font-display tracking-[0.2em] uppercase"
+              style={{ color: "oklch(1 0 0 / 18%)" }}
+            >
+              MRKT
+            </div>
           </div>
         </div>
       </div>

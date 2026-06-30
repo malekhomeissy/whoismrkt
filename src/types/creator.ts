@@ -51,6 +51,19 @@ export interface CreatorProfile {
   media_kit_url: string | null;
   previous_collaborations: string | null;
   is_public: boolean;
+  creator_stage?: "beginner" | "growing" | "established";
+  is_verified?: boolean;
+  is_beta_pioneer?: boolean;
+  // Instagram OAuth connection — only written by edge functions, never by client
+  instagram_connected?:            boolean;
+  instagram_user_id?:              string | null;
+  instagram_followers?:            number | null;
+  instagram_followers_synced_at?:  string | null;
+  instagram_profile_picture_url?:  string | null;
+  creator_verification_type?: "none" | "organic_70k" | "paid_10k_plus";
+  verification_status?: "not_eligible" | "eligible" | "verified" | "pending_payment";
+  avg_rating?: number | null;
+  review_count?: number;
   status: CreatorProfileStatus;
   created_at: string;
   updated_at: string;
@@ -91,6 +104,7 @@ export interface CreatorOnboardingData {
   rate_range: string;
   preferred_content_types: string[];
   // Step 5 — Portfolio
+  creator_stage: "beginner" | "growing" | "established";
   featured_link_1: string;
   featured_link_2: string;
   featured_link_3: string;
@@ -155,13 +169,13 @@ export function platformShort(p: string): string {
 const PLATFORM_COLOR_MAP: Record<string, string> = {
   "Instagram": "oklch(0.70 0.12 0)",
   "TikTok":    "oklch(0.88 0 0)",
-  "YouTube":   "oklch(0.65 0.18 25)",
+  "YouTube":   "oklch(0.52 0.15 24)",
   "Twitter/X": "oklch(0.80 0 0)",
-  "LinkedIn":  "oklch(0.55 0.15 235)",
+  "LinkedIn":  "oklch(0.75 0.005 0)",
   "Pinterest": "oklch(0.62 0.15 20)",
-  "Snapchat":  "oklch(0.88 0.15 90)",
-  "Twitch":    "oklch(0.65 0.18 290)",
-  "Facebook":  "oklch(0.55 0.15 250)",
+  "Snapchat":  "oklch(0.80 0.005 0)",
+  "Twitch":    "oklch(0.55 0 0)",
+  "Facebook":  "oklch(0.72 0.005 0)",
 };
 export function platformColor(p: string): string {
   return PLATFORM_COLOR_MAP[p] ?? "oklch(0.75 0 0)";

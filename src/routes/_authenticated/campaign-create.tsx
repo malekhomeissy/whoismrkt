@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowUpRight, ArrowLeft, Check, Plus, X,
   DollarSign, Gift, TrendingUp, Percent, Minus,
-  Instagram, Youtube, Globe,
+  Instagram, Youtube, Globe, Sparkles, Loader2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import {
 } from "@/types/campaign";
 import type { CreatorCategory } from "@/types/creator";
 import { CATEGORY_LABELS } from "@/types/creator";
+import { C } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/campaign-create")({
   head: () => ({ meta: [{ title: "Post a Campaign — MRKT Connect" }] }),
@@ -109,7 +110,7 @@ function Input({ value, onChange, placeholder, type = "text", prefix }: {
   return (
     <div
       className="flex items-center rounded-xl overflow-hidden"
-      style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}
+      style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}
     >
       {prefix && (
         <span className="px-3.5 shrink-0 text-sm select-none" style={{
@@ -134,7 +135,7 @@ function Textarea({ value, onChange, placeholder, rows = 4 }: {
   value: string; onChange: (v: string) => void; placeholder?: string; rows?: number;
 }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
       <textarea
         value={value} onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder} rows={rows}
@@ -150,7 +151,7 @@ function Select({ value, onChange, options, placeholder }: {
   options: readonly string[]; placeholder?: string;
 }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
       <select
         value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full bg-transparent px-3.5 py-[0.6875rem] text-sm outline-none appearance-none"
@@ -158,7 +159,7 @@ function Select({ value, onChange, options, placeholder }: {
       >
         {placeholder && <option value="" disabled>{placeholder}</option>}
         {options.map((o) => (
-          <option key={o} value={o} style={{ background: "oklch(0.08 0 0)", color: "oklch(1 0 0 / 85%)" }}>
+          <option key={o} value={o} style={{ background: "oklch(0.065 0 0)", color: "oklch(1 0 0 / 85%)" }}>
             {o}
           </option>
         ))}
@@ -212,6 +213,58 @@ function StepBusiness({ d, s }: { d: CampaignFormData; s: SetFn }) {
 // ─────────────────────────────────────────────────────────────
 
 function StepCampaign({ d, s }: { d: CampaignFormData; s: SetFn }) {
+  const [improving, setImproving] = useState(false);
+  const [preview,   setPreview]   = useState<{ title: string; description: string } | null>(null);
+
+  const canImprove = !!(d.title.trim() || d.product_service.trim() || d.description.trim());
+
+  async function improveWithAI() {
+    if (!canImprove) return;
+    setImproving(true);
+    setPreview(null);
+    try {
+      const prompt = `Improve this campaign brief for a GCC influencer marketing campaign.
+
+Current details:
+Title: ${d.title || "(none)"}
+Product/Service: ${d.product_service || "(none)"}
+Goal: ${d.campaign_goal || "(none)"}
+Description: ${d.description || "(none)"}
+
+Return ONLY a JSON object with these exact fields (no markdown, no explanation):
+{
+  "title": "improved campaign title (concise, compelling, max 60 chars)",
+  "description": "improved campaign description (3-4 sentences, clear brief, GCC market context, creator tone guidance, deliverable expectations)"
+}`;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).functions.invoke("ai-router", {
+        body: { task_type: "campaign_brief", prompt },
+      });
+
+      if (error) throw new Error(error.message ?? "AI error");
+
+      const raw     = (data?.response as string ?? "").replace(/```(?:json)?\n?/g, "").replace(/```/g, "").trim();
+      const parsed  = JSON.parse(raw) as { title?: string; description?: string };
+
+      if (!parsed.title && !parsed.description) throw new Error("Empty response");
+      setPreview({ title: parsed.title ?? d.title, description: parsed.description ?? d.description });
+    } catch (err) {
+      console.error("AI brief improvement failed:", err);
+      toast.error("AI improvement failed. Try again.");
+    } finally {
+      setImproving(false);
+    }
+  }
+
+  function acceptPreview() {
+    if (!preview) return;
+    s("title",       preview.title);
+    s("description", preview.description);
+    setPreview(null);
+    toast.success("Brief updated with AI suggestions.");
+  }
+
   return (
     <div className="space-y-5">
       <Field label="Campaign Title">
@@ -225,14 +278,75 @@ function StepCampaign({ d, s }: { d: CampaignFormData; s: SetFn }) {
           <Input value={d.campaign_goal} onChange={(v) => s("campaign_goal", v)} placeholder="Brand awareness, product launch…" />
         </Field>
       </div>
-      <Field label="Campaign Description">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(1 0 0 / 35%)" }}>
+            Campaign Description
+          </label>
+          <button
+            type="button"
+            onClick={improveWithAI}
+            disabled={improving || !canImprove}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all duration-150 disabled:opacity-40"
+            style={{
+              background: "oklch(0.72 0.10 224 / 12%)",
+              border:     "1px solid oklch(0.72 0.10 224 / 25%)",
+              color:      "oklch(0.72 0.10 224)",
+            }}
+          >
+            {improving
+              ? <><Loader2 className="h-3 w-3 animate-spin" /> Improving…</>
+              : <><Sparkles className="h-3 w-3" /> Improve with AI</>
+            }
+          </button>
+        </div>
         <Textarea
           value={d.description}
           onChange={(v) => s("description", v)}
           placeholder="Describe what you're launching, the tone you're looking for, and what makes this campaign unique…"
           rows={5}
         />
-      </Field>
+      </div>
+
+      {/* AI preview panel */}
+      {preview && (
+        <div
+          className="rounded-2xl p-4 space-y-3"
+          style={{
+            background: "oklch(0.72 0.10 224 / 6%)",
+            border:     "1px solid oklch(0.72 0.10 224 / 20%)",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5" style={{ color: "oklch(0.72 0.10 224)" }} />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: "oklch(0.72 0.10 224)" }}>
+              AI Suggestion
+            </span>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[12px] font-semibold" style={{ color: "oklch(1 0 0 / 85%)" }}>{preview.title}</p>
+            <p className="text-[12px] leading-relaxed" style={{ color: "oklch(1 0 0 / 55%)" }}>{preview.description}</p>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={acceptPreview}
+              className="rounded-lg px-3 py-1.5 text-[11.5px] font-semibold transition-all duration-150"
+              style={{ background: "oklch(0.72 0.10 224 / 20%)", color: "oklch(0.84 0 0)", border: "1px solid oklch(0.55 0.18 260 / 35%)" }}
+            >
+              Accept
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreview(null)}
+              className="rounded-lg px-3 py-1.5 text-[11.5px] font-medium transition-all duration-150"
+              style={{ background: "oklch(1 0 0 / 5%)", color: "oklch(1 0 0 / 40%)", border: "1px solid oklch(1 0 0 / 12%)" }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -261,20 +375,20 @@ function StepCompensation({ d, s }: { d: CampaignFormData; s: SetFn }) {
               className="text-left rounded-2xl p-5 transition-all duration-150"
               style={{
                 background: selected
-                  ? isUnpaid ? "oklch(1 0 0 / 4%)" : "oklch(0.72 0.14 152 / 8%)"
+                  ? isUnpaid ? "oklch(1 0 0 / 4%)" : "oklch(1 0 0 / 8%)"
                   : "oklch(1 0 0 / 2.5%)",
                 border: selected
-                  ? isUnpaid ? "1px solid oklch(1 0 0 / 22%)" : "1px solid oklch(0.72 0.14 152 / 45%)"
-                  : "1px solid oklch(1 0 0 / 9%)",
-                boxShadow: selected && !isUnpaid ? "0 0 0 1px oklch(0.72 0.14 152 / 12%)" : "none",
+                  ? isUnpaid ? "1px solid oklch(1 0 0 / 22%)" : "1px solid oklch(1 0 0 / 45%)"
+                  : "1px solid oklch(1 0 0 / 8%)",
+                boxShadow: selected && !isUnpaid ? "0 0 0 1px oklch(1 0 0 / 12%)" : "none",
               }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div
                   className="h-9 w-9 rounded-xl flex items-center justify-center"
                   style={{
-                    background: selected && !isUnpaid ? "oklch(0.72 0.14 152 / 15%)" : "oklch(1 0 0 / 6%)",
-                    color:      selected && !isUnpaid ? "oklch(0.72 0.14 152)"        : "oklch(1 0 0 / 40%)",
+                    background: selected && !isUnpaid ? "oklch(1 0 0 / 15%)" : "oklch(1 0 0 / 6%)",
+                    color:      selected && !isUnpaid ? "oklch(0.84 0 0)"        : "oklch(1 0 0 / 40%)",
                   }}
                 >
                   {card.icon}
@@ -282,7 +396,7 @@ function StepCompensation({ d, s }: { d: CampaignFormData; s: SetFn }) {
                 {selected && (
                   <span
                     className="h-5 w-5 rounded-full flex items-center justify-center"
-                    style={{ background: isUnpaid ? "oklch(1 0 0 / 55%)" : "oklch(0.72 0.14 152)" }}
+                    style={{ background: isUnpaid ? "oklch(1 0 0 / 55%)" : "oklch(0.84 0 0)" }}
                   >
                     <Check className="h-3 w-3 text-black" strokeWidth={3} />
                   </span>
@@ -331,7 +445,7 @@ function StepCompensation({ d, s }: { d: CampaignFormData; s: SetFn }) {
             </Field>
           )}
           {d.paid_structure === "range" && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Minimum (USD)">
                 <Input value={d.compensation_budget_min} onChange={(v) => s("compensation_budget_min", v)} prefix="$" placeholder="1,000" />
               </Field>
@@ -439,7 +553,7 @@ function StepDeliverables({ d, addDeliverable, updateDeliverable, removeDelivera
                   }, 0);
                 }}
                 className="px-3 py-1.5 rounded-full text-[11.5px] transition-colors duration-150"
-                style={{ background: "oklch(1 0 0 / 4%)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 48%)" }}
+                style={{ background: "oklch(1 0 0 / 4%)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 48%)" }}
               >
                 {preset.quantity} × {preset.platform} {preset.content_type}
               </button>
@@ -481,7 +595,7 @@ function DeliverableRow({ item, onUpdate, onRemove }: {
           </div>
           <div>
             <div className="text-[9.5px] uppercase tracking-[0.24em] mb-1.5" style={{ color: "oklch(1 0 0 / 30%)" }}>Qty</div>
-            <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+            <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
               <input
                 type="number" min={1} max={99}
                 value={item.quantity}
@@ -543,7 +657,7 @@ function StepRequirements({ d, s, toggleNiche, togglePlatform, addAsset, updateA
                   className="px-3.5 py-2 rounded-full text-[12px] font-medium transition-all duration-150"
                   style={{
                     background: sel ? "oklch(1 0 0 / 10%)"         : "oklch(1 0 0 / 3%)",
-                    border:     `1px solid ${sel ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 9%)"}`,
+                    border:     `1px solid ${sel ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 8%)"}`,
                     color:      sel ? "oklch(1 0 0 / 88%)"          : "oklch(1 0 0 / 40%)",
                   }}
                 >
@@ -583,7 +697,7 @@ function StepRequirements({ d, s, toggleNiche, togglePlatform, addAsset, updateA
                   className="px-4 py-2 rounded-full text-[12.5px] font-medium transition-all duration-150"
                   style={{
                     background: sel ? "oklch(1 0 0 / 10%)"         : "oklch(1 0 0 / 3%)",
-                    border:     `1px solid ${sel ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 9%)"}`,
+                    border:     `1px solid ${sel ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 8%)"}`,
                     color:      sel ? "oklch(1 0 0 / 88%)"          : "oklch(1 0 0 / 40%)",
                   }}
                 >
@@ -675,17 +789,17 @@ function StepReview({ d, saving, onPublish, onDraft }: {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(1 0 0 / 2.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(1 0 0 / 2.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
         <div
           className="px-6 py-5 flex items-center gap-3"
-          style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: isPaid ? "oklch(0.72 0.14 152 / 6%)" : "oklch(1 0 0 / 2%)" }}
+          style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: isPaid ? "oklch(1 0 0 / 6%)" : "oklch(1 0 0 / 2%)" }}
         >
           <span
             className="text-[11px] font-bold uppercase tracking-[0.22em] rounded-full px-3 py-1"
             style={{
-              color:      isPaid ? "oklch(0.72 0.14 152)"           : "oklch(1 0 0 / 50%)",
-              background: isPaid ? "oklch(0.72 0.14 152 / 14%)"     : "oklch(1 0 0 / 6%)",
-              border:     `1px solid ${isPaid ? "oklch(0.72 0.14 152 / 30%)" : "oklch(1 0 0 / 12%)"}`,
+              color:      isPaid ? "oklch(0.84 0 0)"           : "oklch(1 0 0 / 50%)",
+              background: isPaid ? "oklch(1 0 0 / 14%)"     : "oklch(1 0 0 / 6%)",
+              border:     `1px solid ${isPaid ? "oklch(1 0 0 / 30%)" : "oklch(1 0 0 / 12%)"}`,
             }}
           >
             {COMP_LABELS[compType]}
@@ -754,7 +868,7 @@ function StepReview({ d, saving, onPublish, onDraft }: {
           onClick={onDraft}
           disabled={saving}
           className="w-full h-11 rounded-full text-sm transition-colors duration-150"
-          style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 45%)" }}
+          style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 45%)" }}
         >
           Save as Draft
         </button>
@@ -783,6 +897,14 @@ function parseIntStr(s: string): number | null {
 // Page
 // ─────────────────────────────────────────────────────────────
 
+interface StoredBizProfile {
+  company_name: string | null;
+  industry:     string | null;
+  website:      string | null;
+  location:     string | null;
+  is_complete:  boolean;
+}
+
 function CampaignCreatePage() {
   const { user } = useAuth();
   const nav = useNavigate();
@@ -790,23 +912,31 @@ function CampaignCreatePage() {
   const [data, setData] = useState<CampaignFormData>(EMPTY);
   const [saving, setSaving] = useState(false);
 
-  // Role check — only business accounts may create campaigns
   const [roleChecked, setRoleChecked] = useState(false);
-  const [isCreator, setIsCreator] = useState(false);
+  const [isCreator,   setIsCreator]   = useState(false);
+  const [bizProfile,  setBizProfile]  = useState<StoredBizProfile | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("onboarding_path,account_type")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data: p }) => {
-        const creator =
-          p?.onboarding_path === "creator" || p?.account_type === "creator";
-        setIsCreator(creator);
-        setRoleChecked(true);
-      });
+    Promise.all([
+      supabase
+        .from("profiles")
+        .select("onboarding_path,account_type")
+        .eq("id", user.id)
+        .maybeSingle(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("business_profiles")
+        .select("company_name,industry,website,location,is_complete")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]).then(([{ data: p }, { data: biz }]) => {
+      const creator =
+        p?.onboarding_path === "creator" || p?.account_type === "creator";
+      setIsCreator(creator);
+      setBizProfile(biz ?? null);
+      setRoleChecked(true);
+    });
   }, [user]);
 
   function set<K extends keyof CampaignFormData>(k: K, v: CampaignFormData[K]) {
@@ -870,9 +1000,8 @@ function CampaignCreatePage() {
   }
 
   function canProceed(): boolean {
-    if (step === 1) return !!(data.business_name.trim() && data.business_location.trim());
-    if (step === 2) return !!(data.title.trim() && data.description.trim());
-    if (step === 3) return !!data.compensation_type;
+    if (step === 1) return !!(data.title.trim() && data.description.trim());
+    if (step === 2) return !!data.compensation_type;
     return true;
   }
 
@@ -885,12 +1014,13 @@ function CampaignCreatePage() {
         .from("campaigns")
         .insert({
           user_id:                      user.id,
-          business_name:                data.business_name.trim(),
-          business_industry:            data.business_industry || null,
-          business_website:             data.business_website.trim() || null,
-          business_instagram:           data.business_instagram.trim() || null,
-          business_tiktok:              data.business_tiktok.trim() || null,
-          business_location:            data.business_location.trim() || null,
+          // Business identity is pulled from the stored profile — never re-entered
+          business_name:                bizProfile?.company_name?.trim() || "",
+          business_industry:            bizProfile?.industry            || null,
+          business_website:             bizProfile?.website?.trim()     || null,
+          business_instagram:           null,
+          business_tiktok:              null,
+          business_location:            bizProfile?.location?.trim()    || null,
           title:                        data.title.trim(),
           description:                  data.description.trim(),
           product_service:              data.product_service.trim() || null,
@@ -939,7 +1069,7 @@ function CampaignCreatePage() {
       }
 
       toast.success(publish ? "Campaign published! It's live on MRKT Connect." : "Draft saved.");
-      nav({ to: "/find-creators" });
+      nav({ to: "/pipeline" });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Something went wrong.";
       toast.error(msg);
@@ -970,7 +1100,7 @@ function CampaignCreatePage() {
               className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 mb-8"
               style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 10%)" }}
             >
-              <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.72 0.14 152)" }} />
+              <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.84 0 0)" }} />
               <span className="text-[9px] font-medium uppercase tracking-[0.32em]" style={{ color: "oklch(1 0 0 / 42%)" }}>
                 MRKT Connect
               </span>
@@ -1002,16 +1132,44 @@ function CampaignCreatePage() {
     );
   }
 
-  // ── Form ─────────────────────────────────────────────────────
+  // ── Incomplete business profile gate ────────────────────────
+  if (roleChecked && !isCreator && bizProfile && !bizProfile.is_complete) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <header className="px-6 h-16 flex items-center justify-between shrink-0" style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
+          <Link to="/chat"><Logo /></Link>
+          <Link to="/chat" className="text-sm transition-colors duration-200" style={{ color: "oklch(1 0 0 / 32%)" }}>← Exit</Link>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-6 py-20">
+          <div className="max-w-md text-center">
+            <h1 className="font-display text-3xl font-bold tracking-[-0.04em] mb-4">
+              Complete your Business Profile first.
+            </h1>
+            <p className="text-[1rem] font-light leading-relaxed mb-10" style={{ color: "oklch(1 0 0 / 44%)" }}>
+              Your business information is attached to every campaign you post. Finish setting it up once — then creating campaigns takes under 60 seconds.
+            </p>
+            <Link
+              to="/business/onboarding"
+              className="btn-primary inline-flex items-center gap-2 rounded-full px-7 h-11 text-sm"
+            >
+              Complete Profile <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
-  const progress   = (step / 6) * 100;
+  // ── Form (5 steps — no business step) ───────────────────────
+
+  const TOTAL     = 5;
+  const progress  = (step / TOTAL) * 100;
   const stepTitles = [
-    { eyebrow: "Step 01 of 06", headline: "Your business.",          sub: "Tell creators who they'd be working with." },
-    { eyebrow: "Step 02 of 06", headline: "The campaign.",           sub: "What are you launching and what do you need?" },
-    { eyebrow: "Step 03 of 06", headline: "Compensation.",           sub: "Be direct. Creators see this before they open your campaign." },
-    { eyebrow: "Step 04 of 06", headline: "Deliverables.",           sub: "Define exactly what you need creators to produce." },
-    { eyebrow: "Step 05 of 06", headline: "Requirements & assets.",  sub: "Who should apply, and what do they need to know?" },
-    { eyebrow: "Step 06 of 06", headline: "Review and publish.",     sub: "Everything looks right? Go live." },
+    { eyebrow: `Step 01 of 0${TOTAL}`, headline: "The campaign.",           sub: "What are you launching and what do you need?" },
+    { eyebrow: `Step 02 of 0${TOTAL}`, headline: "Compensation.",           sub: "Be direct. Creators see this before they open your campaign." },
+    { eyebrow: `Step 03 of 0${TOTAL}`, headline: "Deliverables.",           sub: "Define exactly what you need creators to produce." },
+    { eyebrow: `Step 04 of 0${TOTAL}`, headline: "Requirements & assets.",  sub: "Who should apply, and what do they need to know?" },
+    { eyebrow: `Step 05 of 0${TOTAL}`, headline: "Review and publish.",     sub: "Everything looks right? Go live." },
   ];
   const current = stepTitles[step - 1];
 
@@ -1023,13 +1181,16 @@ function CampaignCreatePage() {
         <div className="flex items-center gap-4">
           <span
             className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.24em]"
-            style={{ background: "oklch(0.78 0.12 60 / 10%)", border: "1px solid oklch(0.78 0.12 60 / 25%)", color: "oklch(0.78 0.12 60)" }}
+            style={{ background: C.blueBg, border: `1px solid ${C.blueBorder}`, color: C.aiBlue }}
           >
             Beta
           </span>
-          <span className="hidden sm:block text-[11px] uppercase tracking-[0.24em]" style={{ color: "oklch(1 0 0 / 28%)" }}>
-            {STEP_LABELS[step - 1]}
-          </span>
+          {/* Show business name from profile so they know which account is posting */}
+          {bizProfile?.company_name && (
+            <span className="hidden sm:block text-[11px] uppercase tracking-[0.24em]" style={{ color: "oklch(1 0 0 / 28%)" }}>
+              {bizProfile.company_name}
+            </span>
+          )}
           <Link to="/chat" className="text-sm transition-colors duration-200" style={{ color: "oklch(1 0 0 / 32%)" }}>
             ← Exit
           </Link>
@@ -1044,7 +1205,7 @@ function CampaignCreatePage() {
         />
       </div>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-2xl mx-auto px-6 py-14">
           <div className="mb-10">
             <div className="text-[10px] uppercase tracking-[0.32em] font-medium mb-4" style={{ color: "oklch(1 0 0 / 28%)" }}>
@@ -1058,10 +1219,9 @@ function CampaignCreatePage() {
             </p>
           </div>
 
-          {step === 1 && <StepBusiness d={data} s={set} />}
-          {step === 2 && <StepCampaign d={data} s={set} />}
-          {step === 3 && <StepCompensation d={data} s={set} />}
-          {step === 4 && (
+          {step === 1 && <StepCampaign d={data} s={set} />}
+          {step === 2 && <StepCompensation d={data} s={set} />}
+          {step === 3 && (
             <StepDeliverables
               d={data}
               addDeliverable={addDeliverable}
@@ -1069,7 +1229,7 @@ function CampaignCreatePage() {
               removeDeliverable={removeDeliverable}
             />
           )}
-          {step === 5 && (
+          {step === 4 && (
             <StepRequirements
               d={data} s={set}
               toggleNiche={toggleNiche}
@@ -1079,7 +1239,7 @@ function CampaignCreatePage() {
               removeAsset={removeAsset}
             />
           )}
-          {step === 6 && (
+          {step === 5 && (
             <StepReview
               d={data} saving={saving}
               onPublish={() => submitCampaign(true)}
@@ -1087,7 +1247,7 @@ function CampaignCreatePage() {
             />
           )}
 
-          {step < 6 && (
+          {step < TOTAL && (
             <div className="mt-10 flex items-center justify-between">
               <button
                 onClick={() => setStep((s) => Math.max(1, s - 1))}
@@ -1098,7 +1258,7 @@ function CampaignCreatePage() {
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
               <button
-                onClick={() => setStep((s) => Math.min(6, s + 1))}
+                onClick={() => setStep((s) => Math.min(TOTAL, s + 1))}
                 disabled={!canProceed()}
                 className="btn-primary inline-flex items-center gap-2 rounded-full px-7 h-11 text-sm"
                 style={{ opacity: canProceed() ? 1 : 0.4 }}

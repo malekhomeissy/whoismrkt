@@ -20,18 +20,7 @@ export const Route = createFileRoute("/_authenticated/campaigns/$campaignId/edit
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
-const C = {
-  canvas:       "#000",
-  surface:      "oklch(0.11 0 0)",
-  raised:       "oklch(0.15 0 0)",
-  borderSubtle: "oklch(1 0 0 / 8%)",
-  borderNormal: "oklch(1 0 0 / 14%)",
-  textPrimary:  "oklch(1 0 0 / 92%)",
-  textSecondary:"oklch(1 0 0 / 68%)",
-  textTertiary: "oklch(1 0 0 / 46%)",
-  textMuted:    "oklch(1 0 0 / 22%)",
-  accent:       "oklch(0.72 0.14 152)",
-} as const;
+import { C } from "@/lib/theme";
 
 const inputStyle = {
   background:  C.raised,
@@ -334,7 +323,7 @@ function EditCampaignPage() {
             onClick={handleSave}
             disabled={saving}
             className="h-9 px-5 rounded-xl text-[12.5px] font-semibold flex items-center gap-2 transition-opacity duration-100"
-            style={{ background: C.accent, color: "oklch(0.08 0 0)", opacity: saving ? 0.6 : 1 }}
+            style={{ background: C.accent, color: "oklch(1 0 0 / 95%)", opacity: saving ? 0.6 : 1 }}
           >
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {saving ? "Saving…" : "Save Changes"}
@@ -421,8 +410,8 @@ function EditCampaignPage() {
                     onClick={() => set("compensation_type", t)}
                     className="h-9 rounded-xl text-[12px] font-medium transition-all duration-100"
                     style={{
-                      background:  form.compensation_type === t ? "oklch(0.72 0.14 152 / 15%)" : C.raised,
-                      border:      `1px solid ${form.compensation_type === t ? "oklch(0.72 0.14 152 / 40%)" : C.borderSubtle}`,
+                      background:  form.compensation_type === t ? "oklch(1 0 0 / 15%)" : C.raised,
+                      border:      `1px solid ${form.compensation_type === t ? "oklch(1 0 0 / 40%)" : C.borderSubtle}`,
                       color:       form.compensation_type === t ? C.accent : C.textTertiary,
                     }}
                   >
@@ -433,7 +422,7 @@ function EditCampaignPage() {
             </div>
 
             {form.compensation_type === "paid" && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 gap-3">
                 <div>
                   <FieldLabel>Fixed amount ($)</FieldLabel>
                   <input
@@ -492,7 +481,7 @@ function EditCampaignPage() {
                 className="rounded-xl p-3.5"
                 style={{ background: C.raised, border: `1px solid ${C.borderSubtle}` }}
               >
-                <div className="grid grid-cols-3 gap-2 mb-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
                   <div className="relative">
                     <select
                       value={del.platform}
@@ -534,8 +523,8 @@ function EditCampaignPage() {
                       type="button"
                       onClick={() => removeDeliverable(i)}
                       className="ml-auto h-7 w-7 rounded-lg flex items-center justify-center transition-colors duration-100"
-                      style={{ color: "oklch(0.68 0.12 25 / 70%)" }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.68 0.12 25 / 10%)"; }}
+                      style={{ color: C.textTertiary }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 7%)"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -567,7 +556,7 @@ function EditCampaignPage() {
         {/* Requirements */}
         <Section title="Requirements">
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <FieldLabel>Min. Followers</FieldLabel>
                 <input
@@ -619,8 +608,8 @@ function EditCampaignPage() {
                     onClick={() => toggleArray("required_platforms", p)}
                     className="h-8 px-3.5 rounded-xl text-[12px] font-medium transition-all duration-100"
                     style={{
-                      background: form.required_platforms.includes(p) ? "oklch(0.72 0.14 152 / 15%)" : C.raised,
-                      border:     `1px solid ${form.required_platforms.includes(p) ? "oklch(0.72 0.14 152 / 40%)" : C.borderSubtle}`,
+                      background: form.required_platforms.includes(p) ? "oklch(1 0 0 / 15%)" : C.raised,
+                      border:     `1px solid ${form.required_platforms.includes(p) ? "oklch(1 0 0 / 40%)" : C.borderSubtle}`,
                       color:      form.required_platforms.includes(p) ? C.accent : C.textTertiary,
                     }}
                   >
@@ -641,8 +630,8 @@ function EditCampaignPage() {
                     onClick={() => toggleArray("required_niches", value)}
                     className="h-7 px-3 rounded-full text-[11.5px] font-medium transition-all duration-100"
                     style={{
-                      background: form.required_niches.includes(value) ? "oklch(0.72 0.14 152 / 15%)" : "oklch(1 0 0 / 4%)",
-                      border:     `1px solid ${form.required_niches.includes(value) ? "oklch(0.72 0.14 152 / 40%)" : "oklch(1 0 0 / 8%)"}`,
+                      background: form.required_niches.includes(value) ? "oklch(1 0 0 / 15%)" : "oklch(1 0 0 / 4%)",
+                      border:     `1px solid ${form.required_niches.includes(value) ? "oklch(1 0 0 / 40%)" : "oklch(1 0 0 / 8%)"}`,
                       color:      form.required_niches.includes(value) ? C.accent : C.textTertiary,
                     }}
                   >
@@ -670,7 +659,7 @@ function EditCampaignPage() {
             onClick={handleSave}
             disabled={saving}
             className="flex-[2] h-11 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold transition-opacity duration-100"
-            style={{ background: C.accent, color: "oklch(0.08 0 0)", opacity: saving ? 0.6 : 1 }}
+            style={{ background: C.accent, color: "oklch(1 0 0 / 95%)", opacity: saving ? 0.6 : 1 }}
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? "Saving…" : "Save Changes"}

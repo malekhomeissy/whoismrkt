@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/site/Logo";
 import { toast } from "sonner";
+import { AvatarCropModal } from "@/components/app/AvatarCropModal";
 import { resolveLocationCoords } from "@/lib/geocoding";
 import {
   type CreatorCategory,
@@ -16,6 +17,7 @@ import {
   platformShort,
   platformColor,
 } from "@/types/creator";
+import { C } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/creator-onboarding")({
   head: () => ({ meta: [{ title: "Creator Profile — MRKT" }] }),
@@ -37,6 +39,7 @@ const EMPTY: CreatorOnboardingData = {
   audience_location: "", audience_age_range: "", audience_gender_split: "", primary_language: "",
   accepts_paid: true, accepts_gifted: true, accepts_affiliate: false,
   rate_range: "", preferred_content_types: [],
+  creator_stage: "growing",
   featured_link_1: "", featured_link_2: "", featured_link_3: "",
   media_kit_url: "", previous_collaborations: "",
 };
@@ -67,7 +70,7 @@ function Input({ value, onChange, placeholder, type = "text", prefix }: {
   value: string; onChange: (v: string) => void; placeholder?: string; type?: string; prefix?: string;
 }) {
   return (
-    <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+    <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
       {prefix && (
         <span className="px-3.5 shrink-0 text-sm select-none" style={{ color: "oklch(1 0 0 / 28%)", borderRight: "1px solid oklch(1 0 0 / 8%)", paddingTop: "0.6875rem", paddingBottom: "0.6875rem" }}>
           {prefix}
@@ -87,7 +90,7 @@ function Textarea({ value, onChange, placeholder, maxLength }: {
   value: string; onChange: (v: string) => void; placeholder?: string; maxLength?: number;
 }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
       <textarea
         value={value} onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder} maxLength={maxLength} rows={3}
@@ -112,7 +115,7 @@ function Toggle({ label, sub, checked, onChange }: {
       className="flex items-start justify-between gap-4 w-full rounded-xl px-4 py-3.5 text-left transition-all duration-150"
       style={{
         background: checked ? "oklch(1 0 0 / 5%)" : "oklch(1 0 0 / 2%)",
-        border: `1px solid ${checked ? "oklch(0.84 0 0 / 40%)" : "oklch(1 0 0 / 9%)"}`,
+        border: `1px solid ${checked ? "oklch(0.84 0 0 / 40%)" : "oklch(1 0 0 / 8%)"}`,
       }}
     >
       <div className="flex-1">
@@ -154,6 +157,7 @@ function ProfileImageUploader({
   const [localPreview, setLocalPreview]   = useState<string | null>(null);
   const [showUrlInput, setShowUrlInput]   = useState(false);
   const [urlDraft,     setUrlDraft]       = useState("");
+  const [cropSrc,      setCropSrc]        = useState<string | null>(null);
 
   const isDragging = dragCounter > 0;
   const displayUrl = localPreview || value;
@@ -170,22 +174,26 @@ function ProfileImageUploader({
       return;
     }
     setUploadError(null);
-    setUploading(true);
 
-    // Immediate data-URL preview while uploading
+    // Save original silently in background (avatar_original_url)
+    const originalPath = `${userId}/original${file.name.match(/\.[^.]+$/)?.[0] ?? ".jpg"}`;
+    supabase.storage.from("creator-avatars").upload(originalPath, file, { upsert: true });
+
+    // Open crop modal — user will position before final upload
     const reader = new FileReader();
-    reader.onload = (e) => setLocalPreview(e.target?.result as string);
+    reader.onload = e => setCropSrc(e.target?.result as string);
     reader.readAsDataURL(file);
+  }
 
-    const extMap: Record<string, string> = {
-      "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp",
-    };
-    const ext  = extMap[file.type] ?? "jpg";
-    const path = `${userId}/avatar.${ext}`;
+  async function handleCropSave(blob: Blob, previewDataUrl: string) {
+    setCropSrc(null);
+    setUploading(true);
+    setLocalPreview(previewDataUrl);
 
+    const path = `${userId}/avatar.jpg`;
     const { error } = await supabase.storage
       .from("creator-avatars")
-      .upload(path, file, { upsert: true, contentType: file.type });
+      .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
 
     if (error) {
       setUploadError("Upload failed — check your bucket settings, or paste a URL instead.");
@@ -198,7 +206,6 @@ function ProfileImageUploader({
       .from("creator-avatars")
       .getPublicUrl(path);
 
-    // Cache-bust query param so the browser re-fetches on replacement
     onChange(`${urlData.publicUrl}?v=${Date.now()}`);
     setLocalPreview(null);
     setUploading(false);
@@ -239,7 +246,7 @@ function ProfileImageUploader({
         /* ── Image preview ─────────────────────────────────── */
         <div
           className="flex items-center gap-4 rounded-2xl px-4 py-4"
-          style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 9%)" }}
+          style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 8%)" }}
         >
           {/* Avatar circle */}
           <div className="relative shrink-0">
@@ -284,7 +291,7 @@ function ProfileImageUploader({
                     onClick={handleRemove}
                     className="text-[12px] transition-colors duration-150"
                     style={{ color: "oklch(1 0 0 / 32%)" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.65 0.18 25)"; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.52 0.15 24)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 32%)"; }}
                   >
                     Remove
@@ -339,11 +346,21 @@ function ProfileImageUploader({
         onChange={handleInputChange}
       />
 
+      {/* Crop modal */}
+      {cropSrc && (
+        <AvatarCropModal
+          imageSrc={cropSrc}
+          shape="round"
+          onSave={handleCropSave}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
+
       {/* Error message */}
       {uploadError && (
-        <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5" style={{ background: "oklch(0.65 0.18 25 / 10%)", border: "1px solid oklch(0.65 0.18 25 / 25%)" }}>
-          <XIcon className="h-3.5 w-3.5 shrink-0" style={{ color: "oklch(0.65 0.18 25)" }} />
-          <span className="text-[11.5px]" style={{ color: "oklch(0.75 0.12 25)" }}>{uploadError}</span>
+        <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5" style={{ background: "oklch(0.52 0.15 24 / 10%)", border: "1px solid oklch(0.52 0.15 24 / 25%)" }}>
+          <XIcon className="h-3.5 w-3.5 shrink-0" style={{ color: "oklch(0.52 0.15 24)" }} />
+          <span className="text-[11.5px]" style={{ color: C.red }}>{uploadError}</span>
         </div>
       )}
 
@@ -362,7 +379,7 @@ function ProfileImageUploader({
       ) : (
         <div className="space-y-2">
           <div className="flex gap-2">
-            <div className="flex-1 flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+            <div className="flex-1 flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
               <input
                 type="url"
                 value={urlDraft}
@@ -388,7 +405,7 @@ function ProfileImageUploader({
               type="button"
               onClick={() => setShowUrlInput(false)}
               className="rounded-xl px-3 shrink-0 transition-colors duration-150"
-              style={{ background: "oklch(1 0 0 / 4%)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 30%)" }}
+              style={{ background: "oklch(1 0 0 / 4%)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 30%)" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 60%)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 30%)"; }}
             >
@@ -502,7 +519,7 @@ function StepCreatorDetails({ data, set, toggleCategory }: {
                 className="px-3.5 py-2 rounded-full text-[12px] font-medium transition-all duration-150"
                 style={{
                   background: selected ? "oklch(1 0 0 / 10%)" : "oklch(1 0 0 / 3%)",
-                  border: `1px solid ${selected ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 9%)"}`,
+                  border: `1px solid ${selected ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 8%)"}`,
                   color: selected ? "oklch(1 0 0 / 88%)" : "oklch(1 0 0 / 40%)",
                 }}
               >
@@ -529,7 +546,7 @@ function StepCreatorDetails({ data, set, toggleCategory }: {
                 className="px-3.5 py-2 rounded-full text-[12px] font-medium transition-all duration-150"
                 style={{
                   background: selected ? "oklch(1 0 0 / 10%)" : "oklch(1 0 0 / 3%)",
-                  border: `1px solid ${selected ? platformColor(p) : "oklch(1 0 0 / 9%)"}`,
+                  border: `1px solid ${selected ? platformColor(p) : "oklch(1 0 0 / 8%)"}`,
                   color: selected ? platformColor(p) : "oklch(1 0 0 / 40%)",
                 }}
               >
@@ -653,7 +670,7 @@ function StepCollaboration({ data, set }: { data: CreatorOnboardingData; set: Se
                 className="px-3.5 py-2 rounded-full text-[12px] font-medium transition-all duration-150"
                 style={{
                   background: selected ? "oklch(1 0 0 / 10%)" : "oklch(1 0 0 / 3%)",
-                  border: `1px solid ${selected ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 9%)"}`,
+                  border: `1px solid ${selected ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 8%)"}`,
                   color: selected ? "oklch(1 0 0 / 88%)" : "oklch(1 0 0 / 40%)",
                 }}
               >
@@ -672,33 +689,88 @@ function StepCollaboration({ data, set }: { data: CreatorOnboardingData; set: Se
 // ─────────────────────────────────────────────────────────────
 
 function StepPortfolio({ data, set }: { data: CreatorOnboardingData; set: SetFn }) {
+  const isBeginner = data.creator_stage === "beginner";
+
+  function toggleBeginner() {
+    set("creator_stage", isBeginner ? "growing" : "beginner");
+  }
+
   return (
     <div className="space-y-5">
-      <div className="rounded-xl px-4 py-3.5 text-[11.5px] leading-relaxed" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 7%)", color: "oklch(1 0 0 / 40%)" }}>
-        Add links to your best work — a post, portfolio site, or any URL that shows what you create.
-      </div>
 
-      <Field label="Featured Link 1" hint="Optional">
-        <Input value={data.featured_link_1} onChange={(v) => set("featured_link_1", v)} placeholder="https://..." prefix="↗" />
-      </Field>
-      <Field label="Featured Link 2" hint="Optional">
-        <Input value={data.featured_link_2} onChange={(v) => set("featured_link_2", v)} placeholder="https://..." prefix="↗" />
-      </Field>
-      <Field label="Featured Link 3" hint="Optional">
-        <Input value={data.featured_link_3} onChange={(v) => set("featured_link_3", v)} placeholder="https://..." prefix="↗" />
-      </Field>
+      {/* ── Just starting out toggle ─────────────────────────────── */}
+      <button
+        type="button"
+        onClick={toggleBeginner}
+        className="w-full flex items-center justify-between rounded-2xl px-5 py-4 text-left transition-all duration-200"
+        style={{
+          background: isBeginner ? "oklch(1 0 0 / 6%)" : "oklch(1 0 0 / 3%)",
+          border: `1px solid ${isBeginner ? "oklch(1 0 0 / 18%)" : "oklch(1 0 0 / 8%)"}`,
+        }}
+      >
+        <div className="flex-1 min-w-0 pr-4">
+          <div className="text-[13.5px] font-semibold" style={{ color: "oklch(1 0 0 / 88%)" }}>
+            Just starting out
+          </div>
+          <div className="text-[11.5px] mt-0.5 leading-relaxed" style={{ color: "oklch(1 0 0 / 42%)" }}>
+            No portfolio yet? That's completely fine. You can add links anytime from your profile.
+          </div>
+        </div>
+        {/* Toggle pill */}
+        <div
+          className="shrink-0 h-6 w-11 rounded-full transition-all duration-200 relative"
+          style={{ background: isBeginner ? "oklch(0.84 0 0)" : "oklch(1 0 0 / 15%)" }}
+        >
+          <div
+            className="absolute top-[3px] h-[18px] w-[18px] rounded-full transition-all duration-200"
+            style={{
+              background: isBeginner ? "oklch(0.06 0 0)" : "oklch(0.55 0 0)",
+              left: isBeginner ? "calc(100% - 21px)" : "3px",
+            }}
+          />
+        </div>
+      </button>
 
-      <Field label="Media Kit URL" hint="Optional — PDF">
-        <Input value={data.media_kit_url} onChange={(v) => set("media_kit_url", v)} placeholder="https://..." prefix="↗" />
-      </Field>
+      {/* ── Beginner state ───────────────────────────────────────── */}
+      {isBeginner ? (
+        <div className="rounded-2xl px-5 py-6 text-center space-y-2" style={{ background: "oklch(1 0 0 / 2%)", border: "1px solid oklch(1 0 0 / 7%)" }}>
+          <div className="text-[14px] font-medium" style={{ color: "oklch(1 0 0 / 70%)" }}>
+            You're all set for this step.
+          </div>
+          <div className="text-[12px] leading-relaxed max-w-xs mx-auto" style={{ color: "oklch(1 0 0 / 35%)" }}>
+            Your profile will show <span style={{ color: "oklch(1 0 0 / 55%)" }}>Emerging Creator</span> — letting businesses know you're building your portfolio. You can add links at any time.
+          </div>
+        </div>
+      ) : (
+        /* ── Portfolio fields ───────────────────────────────────── */
+        <>
+          <div className="rounded-xl px-4 py-3.5 text-[11.5px] leading-relaxed" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 7%)", color: "oklch(1 0 0 / 40%)" }}>
+            Add links to your best work — a post, portfolio site, or any URL that shows what you create.
+          </div>
 
-      <Field label="Previous Collaborations" hint="Optional">
-        <Textarea
-          value={data.previous_collaborations} onChange={(v) => set("previous_collaborations", v)}
-          placeholder="e.g. Nike, Glossier, Airbnb — summer 2024 campaign"
-          maxLength={400}
-        />
-      </Field>
+          <Field label="Featured Link 1" hint="Optional">
+            <Input value={data.featured_link_1} onChange={(v) => set("featured_link_1", v)} placeholder="https://..." prefix="↗" />
+          </Field>
+          <Field label="Featured Link 2" hint="Optional">
+            <Input value={data.featured_link_2} onChange={(v) => set("featured_link_2", v)} placeholder="https://..." prefix="↗" />
+          </Field>
+          <Field label="Featured Link 3" hint="Optional">
+            <Input value={data.featured_link_3} onChange={(v) => set("featured_link_3", v)} placeholder="https://..." prefix="↗" />
+          </Field>
+
+          <Field label="Media Kit URL" hint="Optional — PDF">
+            <Input value={data.media_kit_url} onChange={(v) => set("media_kit_url", v)} placeholder="https://..." prefix="↗" />
+          </Field>
+
+          <Field label="Previous Collaborations" hint="Optional">
+            <Textarea
+              value={data.previous_collaborations} onChange={(v) => set("previous_collaborations", v)}
+              placeholder="e.g. Nike, Glossier, Airbnb — summer 2024 campaign"
+              maxLength={400}
+            />
+          </Field>
+        </>
+      )}
     </div>
   );
 }
@@ -754,7 +826,7 @@ function StepPreview({ data, saving, onPublish, onDraft, isEdit }: {
         <div className="text-[9.5px] uppercase tracking-[0.28em] font-medium mb-3" style={{ color: "oklch(1 0 0 / 28%)" }}>
           How businesses will see your profile
         </div>
-        <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
           <div className="px-5 py-5">
             <div className="flex items-center gap-4 mb-4">
               <div
@@ -795,7 +867,7 @@ function StepPreview({ data, saving, onPublish, onDraft, isEdit }: {
             {(data.niche || data.categories.length > 0) && (
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {data.niche && (
-                  <span className="text-[10px] uppercase tracking-[0.18em] rounded-full px-2.5 py-0.5" style={{ background: "oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 55%)", border: "1px solid oklch(1 0 0 / 10%)" }}>
+                  <span className="text-[10px] uppercase tracking-[0.18em] rounded-full px-2.5 py-0.5" style={{ background: "oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 55%)", border: "1px solid oklch(1 0 0 / 10%)" }}>
                     {data.niche}
                   </span>
                 )}
@@ -824,17 +896,17 @@ function StepPreview({ data, saving, onPublish, onDraft, isEdit }: {
             {(data.accepts_paid || data.accepts_gifted || data.accepts_affiliate) && (
               <div className="flex flex-wrap gap-1.5">
                 {data.accepts_paid && (
-                  <span className="text-[10px] rounded-full px-2.5 py-0.5" style={{ background: "oklch(0.72 0.14 152 / 12%)", color: "oklch(0.72 0.14 152)", border: "1px solid oklch(0.72 0.14 152 / 25%)" }}>
+                  <span className="text-[10px] rounded-full px-2.5 py-0.5" style={{ background: "oklch(1 0 0 / 12%)", color: "oklch(0.84 0 0)", border: "1px solid oklch(1 0 0 / 25%)" }}>
                     Paid
                   </span>
                 )}
                 {data.accepts_gifted && (
-                  <span className="text-[10px] rounded-full px-2.5 py-0.5" style={{ background: "oklch(0.65 0.14 250 / 12%)", color: "oklch(0.65 0.14 250)", border: "1px solid oklch(0.65 0.14 250 / 25%)" }}>
+                  <span className="text-[10px] rounded-full px-2.5 py-0.5" style={{ background: C.blueBg, color: C.aiBlue, border: `1px solid ${C.blueBorder}` }}>
                     Gifted
                   </span>
                 )}
                 {data.accepts_affiliate && (
-                  <span className="text-[10px] rounded-full px-2.5 py-0.5" style={{ background: "oklch(0.78 0.12 60 / 12%)", color: "oklch(0.78 0.12 60)", border: "1px solid oklch(0.78 0.12 60 / 25%)" }}>
+                  <span className="text-[10px] rounded-full px-2.5 py-0.5" style={{ background: C.amberMuted, color: C.amber, border: `1px solid ${C.amberBorder}` }}>
                     Affiliate
                   </span>
                 )}
@@ -863,7 +935,7 @@ function StepPreview({ data, saving, onPublish, onDraft, isEdit }: {
           onClick={onDraft}
           disabled={saving}
           className="w-full h-11 rounded-full text-sm transition-colors duration-150"
-          style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 9%)", color: "oklch(1 0 0 / 45%)" }}
+          style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 8%)", color: "oklch(1 0 0 / 45%)" }}
         >
           Save as Draft
         </button>
@@ -908,7 +980,7 @@ function CreatorOnboardingPage() {
               "audience_location,audience_age_range,audience_gender_split,primary_language," +
               "accepts_paid,accepts_gifted,accepts_affiliate,rate_range,preferred_content_types," +
               "featured_link_1,featured_link_2,featured_link_3,media_kit_url,previous_collaborations," +
-              "status,is_public")
+              "creator_stage,status,is_public")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data: existing }: { data: Record<string, unknown> | null }) => {
@@ -962,6 +1034,7 @@ function CreatorOnboardingPage() {
             accepts_affiliate:       (existing.accepts_affiliate as boolean)     ?? false,
             rate_range:              (existing.rate_range as string)             ?? "",
             preferred_content_types: (existing.preferred_content_types as string[]) ?? [],
+            creator_stage:           (existing.creator_stage as "beginner" | "growing" | "established") ?? "growing",
             featured_link_1:         (existing.featured_link_1 as string)        ?? "",
             featured_link_2:         (existing.featured_link_2 as string)        ?? "",
             featured_link_3:         (existing.featured_link_3 as string)        ?? "",
@@ -1038,6 +1111,7 @@ function CreatorOnboardingPage() {
         accepts_affiliate:       data.accepts_affiliate,
         rate_range:              data.rate_range.trim()              || null,
         preferred_content_types: data.preferred_content_types,
+        creator_stage:           data.creator_stage,
         featured_link_1:         data.featured_link_1.trim()         || null,
         featured_link_2:         data.featured_link_2.trim()         || null,
         featured_link_3:         data.featured_link_3.trim()         || null,
@@ -1066,7 +1140,29 @@ function CreatorOnboardingPage() {
           ? isUpdate ? "Profile updated and live." : "You're live on MRKT! Businesses can now find you."
           : "Draft saved."
       );
-      nav({ to: "/chat" });
+
+      // Broadcast live avatar update so AppShell + other components refresh without reload
+      if (data.profile_image_url) {
+        window.dispatchEvent(new CustomEvent("mrkt:avatar-updated", { detail: { url: data.profile_image_url } }));
+      }
+
+      // First-time publish → trigger AI welcome session in the strategist
+      if (publish && !isUpdate) {
+        const profile = {
+          name:        data.display_name,
+          niche:       data.niche,
+          categories:  data.categories,
+          platforms:   data.platforms,
+          location:    [data.location_city, data.location_country].filter(Boolean).join(", "),
+          audience:    data.audience_location,
+          rate:        data.rate_range,
+          instagram:   data.instagram_handle,
+        };
+        localStorage.setItem("mrkt_creator_welcome_pending", JSON.stringify(profile));
+        nav({ to: "/chat" });
+      } else {
+        nav({ to: "/home" });
+      }
     } catch (e: unknown) {
       // PostgrestError is a plain object { message, code, details, hint } — not
       // an Error instance — so we must check .message directly, not instanceof.
@@ -1121,7 +1217,7 @@ function CreatorOnboardingPage() {
         <div className="h-full transition-all duration-500 ease-out" style={{ width: `${progress}%`, background: "oklch(1 0 0 / 55%)" }} />
       </div>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-2xl mx-auto px-6 py-14">
           <div className="mb-10">
             <div className="text-[10px] uppercase tracking-[0.32em] font-medium mb-4" style={{ color: "oklch(1 0 0 / 28%)" }}>

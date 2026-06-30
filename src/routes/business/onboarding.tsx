@@ -98,7 +98,7 @@ function Input({ value, onChange, placeholder, type = "text", prefix }: {
   value: string; onChange: (v: string) => void; placeholder?: string; type?: string; prefix?: string;
 }) {
   return (
-    <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+    <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
       {prefix && (
         <span className="px-3.5 shrink-0 text-sm select-none" style={{ color: "oklch(1 0 0 / 28%)", borderRight: "1px solid oklch(1 0 0 / 8%)", paddingTop: "0.6875rem", paddingBottom: "0.6875rem" }}>
           {prefix}
@@ -118,7 +118,7 @@ function Textarea({ value, onChange, placeholder, maxLength }: {
   value: string; onChange: (v: string) => void; placeholder?: string; maxLength?: number;
 }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3.5%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
       <textarea
         value={value} onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder} maxLength={maxLength} rows={3}
@@ -141,7 +141,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
       className="px-3.5 py-2 rounded-full text-[12px] font-medium transition-all duration-150"
       style={{
         background: selected ? "oklch(1 0 0 / 10%)" : "oklch(1 0 0 / 3%)",
-        border: `1px solid ${selected ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 9%)"}`,
+        border: `1px solid ${selected ? "oklch(0.84 0 0 / 45%)" : "oklch(1 0 0 / 8%)"}`,
         color: selected ? "oklch(1 0 0 / 88%)" : "oklch(1 0 0 / 40%)",
       }}
     >
@@ -157,7 +157,7 @@ function RadioChip({ label, selected, onClick }: { label: string; selected: bool
       className="flex items-center gap-2.5 w-full rounded-xl px-4 py-3.5 text-left transition-all duration-150"
       style={{
         background: selected ? "oklch(1 0 0 / 5%)" : "oklch(1 0 0 / 2%)",
-        border: `1px solid ${selected ? "oklch(0.84 0 0 / 40%)" : "oklch(1 0 0 / 9%)"}`,
+        border: `1px solid ${selected ? "oklch(0.84 0 0 / 40%)" : "oklch(1 0 0 / 8%)"}`,
       }}
     >
       <div
@@ -362,7 +362,7 @@ function StepGoals({ data, set }: { data: BusinessOnboardingData; set: SetFn }) 
               className="flex items-center gap-3 rounded-xl px-4 py-4 text-left transition-all duration-150"
               style={{
                 background: selected ? "oklch(1 0 0 / 5.5%)" : "oklch(1 0 0 / 2%)",
-                border: `1px solid ${selected ? "oklch(0.84 0 0 / 42%)" : "oklch(1 0 0 / 9%)"}`,
+                border: `1px solid ${selected ? "oklch(0.84 0 0 / 42%)" : "oklch(1 0 0 / 8%)"}`,
               }}
             >
               <div
@@ -503,7 +503,7 @@ function StepPreview({ data, saving, onFinish }: {
         <div className="text-[9.5px] uppercase tracking-[0.28em] font-medium mb-3" style={{ color: "oklch(1 0 0 / 28%)" }}>
           Your business profile
         </div>
-        <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
           {/* Header */}
           <div className="px-5 pt-5 pb-4" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)" }}>
             <div className="flex items-start gap-4">
@@ -519,7 +519,7 @@ function StepPreview({ data, saving, onFinish }: {
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
                   {data.industry && (
-                    <span className="text-[10px] uppercase tracking-[0.18em] rounded-full px-2.5 py-0.5" style={{ background: "oklch(1 0 0 / 7%)", color: "oklch(1 0 0 / 50%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+                    <span className="text-[10px] uppercase tracking-[0.18em] rounded-full px-2.5 py-0.5" style={{ background: "oklch(1 0 0 / 7%)", color: "oklch(1 0 0 / 50%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
                       {data.industry}
                     </span>
                   )}
@@ -546,7 +546,7 @@ function StepPreview({ data, saving, onFinish }: {
             {data.preferred_platforms.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {data.preferred_platforms.map((p) => (
-                  <span key={p} className="text-[10px] font-medium rounded-full px-2.5 py-0.5" style={{ background: "oklch(1 0 0 / 6%)", color: "oklch(1 0 0 / 45%)", border: "1px solid oklch(1 0 0 / 9%)" }}>
+                  <span key={p} className="text-[10px] font-medium rounded-full px-2.5 py-0.5" style={{ background: "oklch(1 0 0 / 6%)", color: "oklch(1 0 0 / 45%)", border: "1px solid oklch(1 0 0 / 8%)" }}>
                     {p}
                   </span>
                 ))}
@@ -659,7 +659,7 @@ function BusinessOnboardingPage() {
           profile?.onboarding_path === "business_marketing";
         if (!isBiz) {
           // Creators and anonymous users should not be here
-          nav({ to: "/chat" });
+          nav({ to: "/home" });
           return;
         }
         setCheckingAuth(false);

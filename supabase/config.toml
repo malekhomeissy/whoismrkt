@@ -1,4 +1,19 @@
 project_id = "zkleghcsduntwonyiynb"
 
+[auth]
+site_url = "https://usemrkt.app"
+additional_redirect_urls = ["https://usemrkt.app/**", "https://www.usemrkt.app/**", "https://usemrkt.app/auth/callback"]
+# SECURITY: localhost redirect intentionally removed. Never re-add to production config.
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [functions.chat]
 verify_jwt = true
+
+[functions.stripe-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false

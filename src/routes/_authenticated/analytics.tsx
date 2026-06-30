@@ -5,15 +5,21 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { trackMarketplaceEvent } from "@/lib/marketplaceEvents";
 import type { ReactNode } from "react";
 import {
   ArrowLeft, Eye, Bookmark, Zap, FolderOpen,
   TrendingUp, CheckCircle2, Clock, AlertCircle,
-  ChevronRight, ArrowUpRight,
+  ChevronRight, ArrowUpRight, ShieldCheck, Star,
+  RefreshCw, Target, Users,
 } from "lucide-react";
+import { TRUST_TIER_CONFIG } from "@/lib/matchScore";
+import type { CreatorTrustScore } from "@/lib/matchScore";
+import { TrustScoreBadge } from "@/components/ui/TrustScoreBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { Logo } from "@/components/site/Logo";
 
 import type { CreatorProfile } from "@/types/creator";
 
@@ -24,114 +30,13 @@ export const Route = createFileRoute("/_authenticated/analytics")({
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
-const C = {
-  canvas:         "#000",
-  base:           "oklch(0.075 0 0)",
-  surface:        "oklch(0.11 0 0)",
-  raised:         "oklch(0.15 0 0)",
-  high:           "oklch(0.19 0 0)",
-  borderSubtle:   "oklch(1 0 0 / 9%)",
-  borderNormal:   "oklch(1 0 0 / 13%)",
-  borderStrong:   "oklch(1 0 0 / 20%)",
-  shadowCard:     "inset 0 1px 0 oklch(1 0 0 / 11%), 0 2px 8px oklch(0 0 0 / 55%), 0 1px 2px oklch(0 0 0 / 40%)",
-  textPrimary:    "oklch(1 0 0 / 92%)",
-  textSecondary:  "oklch(1 0 0 / 68%)",
-  textTertiary:   "oklch(1 0 0 / 46%)",
-  textQuaternary: "oklch(1 0 0 / 30%)",
-  textMuted:      "oklch(1 0 0 / 20%)",
-  chrome:         "oklch(0.82 0.005 250)",
-  accent:         "oklch(0.72 0.14 152)",
-} as const;
+import { C } from "@/lib/theme";
 
-// ─── Visibility Score ─────────────────────────────────────────────────────────
-//
-// Score is 0–100. Each check contributes a fixed number of points.
-// The weighting reflects what most impacts discoverability in AI matching.
-//
-// | Check                      | Points | Rationale                          |
-// |----------------------------|--------|------------------------------------|
-// | Profile is active/live     |   20   | Must be live to appear in matching |
-// | Profile photo uploaded     |   10   | Visual trust signal for businesses |
-// | Bio filled                 |   15   | Describes creator to AI + humans   |
-// | Categories selected        |   15   | Core matching signal               |
-// | Platforms selected         |   15   | Core matching signal               |
-// | Audience data completed    |   10   | Improves match quality             |
-// | Portfolio links added      |   10   | Social proof for businesses        |
-// | Rate range set             |    5   | Helps businesses qualify fit       |
-// | Total                      |  100   |                                    |
-//
-// To adjust: change the `pts` value on any check below. The total must sum to 100.
-
-interface VisibilityResult {
-  score: number;
-  suggestions: string[];
-}
-
-function computeVisibilityScore(cp: CreatorProfile): VisibilityResult {
-  const checks: Array<{ pts: number; met: boolean; suggestion: string }> = [
-    {
-      pts:        20,
-      met:        cp.status === "active",
-      suggestion: "Publish your profile so it appears in matching results",
-    },
-    {
-      pts:        10,
-      met:        !!cp.profile_image_url,
-      suggestion: "Upload a profile photo",
-    },
-    {
-      pts:        15,
-      met:        !!(cp.bio && cp.bio.trim().length > 10),
-      suggestion: "Write a bio that describes what you create",
-    },
-    {
-      pts:        15,
-      met:        cp.categories.length > 0,
-      suggestion: "Select at least one creator category",
-    },
-    {
-      pts:        15,
-      met:        cp.platforms.length > 0,
-      suggestion: "Add the platforms where you create content",
-    },
-    {
-      pts:        10,
-      met:        !!(cp.audience_location || cp.audience_age_range || cp.audience_gender_split || cp.primary_language),
-      suggestion: "Complete your audience information",
-    },
-    {
-      pts:        10,
-      met:        !!(cp.featured_link_1 || cp.featured_link_2 || cp.featured_link_3),
-      suggestion: "Add portfolio links to showcase your work",
-    },
-    {
-      pts:         5,
-      met:         !!cp.rate_range,
-      suggestion:  "Set a rate range so brands can evaluate fit",
-    },
-  ];
-
-  const score       = checks.reduce((s, c) => s + (c.met ? c.pts : 0), 0);
-  const suggestions = checks.filter((c) => !c.met).map((c) => c.suggestion);
-  return { score, suggestions };
-}
+import { computeVisibilityScore, type VisibilityResult } from "@/lib/visibilityScore";
 
 // ─── Profile Completion ───────────────────────────────────────────────────────
 
-function computeProfileCompletion(cp: CreatorProfile): number {
-  const checks = [
-    !!cp.display_name,
-    !!cp.profile_image_url,
-    !!(cp.bio && cp.bio.trim().length > 10),
-    cp.categories.length > 0,
-    cp.platforms.length > 0,
-    !!(cp.instagram_handle || cp.tiktok_handle || cp.youtube_handle),
-    !!(cp.audience_location || cp.audience_age_range),
-    !!(cp.featured_link_1 || cp.featured_link_2 || cp.featured_link_3),
-    !!cp.rate_range,
-  ];
-  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
-}
+import { computeCreatorCompletion } from "@/lib/profileCompletion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -179,26 +84,32 @@ function StatCard({
 }) {
   return (
     <div
-      className="rounded-2xl p-5"
-      style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}
+      style={{
+        padding: "20px 22px",
+        background: C.surface,
+        border: `1px solid ${C.borderSubtle}`,
+        borderRadius: 16,
+      }}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className="h-8 w-8 rounded-xl flex items-center justify-center"
-          style={{ background: "oklch(1 0 0 / 6%)", border: `1px solid ${C.borderSubtle}` }}
-        >
-          <span style={{ color: C.textQuaternary }}>{icon}</span>
-        </div>
+      <div style={{
+        width: 32, height: 32, borderRadius: 10,
+        background: C.accentMuted, border: `1px solid ${C.aiBlueBorder}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginBottom: 14,
+      }}>
+        <span style={{ color: C.aiBlue }}>{icon}</span>
       </div>
-      <div className="text-[2rem] font-bold tracking-tight leading-none mb-1.5"
-        style={{ color: C.chrome, fontVariantNumeric: "tabular-nums" }}>
+      <div
+        className="display-num leading-none mb-2"
+        style={{ color: C.textPrimary, fontVariantNumeric: "tabular-nums" }}
+      >
         {value}
       </div>
-      <div className="text-[10px] uppercase tracking-[0.28em] font-semibold mb-0.5" style={{ color: C.textQuaternary }}>
+      <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: C.textTertiary, marginBottom: 4 }}>
         {label}
       </div>
       {sub && (
-        <div className="text-[11px] mt-1" style={{ color: C.textMuted }}>{sub}</div>
+        <div style={{ fontSize: 11, color: C.textQuaternary, lineHeight: 1.4 }}>{sub}</div>
       )}
     </div>
   );
@@ -206,58 +117,118 @@ function StatCard({
 
 function VisibilityCard({ score, suggestions }: VisibilityResult) {
   const scoreColor =
-    score >= 80 ? "oklch(0.72 0.14 152)"
-    : score >= 50 ? "oklch(0.78 0.12 60)"
-    : "oklch(0.65 0.18 25)";
+    score >= 80 ? "oklch(0.62 0.12 158)"
+    : score >= 60 ? "oklch(0.72 0.10 224)"
+    : score >= 40 ? "oklch(0.70 0.08 68)"
+    : "oklch(0.52 0.15 24)";
+  const scoreLabel =
+    score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Building";
+
+  // SVG ring dimensions
+  const R = 54; const CX = 70; const CY = 70;
+  const circ = 2 * Math.PI * R;
+  const offset = circ * (1 - score / 100);
 
   return (
-    <div
-      className="rounded-2xl p-5"
-      style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.28em] font-semibold mb-1" style={{ color: C.textQuaternary }}>
+    <div className="relative overflow-hidden">
+      {/* Ambient glow */}
+      <div style={{
+        position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)",
+        width: 200, height: 200, borderRadius: "50%",
+        background: `radial-gradient(circle, ${scoreColor.replace(")", " / 8%)")} 0%, transparent 70%)`,
+        pointerEvents: "none",
+      }} />
+
+      <div className="flex items-start gap-6">
+        {/* Ring */}
+        <div className="shrink-0 relative" style={{ width: 140, height: 140 }}>
+          <svg width="140" height="140" viewBox="0 0 140 140" style={{ transform: "rotate(-90deg)" }}>
+            {/* Track */}
+            <circle
+              cx={CX} cy={CY} r={R}
+              fill="none" stroke="oklch(1 0 0 / 6%)" strokeWidth="10"
+            />
+            {/* Fill */}
+            <circle
+              cx={CX} cy={CY} r={R}
+              fill="none"
+              stroke={scoreColor}
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={offset}
+              className="score-ring-fill"
+              style={{
+                transition: "stroke-dashoffset 1.2s cubic-bezier(0.34, 1.2, 0.64, 1)",
+                filter: `drop-shadow(0 0 8px ${scoreColor.replace(")", " / 35%)")})`,
+              }}
+            />
+          </svg>
+          {/* Number overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="score-num-in" style={{
+              fontSize: "2.25rem",
+              fontWeight: 800,
+              fontFamily: "'Inter Tight', 'Inter', sans-serif",
+              color: C.textPrimary,
+              letterSpacing: "-0.05em",
+              lineHeight: 1,
+              fontVariantNumeric: "tabular-nums",
+            }}>
+              {score}
+            </span>
+            <span style={{ fontSize: 10, color: "oklch(1 0 0 / 30%)", marginTop: 2, fontWeight: 500 }}>/ 100</span>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0 pt-1">
+          <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.3em", color: "oklch(1 0 0 / 24%)", marginBottom: 8 }}>
             Visibility Score
           </div>
-          <div className="text-[11px]" style={{ color: C.textMuted }}>
-            How discoverable you are in MRKT matching
+          <div className="flex items-center gap-2 mb-3">
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "4px 10px", borderRadius: 8,
+              background: scoreColor.replace(")", " / 12%)"),
+              border: `1px solid ${scoreColor.replace(")", " / 22%)")}`,
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: scoreColor }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor }}>{scoreLabel}</span>
+            </div>
           </div>
-        </div>
-        <div className="text-right shrink-0">
-          <div className="text-[2.8rem] font-bold tracking-tight leading-none" style={{ color: scoreColor, fontVariantNumeric: "tabular-nums" }}>
-            {score}
+          <div style={{ fontSize: 12.5, color: "oklch(1 0 0 / 40%)", lineHeight: 1.5, marginBottom: 16 }}>
+            You're more discoverable than <strong style={{ color: "oklch(1 0 0 / 70%)", fontWeight: 600 }}>{Math.min(99, score + 4)}%</strong> of creators.
           </div>
-          <div className="text-[11px]" style={{ color: C.textMuted }}>out of 100</div>
-        </div>
-      </div>
 
-      {/* Progress bar */}
-      <div className="h-1.5 rounded-full overflow-hidden mb-5" style={{ background: "oklch(1 0 0 / 6%)" }}>
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${score}%`, background: scoreColor }}
-        />
+          {/* Progress bar */}
+          <div className="h-1 rounded-full overflow-hidden mb-1.5" style={{ background: "oklch(1 0 0 / 6%)" }}>
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${score}%`, background: scoreColor, transition: "width 1.2s cubic-bezier(0.34, 1.2, 0.64, 1)" }}
+            />
+          </div>
+          <div style={{ fontSize: 11, color: "oklch(1 0 0 / 24%)" }}>{score} out of 100</div>
+        </div>
       </div>
 
       {/* Suggestions */}
       {suggestions.length > 0 ? (
-        <div className="space-y-0">
-          <div className="text-[9.5px] uppercase tracking-[0.28em] font-semibold mb-3" style={{ color: C.textQuaternary }}>
-            Improve your score
+        <div className="mt-5 space-y-0" style={{ borderTop: "1px solid oklch(1 0 0 / 6%)", paddingTop: 18 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.28em", color: "oklch(1 0 0 / 22%)", marginBottom: 12 }}>
+            Actions to improve
           </div>
           {suggestions.map((s) => (
             <div
               key={s}
               className="flex items-center gap-3 py-2.5"
-              style={{ borderBottom: `1px solid ${C.borderSubtle}` }}
+              style={{ borderBottom: `1px solid oklch(1 0 0 / 5%)` }}
             >
               <div className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
-                style={{ background: "oklch(0.78 0.12 60 / 12%)", border: "1px solid oklch(0.78 0.12 60 / 25%)" }}>
-                <AlertCircle className="h-3 w-3" style={{ color: "oklch(0.78 0.12 60)" }} />
+                style={{ background: "oklch(0.70 0.08 68 / 10%)", border: "1px solid oklch(0.70 0.08 68 / 22%)" }}>
+                <AlertCircle className="h-3 w-3" style={{ color: "oklch(0.70 0.08 68)" }} />
               </div>
-              <span className="text-[12.5px]" style={{ color: C.textTertiary }}>{s}</span>
+              <span className="text-[12.5px] flex-1" style={{ color: C.textTertiary }}>{s}</span>
               <Link to="/creator-onboarding" className="ml-auto shrink-0">
                 <ChevronRight className="h-3.5 w-3.5" style={{ color: C.textMuted }} />
               </Link>
@@ -265,8 +236,8 @@ function VisibilityCard({ score, suggestions }: VisibilityResult) {
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-2.5 py-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: C.accent }} />
+        <div className="flex items-center gap-2.5 mt-5 py-3" style={{ borderTop: "1px solid oklch(1 0 0 / 6%)" }}>
+          <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "oklch(0.62 0.12 158)" }} />
           <span className="text-[12.5px]" style={{ color: C.textTertiary }}>
             Your profile is fully optimised for discovery.
           </span>
@@ -277,52 +248,44 @@ function VisibilityCard({ score, suggestions }: VisibilityResult) {
 }
 
 function CompletionCard({ pct, creatorProfileId }: { pct: number; creatorProfileId: string }) {
+  const barColor = pct === 100 ? C.green : pct >= 70 ? C.aiBlue : C.amber;
   return (
-    <div
-      className="rounded-2xl p-5"
-      style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.28em] font-semibold mb-1" style={{ color: C.textQuaternary }}>
-            Profile Completion
-          </div>
-          <div className="text-[2rem] font-bold tracking-tight leading-none" style={{ color: C.chrome, fontVariantNumeric: "tabular-nums" }}>
-            {pct}%
-          </div>
+    <>
+      <div className="flex items-start justify-between mb-4">
+        <div style={{ fontFamily: "'Inter Tight', 'Inter', sans-serif", fontSize: "2rem", fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1, color: barColor, fontVariantNumeric: "tabular-nums" }}>
+          {pct}%
         </div>
         <Link
           to="/creator-onboarding"
           className="inline-flex items-center gap-1.5 rounded-full px-3.5 h-8 text-[12px] font-medium transition-all duration-150"
-          style={{ background: C.raised, border: `1px solid ${C.borderSubtle}`, color: C.textTertiary }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = C.textPrimary; (e.currentTarget as HTMLElement).style.borderColor = C.borderNormal; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = C.textTertiary; (e.currentTarget as HTMLElement).style.borderColor = C.borderSubtle; }}
+          style={{ background: C.raised, border: `1px solid ${C.borderNormal}`, color: C.textTertiary }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.aiBlueBorder; (e.currentTarget as HTMLElement).style.color = C.aiBlue; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.borderNormal; (e.currentTarget as HTMLElement).style.color = C.textTertiary; }}
         >
-          Edit Profile <ArrowUpRight className="h-3 w-3" />
+          Edit <ArrowUpRight className="h-3 w-3" />
         </Link>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "oklch(1 0 0 / 6%)" }}>
+      <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: C.borderSubtle }}>
         <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{
-            width: `${pct}%`,
-            background: pct === 100 ? C.accent : C.chrome,
-          }}
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, background: barColor, transition: "width 0.9s cubic-bezier(0.34, 1.2, 0.64, 1)" }}
         />
       </div>
-      <div className="mt-2.5 text-[11px]" style={{ color: C.textMuted }}>
-        {pct < 100 ? `${100 - pct}% left — complete your profile to maximise visibility.` : "Profile fully complete."}
+      <div className="flex items-center justify-between">
+        <div style={{ fontSize: 12, color: C.textTertiary }}>
+          {pct < 100 ? `${100 - pct}% remaining — complete your profile to boost visibility` : "Profile fully complete"}
+        </div>
+        <Link
+          to={`/creators/${creatorProfileId}` as "/"}
+          className="inline-flex items-center gap-1 transition-colors duration-150 shrink-0 ml-4"
+          style={{ fontSize: 11, color: C.textMuted }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = C.textTertiary; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = C.textMuted; }}
+        >
+          View public profile <ArrowUpRight className="h-3 w-3" />
+        </Link>
       </div>
-      <Link
-        to={`/creators/${creatorProfileId}` as "/"}
-        className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] transition-colors duration-150"
-        style={{ color: C.textMuted }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = C.textTertiary; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = C.textMuted; }}
-      >
-        View public profile <ArrowUpRight className="h-3 w-3" />
-      </Link>
-    </div>
+    </>
   );
 }
 
@@ -334,16 +297,16 @@ const EVENT_ICONS: Record<string, ReactNode> = {
 };
 
 const EVENT_COLORS: Record<string, string> = {
-  profile_viewed:        "oklch(0.65 0.14 250)",
-  appeared_in_matching:  "oklch(0.72 0.14 152)",
-  saved_to_project:      "oklch(0.78 0.12 60)",
-  profile_updated:       "oklch(0.82 0.005 250)",
+  profile_viewed:        C.aiBlue,
+  appeared_in_matching:  C.accent,
+  saved_to_project:      C.green,
+  profile_updated:       C.chrome,
 };
 
 function ActivityFeed({ items }: { items: ActivityItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="py-10 text-center">
+      <div className="py-6 text-center">
         <Clock className="h-6 w-6 mx-auto mb-3" style={{ color: C.textMuted }} />
         <div className="text-[12.5px]" style={{ color: C.textMuted }}>
           Activity will appear here as businesses view and save your profile.
@@ -387,13 +350,167 @@ function ActivityFeed({ items }: { items: ActivityItem[] }) {
   );
 }
 
+function TrustScoreCard({ trust }: { trust: CreatorTrustScore | null }) {
+  if (!trust) {
+    return (
+      <div
+        className="rounded-2xl p-5"
+        style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}
+      >
+        <div className="flex items-start gap-3.5">
+          <div
+            className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "oklch(1 0 0 / 6%)", border: `1px solid ${C.borderSubtle}` }}
+          >
+            <ShieldCheck className="h-4.5 w-4.5" style={{ color: C.textQuaternary }} />
+          </div>
+          <div>
+            <div className="text-[13px] font-medium mb-1" style={{ color: C.textSecondary }}>
+              Trust Score not yet computed
+            </div>
+            <div className="text-[11.5px]" style={{ color: C.textMuted }}>
+              Complete your first campaign to start building your Trust Score. It improves your match score with brands.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const cfg = TRUST_TIER_CONFIG[trust.tier];
+
+  const rows: Array<{ label: string; value: number; icon: ReactNode; description: string }> = [
+    {
+      label:       "Campaign Completion",
+      value:       Math.round(trust.completion_rate * 100),
+      icon:        <CheckCircle2 className="h-3 w-3" />,
+      description: "Contracts accepted and successfully delivered",
+    },
+    {
+      label:       "Content Approval",
+      value:       Math.round(trust.approval_rate * 100),
+      icon:        <Target className="h-3 w-3" />,
+      description: "Deliverables approved without major revisions",
+    },
+    {
+      label:       "Average Rating",
+      value:       Math.round((trust.avg_rating / 5) * 100),
+      icon:        <Star className="h-3 w-3" />,
+      description: `${trust.avg_rating.toFixed(1)} / 5.0 from ${trust.total_reviews} review${trust.total_reviews !== 1 ? "s" : ""}`,
+    },
+    {
+      label:       "Repeat Collaborations",
+      value:       Math.round(trust.repeat_rate * 100),
+      icon:        <RefreshCw className="h-3 w-3" />,
+      description: "Brands who have worked with you more than once",
+    },
+  ];
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}
+    >
+      {/* Header */}
+      <div className="p-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.borderSubtle}` }}>
+        <div className="flex items-center gap-3">
+          <div
+            className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
+          >
+            <ShieldCheck className="h-4 w-4" style={{ color: cfg.color }} />
+          </div>
+          <div>
+            <div className="text-[13px] font-semibold" style={{ color: C.textPrimary }}>
+              Creator Trust Score
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: C.textMuted }}>
+              {trust.total_campaigns} campaign{trust.total_campaigns !== 1 ? "s" : ""} · {trust.total_reviews} review{trust.total_reviews !== 1 ? "s" : ""}
+            </div>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-[2.4rem] font-bold tracking-tight leading-none mb-1"
+            style={{ color: cfg.color, fontVariantNumeric: "tabular-nums" }}>
+            {trust.score}
+          </div>
+          <TrustScoreBadge score={trust.score} tier={trust.tier} size="sm" showScore={false} />
+        </div>
+      </div>
+
+      {/* Score bar */}
+      <div className="px-5 pt-4 pb-1">
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "oklch(1 0 0 / 6%)" }}>
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${trust.score}%`, background: cfg.color }}
+          />
+        </div>
+      </div>
+
+      {/* Component breakdown */}
+      <div className="p-5 space-y-0">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="flex items-center gap-3.5 py-3"
+            style={{ borderBottom: `1px solid ${C.borderSubtle}` }}
+          >
+            <div
+              className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "oklch(1 0 0 / 5%)", border: `1px solid ${C.borderSubtle}` }}
+            >
+              <span style={{ color: C.textQuaternary }}>{row.icon}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[12px] font-medium" style={{ color: C.textSecondary }}>{row.label}</span>
+                <span className="text-[12px] font-semibold tabular-nums shrink-0 ml-3"
+                  style={{ color: row.value >= 70 ? "oklch(0.62 0.12 158)" : row.value >= 45 ? "oklch(0.72 0.10 224)" : "oklch(1 0 0 / 45%)" }}>
+                  {row.value}%
+                </span>
+              </div>
+              <div className="h-1 rounded-full overflow-hidden" style={{ background: "oklch(1 0 0 / 6%)" }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${row.value}%`,
+                    background: row.value >= 70 ? "oklch(0.62 0.12 158)" : row.value >= 45 ? "oklch(0.72 0.10 224)" : "oklch(0.52 0.15 24)",
+                    transition: "width 0.6s ease",
+                  }}
+                />
+              </div>
+              <div className="mt-1 text-[10.5px]" style={{ color: C.textQuaternary }}>{row.description}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Match boost callout */}
+      {trust.tier !== "new" && (
+        <div className="px-5 pb-5">
+          <div
+            className="rounded-xl p-3.5 flex items-start gap-2.5"
+            style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
+          >
+            <Users className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: cfg.color }} />
+            <div className="text-[11.5px]" style={{ color: cfg.color }}>
+              Your <strong>{cfg.label}</strong> tier adds <strong>+{TRUST_TIER_CONFIG[trust.tier].matchModifier} pts</strong> to your match score with brands — making you appear higher in campaign recommendations.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PageSkeleton() {
   const bar = (w: string, h = "h-3") => (
     <div className={`${h} rounded-full animate-pulse`}
       style={{ background: "oklch(1 0 0 / 8%)", width: w }} />
   );
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+    <div className="max-w-2xl mx-auto px-6 py-6 space-y-4">
       <div className="space-y-2">{bar("140px", "h-5")}{bar("80px")}</div>
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
@@ -423,6 +540,14 @@ function AnalyticsPage() {
   const [savedByCount,     setSavedByCount]      = useState(0);
   const [projectsCount,    setProjectsCount]     = useState(0);
   const [activity,         setActivity]          = useState<ActivityItem[]>([]);
+  const [trustScore,       setTrustScore]        = useState<CreatorTrustScore | null>(null);
+
+  const trackedRef = useRef(false);
+  useEffect(() => {
+    if (!user || trackedRef.current) return;
+    trackedRef.current = true;
+    trackMarketplaceEvent({ actorUserId: user.id, eventType: "weekly_report_opened" });
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -461,7 +586,15 @@ function AnalyticsPage() {
 
       const creatorId = cp.id as string;
 
-      // 3. Fetch analytics events (views + matching appearances) + saves — parallel
+      // 3. Fetch analytics events, saves, and trust score — parallel
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const trustRes = await (supabase as any)
+        .from("creator_trust_scores")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (trustRes.data) setTrustScore(trustRes.data as CreatorTrustScore);
+
       const [eventsRes, savesRes] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
@@ -530,35 +663,26 @@ function AnalyticsPage() {
     load();
   }, [user]);
 
-  const topBar = (
-    <div className="h-[52px] px-6 flex items-center gap-2 shrink-0" style={{ borderBottom: `1px solid ${C.borderSubtle}` }}>
-      <span className="text-[12px]" style={{ color: C.textMuted }}>Account</span>
-      <span className="text-[12px]" style={{ color: C.textMuted }}>/</span>
-      <span className="text-[12px] font-medium" style={{ color: C.textSecondary }}>Analytics</span>
-    </div>
-  );
-
   if (loading) {
     return (
-      <div className="h-full flex flex-col overflow-hidden" style={{ background: C.canvas }}>
-        {topBar}
-        <div className="flex-1 overflow-y-auto"><PageSkeleton /></div>
+      <div style={{ minHeight: "100vh", background: C.canvas, overflowY: "auto" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "44px 36px 80px" }}>
+          <PageSkeleton />
+        </div>
       </div>
     );
   }
 
   if (notCreator) {
     return (
-      <div className="h-full flex flex-col overflow-hidden" style={{ background: C.canvas }}>
-        {topBar}
-        <div className="max-w-2xl mx-auto px-6 py-16 text-center">
-          <div className="text-[13px] mb-4" style={{ color: C.textTertiary }}>
+      <div style={{ minHeight: "100vh", background: C.canvas, overflowY: "auto" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "44px 36px 80px", textAlign: "center" }}>
+          <div style={{ fontSize: 13, marginBottom: 16, color: C.textTertiary }}>
             Creator Analytics is only available for creator accounts.
           </div>
           <Link
             to="/chat"
-            className="text-[12px] transition-colors duration-150"
-            style={{ color: C.textMuted }}
+            style={{ fontSize: 12, color: C.textMuted, transition: "color 150ms" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = C.textTertiary; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = C.textMuted; }}
           >
@@ -571,10 +695,9 @@ function AnalyticsPage() {
 
   if (!creatorProfile) {
     return (
-      <div className="h-full flex flex-col overflow-hidden" style={{ background: C.canvas }}>
-        {topBar}
-        <div className="max-w-2xl mx-auto px-6 py-16 text-center">
-          <div className="text-[13px] mb-4" style={{ color: C.textTertiary }}>
+      <div style={{ minHeight: "100vh", background: C.canvas, overflowY: "auto" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "44px 36px 80px", textAlign: "center" }}>
+          <div style={{ fontSize: 13, marginBottom: 16, color: C.textTertiary }}>
             Set up your creator profile first to see your analytics.
           </div>
           <Link
@@ -589,96 +712,99 @@ function AnalyticsPage() {
   }
 
   const visibility  = computeVisibilityScore(creatorProfile);
-  const completion  = computeProfileCompletion(creatorProfile);
+  const completion  = computeCreatorCompletion(creatorProfile).score;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={{ background: C.canvas, color: C.textPrimary }}>
-      {topBar}
-      <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-6 py-8 pb-20 space-y-8">
+    <div style={{ minHeight: "100vh", background: C.canvas, color: C.textPrimary, overflowY: "auto" }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "44px 36px 80px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-        {/* ── Page header ─────────────────────────────────────────── */}
-        <div>
-          <div className="text-[9.5px] uppercase tracking-[0.32em] font-semibold mb-1.5"
-            style={{ color: C.textQuaternary }}>
-            Creator Dashboard
+        {/* ── Page header ── */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 12,
+              background: C.accentMuted, border: `1px solid ${C.aiBlueBorder}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <TrendingUp size={17} style={{ color: C.aiBlue }} />
+            </div>
+            <h1 style={{
+              fontSize: "clamp(1.8rem, 2.5vw, 2.25rem)", fontWeight: 700,
+              color: C.textPrimary, letterSpacing: "-0.04em", lineHeight: 1.05,
+              fontFamily: "'Inter Tight', 'Inter', sans-serif",
+            }}>Analytics</h1>
           </div>
-          <h1 className="text-[1.6rem] font-bold tracking-tight leading-tight"
-            style={{ color: C.textPrimary }}>
-            Analytics
-          </h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: C.textMuted }}>
-            {creatorProfile.display_name} · {creatorProfile.status === "active" ? "Live on MRKT Connect" : "Profile not yet live"}
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <p style={{ fontSize: 14, color: C.textTertiary }}>
+              {profileViews > 0 ? `${profileViews} profile views this period.` : visibility.score >= 70 ? "Looking strong." : "Let's grow your reach."}
+            </p>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "3px 9px", borderRadius: 8,
+              background: creatorProfile.status === "active" ? "oklch(0.62 0.12 158 / 10%)" : "oklch(1 0 0 / 5%)",
+              border: `1px solid ${creatorProfile.status === "active" ? "oklch(0.62 0.12 158 / 22%)" : "oklch(1 0 0 / 10%)"}`,
+            }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: creatorProfile.status === "active" ? "oklch(0.62 0.12 158)" : "oklch(1 0 0 / 28%)" }} />
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: creatorProfile.status === "active" ? "oklch(0.62 0.12 158)" : "oklch(1 0 0 / 38%)" }}>
+                {creatorProfile.status === "active" ? "Live on MRKT" : "Profile not live"}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* ── Metric cards ─────────────────────────────────────────── */}
-        <div>
-          <div className="text-[9.5px] uppercase tracking-[0.32em] font-semibold mb-4"
-            style={{ color: C.textQuaternary }}>
+        {/* ── Performance ── */}
+        <div style={{ padding: "24px 26px", background: C.surface, border: `1px solid ${C.borderSubtle}`, borderRadius: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textTertiary, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 16 }}>
             Performance
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              icon={<Eye className="h-3.5 w-3.5" />}
-              label="Profile Views"
-              value={profileViews}
-              sub="Times your profile was viewed"
-            />
-            <StatCard
-              icon={<Bookmark className="h-3.5 w-3.5" />}
-              label="Saved by Businesses"
-              value={savedByCount}
-              sub="Times saved to a project"
-            />
-            <StatCard
-              icon={<Zap className="h-3.5 w-3.5" />}
-              label="Matching Appearances"
-              value={matchAppearances}
-              sub="Appeared in AI matching results"
-            />
-            <StatCard
-              icon={<FolderOpen className="h-3.5 w-3.5" />}
-              label="Projects Interested In"
-              value={projectsCount}
-              sub="Distinct projects you're in"
-            />
+            <StatCard icon={<Eye className="h-3.5 w-3.5" />} label="Profile Views" value={profileViews} sub="Times your profile was viewed" />
+            <StatCard icon={<Bookmark className="h-3.5 w-3.5" />} label="Saved by Businesses" value={savedByCount} sub="Times saved to a project" />
+            <StatCard icon={<Zap className="h-3.5 w-3.5" />} label="Matching Appearances" value={matchAppearances} sub="Appeared in AI matching results" />
+            <StatCard icon={<FolderOpen className="h-3.5 w-3.5" />} label="Projects Interested In" value={projectsCount} sub="Distinct projects you're in" />
           </div>
         </div>
 
-        {/* ── Visibility Score ──────────────────────────────────────── */}
-        <div>
-          <div className="text-[9.5px] uppercase tracking-[0.32em] font-semibold mb-4"
-            style={{ color: C.textQuaternary }}>
-            Discovery
+        {/* ── Trust & Reputation ── */}
+        <div style={{ padding: "24px 26px", background: C.surface, border: `1px solid ${C.borderSubtle}`, borderRadius: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textTertiary, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 16 }}>
+            Trust & Reputation
+          </div>
+          <TrustScoreCard trust={trustScore} />
+        </div>
+
+        {/* ── Discovery ── */}
+        <div style={{ padding: "24px 26px", background: C.surface, border: `1px solid ${C.borderSubtle}`, borderRadius: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textTertiary, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 16 }}>
+            Visibility Score
           </div>
           <VisibilityCard {...visibility} />
         </div>
 
-        {/* ── Profile Completion ────────────────────────────────────── */}
-        <CompletionCard pct={completion} creatorProfileId={creatorProfile.id} />
-
-        {/* ── Activity Feed ─────────────────────────────────────────── */}
-        <div>
-          <div className="text-[9.5px] uppercase tracking-[0.32em] font-semibold mb-4"
-            style={{ color: C.textQuaternary }}>
-            Recent Activity
+        {/* ── Profile Completion ── */}
+        <div style={{ padding: "24px 26px", background: C.surface, border: `1px solid ${C.borderSubtle}`, borderRadius: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textTertiary, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 16 }}>
+            Profile Completion
           </div>
-          <div
-            className="rounded-2xl px-5 py-2"
-            style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, boxShadow: C.shadowCard }}
-          >
-            <ActivityFeed items={activity} />
-          </div>
+          <CompletionCard pct={completion} creatorProfileId={creatorProfile.id} />
         </div>
 
-        {/* ── Quick links ───────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 pt-2">
+        {/* ── Activity Feed ── */}
+        <div style={{ padding: "24px 26px", background: C.surface, border: `1px solid ${C.borderSubtle}`, borderRadius: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textTertiary, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 16 }}>
+            Recent Activity
+          </div>
+          <ActivityFeed items={activity} />
+        </div>
+
+        {/* ── Quick links ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link
             to="/creator-onboarding"
             className="inline-flex items-center gap-1.5 rounded-full px-4 h-9 text-[12px] font-medium transition-all duration-150"
-            style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, color: C.textTertiary, boxShadow: C.shadowCard }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.borderStrong; (e.currentTarget as HTMLElement).style.color = C.textPrimary; }}
+            style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, color: C.textTertiary }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.aiBlueBorder; (e.currentTarget as HTMLElement).style.color = C.aiBlue; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.borderNormal; (e.currentTarget as HTMLElement).style.color = C.textTertiary; }}
           >
             Edit Profile <ArrowUpRight className="h-3 w-3" />
@@ -686,14 +812,14 @@ function AnalyticsPage() {
           <Link
             to={`/creators/${creatorProfile.id}` as "/"}
             className="inline-flex items-center gap-1.5 rounded-full px-4 h-9 text-[12px] font-medium transition-all duration-150"
-            style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, color: C.textTertiary, boxShadow: C.shadowCard }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.borderStrong; (e.currentTarget as HTMLElement).style.color = C.textPrimary; }}
+            style={{ background: C.surface, border: `1px solid ${C.borderNormal}`, color: C.textTertiary }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.aiBlueBorder; (e.currentTarget as HTMLElement).style.color = C.aiBlue; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.borderNormal; (e.currentTarget as HTMLElement).style.color = C.textTertiary; }}
           >
             View Public Profile <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
-      </div>
+        </div>
       </div>
     </div>
   );

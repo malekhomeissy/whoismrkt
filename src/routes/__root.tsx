@@ -2,8 +2,11 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { Component, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { LanguageProvider } from "@/lib/i18n";
+import { CookieBanner } from "@/components/app/CookieBanner";
 
-import appCss from "../styles.css?url";
+import appCss      from "../styles.css?url";
+import mrktIconUrl from "../assets/MRKT logo final.png?url";
 
 // ─── Error boundary ───────────────────────────────────────────────────────────
 // Catches render errors that would otherwise silently show "Something went wrong".
@@ -48,8 +51,8 @@ class RootErrorBoundary extends Component<
           <div
             style={{
               height: 48, width: 48, borderRadius: "50%",
-              background: "oklch(0.65 0.18 25 / 18%)",
-              border: "1px solid oklch(0.65 0.18 25 / 35%)",
+              background: "oklch(0.52 0.15 24 / 18%)",
+              border: "1px solid oklch(0.52 0.15 24 / 35%)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 22,
             }}
@@ -122,15 +125,21 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "MRKT — AI marketing operating system" },
       { name: "description", content: "MRKT helps creators and businesses plan content, build campaigns, discover collaborations, and grow with AI." },
-      { name: "author", content: "whoismrkt" },
+      { name: "author", content: "MRKT" },
       { property: "og:title", content: "MRKT — AI marketing operating system" },
       { property: "og:description", content: "Plan content, build campaigns, discover creators, and grow with AI. The marketing operating system for ambitious brands." },
-      { property: "og:type", content: "website" },
+      { property: "og:type",  content: "website" },
+      { property: "og:image", content: mrktIconUrl },
+      { name: "twitter:image", content: mrktIconUrl },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "MRKT — AI marketing operating system" },
       { name: "twitter:description", content: "Plan content, build campaigns, discover creators, and grow with AI." },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet",       href: appCss },
+      { rel: "icon",             type: "image/png", href: mrktIconUrl },
+      { rel: "apple-touch-icon", href: mrktIconUrl },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -154,10 +163,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <RootErrorBoundary>
-      <AuthProvider>
-        <Outlet />
-        <Toaster theme="dark" position="top-right" />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster theme="dark" position="top-right" />
+          <CookieBanner />
+        </AuthProvider>
+      </LanguageProvider>
     </RootErrorBoundary>
   );
 }

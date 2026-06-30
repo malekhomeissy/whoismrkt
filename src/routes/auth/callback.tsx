@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getStoredIntent, clearIntent, intentToAccountType } from "@/lib/onboarding";
 
 export const Route = createFileRoute("/auth/callback")({
-  head: () => ({ meta: [{ title: "Signing in — whoismrkt" }] }),
+  head: () => ({ meta: [{ title: "Signing in — MRKT" }] }),
   component: AuthCallback,
 });
 
