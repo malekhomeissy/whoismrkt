@@ -812,50 +812,36 @@ function BusinessStatChip({ icon: Icon, iconColor, value, label, sub, linkTo }: 
   return (
     <Link
       to={linkTo as "/"}
+      className="card-lift"
       style={{
         display:        "flex",
         flexDirection:  "column",
-        padding:        "14px 16px",
-        background:     "oklch(0.085 0 0)",
-        border:         `1px solid oklch(1 0 0 / 7%)`,
-        borderRadius:   18,
+        padding:        "18px 20px",
+        background:     "oklch(0.09 0 0)",
+        border:         `1px solid oklch(1 0 0 / 8%)`,
+        borderRadius:   20,
         textDecoration: "none",
-        boxShadow:      "inset 0 1px 0 oklch(1 0 0 / 6%), 0 2px 8px oklch(0 0 0 / 40%)",
-        transition:     "background 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.16,1,0.3,1), box-shadow 160ms ease",
-      }}
-      onMouseEnter={(e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.background  = "oklch(0.115 0 0)";
-        el.style.borderColor = "oklch(1 0 0 / 11%)";
-        el.style.transform   = "translateY(-2px)";
-        el.style.boxShadow   = "inset 0 1px 0 oklch(1 0 0 / 8%), 0 6px 24px oklch(0 0 0 / 55%), 0 2px 8px oklch(0 0 0 / 35%)";
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.background  = "oklch(0.085 0 0)";
-        el.style.borderColor = "oklch(1 0 0 / 7%)";
-        el.style.transform   = "";
-        el.style.boxShadow   = "inset 0 1px 0 oklch(1 0 0 / 6%), 0 2px 8px oklch(0 0 0 / 40%)";
+        boxShadow:      "inset 0 1px 0 oklch(1 0 0 / 7%), 0 2px 10px oklch(0 0 0 / 45%)",
       }}
     >
       <div style={{
-        width:          30,
-        height:         30,
-        borderRadius:   9,
-        background:     `${iconColor.replace(")", " / 12%)")}`,
-        border:         `1px solid ${iconColor.replace(")", " / 20%)")}`,
+        width:          38,
+        height:         38,
+        borderRadius:   12,
+        background:     `linear-gradient(160deg, ${iconColor.replace(")", " / 18%)")}, ${iconColor.replace(")", " / 6%)")})`,
+        border:         `1px solid ${iconColor.replace(")", " / 24%)")}`,
         display:        "flex",
         alignItems:     "center",
         justifyContent: "center",
         flexShrink:     0,
-        marginBottom:   10,
+        marginBottom:   14,
       }}>
-        <Icon size={14} style={{ color: iconColor }} />
+        <Icon size={16} style={{ color: iconColor }} />
       </div>
-      <div style={{ fontSize: 24, fontWeight: 800, color: C.textPrimary, letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ fontSize: 30, fontWeight: 800, color: C.textPrimary, letterSpacing: "-0.045em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
         {value}
       </div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary, marginTop: 3, letterSpacing: "-0.01em" }}>{label}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 600, color: C.textSecondary, marginTop: 6, letterSpacing: "-0.01em" }}>{label}</div>
       <div style={{ fontSize: 11, color: C.textMuted, marginTop: 1 }}>{sub}</div>
     </Link>
   );
@@ -1159,17 +1145,17 @@ function BusinessHome({ data, aiInsights, aiInsightsLoading, onOpenReport, compl
           }}>
             {t(greetingKey())}, {data.displayName}
           </div>
-          <h1 style={{
-            fontSize: "clamp(1.5rem, 2.8vw, 2.25rem)", fontWeight: 700,
+          <h1 className="text-chrome" style={{
+            fontSize: "clamp(2rem, 4.5vw, 3.25rem)", fontWeight: 800,
             fontFamily: "'Inter Tight', 'Inter', sans-serif",
-            color: C.textPrimary, letterSpacing: "-0.04em", lineHeight: 1.05,
-            margin: 0, marginBottom: 6,
+            letterSpacing: "-0.045em", lineHeight: 1.02,
+            margin: 0, marginBottom: 10,
           }}>
             {data.pendingApps > 0
               ? `${data.pendingApps} creator${data.pendingApps === 1 ? "" : "s"} applied.`
               : data.activeCampaigns.length > 0 ? "Campaigns are live." : "Your dashboard."}
           </h1>
-          <p style={{ fontSize: 14.5, color: "oklch(1 0 0 / 48%)", margin: 0, marginBottom: 22, fontWeight: 400 }}>
+          <p style={{ fontSize: 15, color: "oklch(1 0 0 / 48%)", margin: 0, marginBottom: 26, fontWeight: 400, maxWidth: 480 }}>
             {sentence}
           </p>
           {/* Primary CTA + secondary week report */}
@@ -1360,55 +1346,41 @@ function CreatorStatChip({ icon: Icon, iconColor, value, label, sub, badge, link
   return (
     <Link
       to={linkTo as "/"}
+      className="card-lift"
       style={{
         display:        "flex",
         flexDirection:  "column",
-        padding:        "14px 16px",
-        background:     "oklch(0.085 0 0)",
-        border:         `1px solid oklch(1 0 0 / 7%)`,
-        borderRadius:   18,
+        padding:        "18px 20px",
+        background:     "oklch(0.09 0 0)",
+        border:         `1px solid oklch(1 0 0 / 8%)`,
+        borderRadius:   20,
         textDecoration: "none",
-        boxShadow:      "inset 0 1px 0 oklch(1 0 0 / 6%), 0 2px 8px oklch(0 0 0 / 40%)",
-        transition:     "background 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.16,1,0.3,1), box-shadow 160ms ease",
-      }}
-      onMouseEnter={(e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.background  = "oklch(0.115 0 0)";
-        el.style.borderColor = "oklch(1 0 0 / 11%)";
-        el.style.transform   = "translateY(-2px)";
-        el.style.boxShadow   = "inset 0 1px 0 oklch(1 0 0 / 8%), 0 6px 24px oklch(0 0 0 / 55%), 0 2px 8px oklch(0 0 0 / 35%)";
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.background  = "oklch(0.085 0 0)";
-        el.style.borderColor = "oklch(1 0 0 / 7%)";
-        el.style.transform   = "";
-        el.style.boxShadow   = "inset 0 1px 0 oklch(1 0 0 / 6%), 0 2px 8px oklch(0 0 0 / 40%)";
+        boxShadow:      "inset 0 1px 0 oklch(1 0 0 / 7%), 0 2px 10px oklch(0 0 0 / 45%)",
       }}
     >
       <div style={{
-        width:          30,
-        height:         30,
-        borderRadius:   9,
-        background:     `${iconColor.replace(")", " / 12%)")}`,
-        border:         `1px solid ${iconColor.replace(")", " / 20%)")}`,
+        width:          38,
+        height:         38,
+        borderRadius:   12,
+        background:     `linear-gradient(160deg, ${iconColor.replace(")", " / 18%)")}, ${iconColor.replace(")", " / 6%)")})`,
+        border:         `1px solid ${iconColor.replace(")", " / 24%)")}`,
         display:        "flex",
         alignItems:     "center",
         justifyContent: "center",
         flexShrink:     0,
-        marginBottom:   10,
+        marginBottom:   14,
       }}>
-        <Icon size={14} style={{ color: iconColor }} />
+        <Icon size={16} style={{ color: iconColor }} />
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-        <span style={{ fontSize: 24, fontWeight: 800, color: C.textPrimary, letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+        <span style={{ fontSize: 30, fontWeight: 800, color: C.textPrimary, letterSpacing: "-0.045em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
           {value}
         </span>
         {badge && (
           <span style={{ fontSize: 11, fontWeight: 700, color: iconColor }}>{badge}</span>
         )}
       </div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary, marginTop: 3, letterSpacing: "-0.01em" }}>{label}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 600, color: C.textSecondary, marginTop: 6, letterSpacing: "-0.01em" }}>{label}</div>
       <div style={{ fontSize: 11, color: C.textMuted, marginTop: 1 }}>{sub}</div>
     </Link>
   );
@@ -1687,17 +1659,17 @@ function CreatorHome({ data, aiInsights, aiInsightsLoading, onOpenReport, comple
           }}>
             {t(greetingKey())}, {data.displayName}
           </div>
-          <h1 style={{
-            fontSize: "clamp(1.5rem, 2.8vw, 2.25rem)", fontWeight: 700,
+          <h1 className="text-chrome" style={{
+            fontSize: "clamp(2rem, 4.5vw, 3.25rem)", fontWeight: 800,
             fontFamily: "'Inter Tight', 'Inter', sans-serif",
-            color: C.textPrimary, letterSpacing: "-0.04em", lineHeight: 1.05,
-            margin: 0, marginBottom: 6,
+            letterSpacing: "-0.045em", lineHeight: 1.02,
+            margin: 0, marginBottom: 10,
           }}>
             {data.opportunities.length > 0
               ? `${data.opportunities.length} opportunities.`
               : data.myApplications > 0 ? "Applications in review." : "Your creator dashboard."}
           </h1>
-          <p style={{ fontSize: 14.5, color: "oklch(1 0 0 / 48%)", margin: 0, marginBottom: 22, fontWeight: 400 }}>
+          <p style={{ fontSize: 15, color: "oklch(1 0 0 / 48%)", margin: 0, marginBottom: 26, fontWeight: 400, maxWidth: 480 }}>
             {herSub}
           </p>
           {/* Primary CTA + secondary week report */}
