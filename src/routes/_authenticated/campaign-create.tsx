@@ -1179,12 +1179,6 @@ function CampaignCreatePage() {
       <header className="px-6 h-16 flex items-center justify-between shrink-0" style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
         <Link to="/chat"><Logo /></Link>
         <div className="flex items-center gap-4">
-          <span
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.24em]"
-            style={{ background: C.blueBg, border: `1px solid ${C.blueBorder}`, color: C.aiBlue }}
-          >
-            Beta
-          </span>
           {/* Show business name from profile so they know which account is posting */}
           {bizProfile?.company_name && (
             <span className="hidden sm:block text-[11px] uppercase tracking-[0.24em]" style={{ color: "oklch(1 0 0 / 28%)" }}>

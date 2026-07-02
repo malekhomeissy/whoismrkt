@@ -28,20 +28,12 @@ function PaymentsPage() {
           <DollarSign className="h-6 w-6" style={{ color: "oklch(0.70 0.08 68)" }} />
         </div>
 
-        <div
-          className="text-[9.5px] uppercase tracking-[0.3em] font-semibold mb-3"
-          style={{ color: "oklch(0.70 0.08 68)" }}
-        >
-          Coming Soon
-        </div>
-
         <h2 className="text-[18px] font-bold mb-2" style={{ color: C.text }}>
           Payments & Payouts
         </h2>
 
         <p className="text-[13px] max-w-[340px] leading-relaxed" style={{ color: C.muted }}>
-          Integrated payment processing and creator payouts are planned for a future
-          release. During beta, compensation is coordinated directly between brands and creators.
+          Integrated payment processing and creator payouts are launching soon. Compensation is currently coordinated directly between brands and creators.
         </p>
 
         <p className="text-[12px] mt-5" style={{ color: C.faint }}>

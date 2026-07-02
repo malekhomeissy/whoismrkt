@@ -387,6 +387,7 @@ function CreatorCard({
   onRemove,
   hasReviewed,
   onReview,
+  onOutreach,
 }: {
   entry: PipelineEntry;
   isDragging: boolean;
@@ -792,6 +793,7 @@ function KanbanColumn({
   onRemove,
   reviewedCampaignIds,
   onReview,
+  onOutreach,
 }: {
   stage: (typeof STAGES)[number];
   entries: PipelineEntry[];

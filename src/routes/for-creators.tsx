@@ -167,7 +167,7 @@ function ForCreatorsPage() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-4">
-                {["Free during beta", "English + Arabic", "MENA-first"].map((t) => (
+                {["Free to use", "English + Arabic", "MENA-first"].map((t) => (
                   <span key={t} className="text-[11.5px]" style={{ color: "oklch(1 0 0 / 30%)" }}>{t}</span>
                 ))}
               </div>
@@ -390,7 +390,7 @@ function ForCreatorsPage() {
           <p className="mt-7 text-[1.0625rem] leading-[1.82] font-light max-w-sm mx-auto" style={bodyStyle}>
             {user
               ? "Brands are looking for creators like you. Browse live campaigns now."
-              : "Join creators building their brand and business with MRKT. Free during beta."}
+              : "Join creators building their brand and business with MRKT. Free to use."}
           </p>
           <Link
             to={user ? "/opportunities" : "/login"}

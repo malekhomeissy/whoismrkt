@@ -16,6 +16,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import {
+  corsHeaders,
+  isRateLimited,
+  STRICT_AI_RATE,
+  requireAuth,
+  jsonErr,
+  AuthError,
+} from "../_shared/security.ts";
 
 const MODEL      = "claude-haiku-4-5-20251001"; // Fast + cheap for insights
 const MAX_TOKENS = 1024;
@@ -123,21 +131,32 @@ Return ONLY valid JSON with no surrounding text:
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin":  "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
-    });
+    return new Response("ok", { headers: corsHeaders(req) });
   }
 
-  const CORS = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  };
+  const CORS = corsHeaders(req);
 
   try {
+    // ── Auth ──────────────────────────────────────────────────────────────
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const db = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    });
+
+    let user: { id: string };
+    try {
+      user = await requireAuth(db);
+    } catch (e) {
+      if (e instanceof AuthError) return jsonErr(e.message, 401, CORS);
+      throw e;
+    }
+
+    // ── Rate limit ────────────────────────────────────────────────────────
+    if (isRateLimited(`generate-intelligence:${user.id}`, STRICT_AI_RATE)) {
+      return jsonErr("Rate limit exceeded. Please wait before requesting more insights.", 429, CORS);
+    }
+
     const body = await req.json();
     const { role, stats, context: ctx } = body as {
       role:    "creator" | "business";
@@ -194,23 +213,22 @@ Deno.serve(async (req: Request) => {
     }));
 
     // Log to ai_requests fire-and-forget
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const db = createClient(supabaseUrl, supabaseKey);
-    db.from("ai_requests").insert({
+    const svcDb = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    svcDb.from("ai_requests").insert({
       function_name: "generate-intelligence",
       model:         MODEL,
       prompt_tokens: 0,
       success:       true,
+      user_id:       user.id,
     }).then(() => {}).catch(() => {});
 
-    return new Response(JSON.stringify({ insights }), { headers: CORS });
+    return new Response(JSON.stringify({ insights }), { headers: { ...CORS, "Content-Type": "application/json" } });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return new Response(JSON.stringify({ error: msg, insights: [] }), {
       status:  500,
-      headers: CORS,
+      headers: { ...CORS, "Content-Type": "application/json" },
     });
   }
 });

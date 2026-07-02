@@ -36,13 +36,6 @@ function Terms() {
           Last updated: {updated}
         </p>
 
-        {/* Beta notice */}
-        <div style={{ background: "oklch(0.70 0.08 68 / 8%)", border: "1px solid oklch(0.70 0.08 68 / 20%)", borderRadius: "12px", padding: "16px 20px", marginBottom: "2rem" }}>
-          <p style={{ ...p, marginBottom: 0, color: "oklch(0.82 0.08 68 / 90%)" }}>
-            <strong>Beta Platform Notice:</strong> MRKT is currently in invite-only beta. Features, availability, and pricing are subject to change. By using the Platform during beta, you accept that some features may be incomplete, unavailable, or modified without advance notice. Payment features are not yet enabled.
-          </p>
-        </div>
-
         <p style={p}>
           These Terms of Service ("Terms") govern your access to and use of MRKT ("Platform"), a creator-brand marketplace and marketing intelligence platform. By creating an account or using the Platform, you agree to be bound by these Terms. If you do not agree, you must not use the Platform.
         </p>

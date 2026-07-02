@@ -366,7 +366,7 @@ function AIPage() {
             <span style={{ color: "oklch(1 0 0 / 32%)" }}>Not just answers.</span>
           </h2>
           <p className="mt-7 text-[1.0625rem] leading-[1.82] font-light max-w-sm mx-auto" style={bodyStyle}>
-            Try MRKT AI during beta. Free, no credit card required. See what it knows
+            Try MRKT AI. Free, no credit card required. See what it knows
             about your market, your niche, and your specific growth opportunities.
           </p>
           <Link

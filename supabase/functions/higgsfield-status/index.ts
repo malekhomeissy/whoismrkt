@@ -8,19 +8,60 @@ import { corsHeaders } from "../_shared/security.ts";
 //
 // Body:
 //   asset_id   string   required  — the generated_assets.id to check
-//
-// Flow:
-//   1. Verify user auth
-//   2. Load asset record (must belong to user)
-//   3. If already completed/failed → return immediately (no Higgsfield call)
-//   4. GET Higgsfield /v2/requests/status/{request_id}
-//   5. If COMPLETED → update DB with output_url, return updated asset
-//   6. If FAILED    → update DB with error_message, return updated asset
-//   7. Otherwise    → return current generating state
 // ─────────────────────────────────────────────────────────────────────────────
 
+const HIGGSFIELD_BASE = "https://fnf-api-gw.higgsfield.ai/fnf";
+const CLERK_TOKEN_URL = "https://clerk.higgsfield.ai/oauth/token";
+const CLERK_CLIENT_ID = "sRGCQJvvJkPrrtRj";
 
-const HIGGSFIELD_BASE = "https://fnf.higgsfield.ai";
+async function getHiggsfieldToken(serviceClient: ReturnType<typeof createClient>): Promise<{
+  accessToken: string;
+  workspaceId: string;
+}> {
+  const { data: rows, error } = await serviceClient
+    .from("system_config")
+    .select("key, value")
+    .in("key", ["higgsfield_access_token", "higgsfield_refresh_token", "higgsfield_expires_at", "higgsfield_workspace_id"]);
+
+  if (error || !rows?.length) throw new Error("Higgsfield credentials not found in system_config");
+
+  const cfg: Record<string, string> = {};
+  for (const row of rows) cfg[row.key] = row.value;
+
+  const expiresAt   = parseInt(cfg["higgsfield_expires_at"] ?? "0", 10);
+  const nowSec      = Math.floor(Date.now() / 1000);
+  const workspaceId = cfg["higgsfield_workspace_id"] ?? "";
+
+  if (expiresAt - nowSec < 300) {
+    const refreshToken = cfg["higgsfield_refresh_token"];
+    if (!refreshToken) throw new Error("No Higgsfield refresh token — re-authenticate via `higgsfield auth login`");
+
+    const res = await fetch(CLERK_TOKEN_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:    new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken, client_id: CLERK_CLIENT_ID }).toString(),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Higgsfield token refresh failed (${res.status}): ${txt}`);
+    }
+
+    const tokens = await res.json() as { access_token: string; refresh_token?: string; expires_in?: number };
+    const newExpiry = nowSec + (tokens.expires_in ?? 86400);
+
+    await serviceClient.from("system_config").upsert([
+      { key: "higgsfield_access_token",  value: tokens.access_token,                 updated_at: new Date().toISOString() },
+      { key: "higgsfield_refresh_token", value: tokens.refresh_token ?? refreshToken, updated_at: new Date().toISOString() },
+      { key: "higgsfield_expires_at",    value: String(newExpiry),                    updated_at: new Date().toISOString() },
+    ]);
+
+    console.log("Higgsfield token auto-refreshed, expires", new Date(newExpiry * 1000).toISOString());
+    return { accessToken: tokens.access_token, workspaceId };
+  }
+
+  return { accessToken: cfg["higgsfield_access_token"] ?? "", workspaceId };
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -43,6 +84,11 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } },
+    );
+
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
@@ -74,14 +120,18 @@ Deno.serve(async (req: Request) => {
       return json({ asset });
     }
 
-    // ── 5. Poll Higgsfield ───────────────────────────────────────────────────
+    // ── 5. Poll Higgsfield API ───────────────────────────────────────────────
 
-    const apiKey = Deno.env.get("HIGGSFIELD_API_KEY");
-    if (!apiKey) return json({ error: "HIGGSFIELD_API_KEY is not configured" }, 503);
+    let hfToken: { accessToken: string; workspaceId: string };
+    try {
+      hfToken = await getHiggsfieldToken(serviceClient);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return json({ error: msg }, 503);
+    }
 
     const requestId = asset.higgsfield_request_id;
     if (!requestId) {
-      // No request ID — mark as failed
       const { data: updated } = await supabase
         .from("generated_assets")
         .update({ status: "failed", error_message: "No Higgsfield request ID found" })
@@ -91,10 +141,15 @@ Deno.serve(async (req: Request) => {
       return json({ asset: updated ?? asset });
     }
 
+    // GET /fnf/developer/v2alpha/jobs/{job_id}
     const statusRes = await fetch(
-      `${HIGGSFIELD_BASE}/agents/jobs/${requestId}`,
+      `${HIGGSFIELD_BASE}/developer/v2alpha/jobs/${requestId}`,
       {
-        headers: { "Authorization": `Bearer ${apiKey}` },
+        headers: {
+          "Authorization":   `Bearer ${hfToken.accessToken}`,
+          "hf-workspace-id": hfToken.workspaceId,
+          "User-Agent":      "hf-cli/1.0.2",
+        },
       },
     );
 
@@ -144,7 +199,7 @@ Deno.serve(async (req: Request) => {
 
     // ── 7. Still in-progress ──────────────────────────────────────────────────
 
-    return json({ asset, higgsfield_status: statusData.status ?? "processing" });
+    return json({ asset, higgsfield_status: statusData.status ?? "processing", error: statusData.error ?? null });
 
   } catch (err) {
     console.error("Unhandled error:", err);

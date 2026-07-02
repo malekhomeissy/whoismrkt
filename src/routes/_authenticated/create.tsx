@@ -522,8 +522,7 @@ function StudioPage() {
     setShowConcepts(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const supabaseUrl = (supabase as any).supabaseUrl as string;
-      const res = await fetch(`${supabaseUrl}/functions/v1/generate-concepts`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-concepts`, {
         method: "POST",
         headers: {
           "Content-Type":  "application/json",
@@ -551,8 +550,7 @@ function StudioPage() {
     setGenerating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const supabaseUrl = (supabase as any).supabaseUrl as string;
-      const res = await fetch(`${supabaseUrl}/functions/v1/higgsfield-generate`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/higgsfield-generate`, {
         method: "POST",
         headers: {
           "Content-Type":  "application/json",

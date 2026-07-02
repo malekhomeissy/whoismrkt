@@ -231,7 +231,7 @@ function MediaKitPage() {
                   </div>
                 )}
                 {creator.trust_score !== null && creator.trust_tier && (
-                  <TrustBadge tier={creator.trust_tier} score={creator.trust_score} />
+                  <TrustBadge tier={creator.trust_tier} score={creator.trust_score ?? 0} />
                 )}
               </div>
 

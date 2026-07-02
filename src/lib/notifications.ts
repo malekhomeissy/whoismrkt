@@ -52,13 +52,14 @@ export async function createNotification(params: {
 export async function fetchNotifications(
   userId: string,
   limit = 20,
+  offset = 0,
 ): Promise<AppNotification[]> {
   const { data } = await db
     .from("notifications")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   return (data ?? []) as AppNotification[];
 }
 

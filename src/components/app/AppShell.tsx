@@ -12,6 +12,7 @@
 
 import { Link, useRouterState, useNavigate, useRouter } from "@tanstack/react-router";
 import { setPreloadFn, preloadRoute, runAppPreloader, resetPreloader } from "@/lib/appPreloader";
+import { cn } from "@/lib/utils";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -174,7 +175,10 @@ function NavItem({
       to={to as "/"}
       onClick={onClick}
       onTouchStart={() => preloadRoute(to)}
-      className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 mb-[1px] text-[13px] font-medium transition-all duration-100"
+      className={cn(
+        "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 mb-[1px] text-[13px] font-medium transition-all duration-100",
+        isActive && (isAI ? "nav-active-ai" : "nav-active"),
+      )}
       style={{
         background: isActive ? activeBg     : "transparent",
         color:      isActive ? activeColor  : C.textTertiary,

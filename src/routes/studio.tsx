@@ -29,7 +29,7 @@ function StudioMockup() {
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid oklch(1 0 0 / 7%)", background: "oklch(0.055 0 0)" }}>
         <Sparkles className="h-3.5 w-3.5" style={blueStyle} />
         <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>MRKT Studio</span>
-        <span className="ml-auto text-[9px] rounded-full px-2.5 py-0.5 font-medium" style={{ background: "oklch(0.78 0.14 60 / 12%)", color: "oklch(0.78 0.14 60)" }}>Coming soon</span>
+        <span className="ml-auto text-[9px] rounded-full px-2.5 py-0.5 font-medium" style={{ background: "oklch(0.78 0.14 60 / 12%)", color: "oklch(0.78 0.14 60)" }}>Live</span>
       </div>
 
       <div className="p-4 space-y-2">
@@ -258,7 +258,7 @@ function StudioPage() {
                     <Icon className="h-4 w-4" style={{ color: live ? "oklch(1 0 0 / 46%)" : "oklch(1 0 0 / 22%)" }} />
                   </div>
                   <span className="text-[8.5px] font-semibold rounded-full px-2.5 py-0.5" style={{ color: live ? "oklch(0.62 0.12 158)" : "oklch(1 0 0 / 24%)", background: live ? "oklch(0.62 0.12 158 / 10%)" : "oklch(1 0 0 / 4%)" }}>
-                    {live ? "Live now" : "Coming soon"}
+                    {live ? "Live now" : "Launching soon"}
                   </span>
                 </div>
                 <div className="text-[13px] font-semibold mb-1.5" style={{ color: live ? "oklch(1 0 0 / 82%)" : "oklch(1 0 0 / 38%)" }}>{label}</div>
@@ -277,7 +277,7 @@ function StudioPage() {
             style={{ background: "oklch(0.72 0.10 224 / 8%)", border: "1px solid oklch(0.72 0.10 224 / 18%)" }}
           >
             <Sparkles className="h-3 w-3" style={blueStyle} />
-            <span className={`${EYEBROW} text-[9px]`} style={blueStyle}>Available now in beta</span>
+            <span className={`${EYEBROW} text-[9px]`} style={blueStyle}>Available now</span>
           </div>
           <h2 className="font-display text-[clamp(2.75rem,6vw,5rem)] font-bold tracking-[-0.048em] leading-[0.96]">
             Content creation
@@ -285,7 +285,7 @@ function StudioPage() {
             <span style={{ color: "oklch(1 0 0 / 32%)" }}>that knows your campaign.</span>
           </h2>
           <p className="mt-7 text-[1.0625rem] leading-[1.82] font-light max-w-sm mx-auto" style={bodyStyle}>
-            Try MRKT Studio during beta. Write briefs, generate hooks, plan content — all
+            Write briefs, generate hooks, plan content — all
             connected to your live campaigns.
           </p>
           <Link

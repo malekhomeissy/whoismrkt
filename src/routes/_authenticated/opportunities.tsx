@@ -123,7 +123,7 @@ function CampaignCard({
                   padding: "1px 7px",
                 }}
               >
-                Beta Partner
+                Early Partner
               </span>
             )}
           </div>

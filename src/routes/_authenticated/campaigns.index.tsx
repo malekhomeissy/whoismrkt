@@ -194,17 +194,23 @@ type FilterKey = "all" | "active" | "draft" | "closed";
 function CampaignsDashboard() {
   const { user } = useAuth();
   const navigate  = useNavigate();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [filter,    setFilter]    = useState<FilterKey>("all");
+  const [campaigns,    setCampaigns]    = useState<Campaign[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [loadingMore,  setLoadingMore]  = useState(false);
+  const [hasMore,      setHasMore]      = useState(false);
+  const [page,         setPage]         = useState(0);
+  const [filter,       setFilter]       = useState<FilterKey>("all");
+
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     if (!user) return;
-    load();
+    load(0);
   }, [user]);
 
-  async function load() {
-    setLoading(true);
+  async function load(pageNum: number) {
+    if (pageNum === 0) setLoading(true);
+    else setLoadingMore(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from("campaigns")
@@ -216,10 +222,18 @@ function CampaignsDashboard() {
         "campaign_applications(id,status,created_at)",
       ].join(","))
       .eq("user_id", user!.id)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
+    const rows = (data as unknown as Campaign[]) ?? [];
+    if (pageNum === 0) setCampaigns(rows);
+    else setCampaigns(prev => [...prev, ...rows]);
+    setHasMore(rows.length === PAGE_SIZE);
+    setPage(pageNum);
     setLoading(false);
-    setCampaigns((data as unknown as Campaign[]) ?? []);
+    setLoadingMore(false);
   }
+
+  function loadMore() { load(page + 1); }
 
   const filtered = campaigns.filter(c => {
     if (filter === "all")    return true;
@@ -388,6 +402,27 @@ function CampaignsDashboard() {
             {filtered.map(c => (
               <CampaignCard key={c.id} campaign={c} navigate={navigate} />
             ))}
+            {hasMore && filter === "all" && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  marginTop: 8,
+                  padding: "10px 24px",
+                  background: "oklch(1 0 0 / 6%)",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 10,
+                  color: C.textSecondary,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: loadingMore ? "default" : "pointer",
+                  fontFamily: "inherit",
+                  opacity: loadingMore ? 0.5 : 1,
+                }}
+              >
+                {loadingMore ? "Loading…" : "Load more campaigns"}
+              </button>
+            )}
           </div>
         )}
       </div>

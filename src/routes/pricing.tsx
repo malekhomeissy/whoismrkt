@@ -11,7 +11,7 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — MRKT" },
-      { name: "description", content: "MRKT is free during beta. Creator Pro and Business Growth plans coming soon. Platform fees will apply when payments launch." },
+      { name: "description", content: "MRKT is free. Creator Pro and Business Growth paid plans launching soon. Platform fees apply when payments go live." },
       { property: "og:title", content: "Pricing — MRKT" },
     ],
   }),
@@ -37,7 +37,7 @@ interface Plan {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const BETA_FEATURES: PlanFeature[] = [
+const FREE_FEATURES: PlanFeature[] = [
   { text: "Creator & business profiles",  icon: Users         },
   { text: "Opportunities & applications", icon: Zap           },
   { text: "MRKT Connect messaging",       icon: MessageSquare },
@@ -50,7 +50,7 @@ const BETA_FEATURES: PlanFeature[] = [
 ];
 
 const CREATOR_FEATURES: PlanFeature[] = [
-  { text: "Everything in Beta",           icon: Check         },
+  { text: "Everything in Free",           icon: Check         },
   { text: "Unlimited AI credits",         icon: Sparkles      },
   { text: "Advanced analytics",           icon: BarChart3     },
   { text: "Priority visibility in matches", icon: Zap         },
@@ -60,7 +60,7 @@ const CREATOR_FEATURES: PlanFeature[] = [
 ];
 
 const BUSINESS_FEATURES: PlanFeature[] = [
-  { text: "Everything in Beta",           icon: Check         },
+  { text: "Everything in Free",           icon: Check         },
   { text: "Unlimited campaigns",          icon: Zap           },
   { text: "Find Creators (advanced)",     icon: Users         },
   { text: "Team pipeline access",         icon: BarChart3     },
@@ -72,20 +72,20 @@ const BUSINESS_FEATURES: PlanFeature[] = [
 
 const PLANS: Plan[] = [
   {
-    name: "Beta",
+    name: "Free",
     badge: "Current",
     price: "Free",
-    period: "during beta",
-    description: "Full access to MRKT while we're in closed beta. No credit card required.",
+    period: null,
+    description: "Full access to MRKT. No credit card required.",
     cta: "Get started free",
     ctaTo: "/login",
-    features: BETA_FEATURES,
+    features: FREE_FEATURES,
     highlight: false,
     soon: false,
   },
   {
     name: "Creator Pro",
-    badge: "Coming Soon",
+    badge: "Launching soon",
     price: "TBD",
     period: null,
     description: "For creators ready to grow seriously. Unlimited AI, advanced analytics, and priority placement.",
@@ -97,7 +97,7 @@ const PLANS: Plan[] = [
   },
   {
     name: "Business Growth",
-    badge: "Coming Soon",
+    badge: "Launching soon",
     price: "TBD",
     period: null,
     description: "For brands running real campaigns. Full creator discovery, team pipeline, and escrow payments.",
@@ -147,7 +147,7 @@ function PricingPage() {
         >
           <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.62 0.12 158)", boxShadow: "0 0 6px oklch(0.62 0.12 158 / 60%)" }} />
           <span className="text-[9px] font-medium uppercase tracking-[0.32em]" style={{ color: "oklch(1 0 0 / 50%)" }}>
-            Free during beta
+            Free to use
           </span>
         </div>
 
@@ -156,7 +156,7 @@ function PricingPage() {
           <span style={{ color: "oklch(1 0 0 / 32%)" }}>pricing.</span>
         </h1>
         <p className="mx-auto max-w-[30rem] text-[1.0625rem] leading-[1.75] font-light" style={{ color: "oklch(1 0 0 / 46%)" }}>
-          MRKT is free during closed beta. Paid plans and escrow payments are coming once payment infrastructure is live.
+          MRKT is free. Paid plans and payments launch once payment infrastructure is live.
         </p>
       </section>
 
@@ -290,7 +290,7 @@ function PricingPage() {
               How AI credits work
             </h2>
             <p className="text-[1rem] leading-[1.75] font-light" style={{ color: "oklch(1 0 0 / 46%)" }}>
-              Different AI actions use different credit amounts. Beta users get 100 credits per month, free. Credits reset monthly.
+              Different AI actions use different credit amounts. All users get 100 credits per month, free. Credits reset monthly.
             </p>
           </div>
 
@@ -368,7 +368,7 @@ function PricingPage() {
                   className="text-[9px] font-semibold uppercase tracking-[0.18em] rounded-full px-2 py-0.5"
                   style={{ background: "oklch(1 0 0 / 6%)", color: "oklch(1 0 0 / 36%)", border: "1px solid oklch(1 0 0 / 10%)" }}
                 >
-                  Coming Soon
+                  Launching soon
                 </span>
               </div>
               <p className="text-[0.9375rem] leading-[1.75]" style={{ color: "oklch(1 0 0 / 52%)" }}>
@@ -397,11 +397,12 @@ function PricingPage() {
       <section className="px-6 py-32 hairline-t">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="font-display text-[clamp(2rem,5vw,3.5rem)] font-bold leading-[1.1] mb-5" style={{ letterSpacing: "-0.02em" }}>
-            Free during beta.<br />
-            <span style={{ color: "oklch(1 0 0 / 34%)" }}>Start now.</span>
+            Free to get started.
+            <br />
+            <span style={{ color: "oklch(1 0 0 / 34%)" }}>No credit card.</span>
           </h2>
           <p className="font-light leading-relaxed mb-8" style={{ color: "oklch(1 0 0 / 44%)", fontSize: "1.0625rem" }}>
-            No credit card required. Full access to MRKT while we build toward launch together.
+            Full access to MRKT. No credit card required.
           </p>
           <Link
             to="/login"

@@ -862,8 +862,9 @@ function BusinessStatChip({ icon: Icon, iconColor, value, label, sub, linkTo }: 
 }
 
 function CreatorRecommendCard({ creator }: { creator: RecommendedCreator }) {
-  const scoreColor = creator.matchScore >= 80 ? C.green : creator.matchScore >= 60 ? C.accent : creator.matchScore >= 40 ? C.amber : C.textSecondary;
-  const scoreBg    = creator.matchScore >= 80 ? C.greenMuted : creator.matchScore >= 60 ? C.accentMuted : creator.matchScore >= 40 ? C.amberMuted : C.surface;
+  const score      = creator.matchScore ?? 0;
+  const scoreColor = score >= 80 ? C.green : score >= 60 ? C.accent : score >= 40 ? C.amber : C.textSecondary;
+  const scoreBg    = score >= 80 ? C.greenMuted : score >= 60 ? C.accentMuted : score >= 40 ? C.amberMuted : C.surface;
 
   const formattedFollowers = creator.followers
     ? creator.followers >= 1_000_000

@@ -99,7 +99,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({
   icon: Icon, label, sub, checked, onChange,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   sub?: string;
   checked: boolean;

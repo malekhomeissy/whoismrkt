@@ -254,18 +254,25 @@ function SkeletonRow() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 50;
+
 function NotificationsPage() {
-  const { user }    = useAuth();
-  const navigate    = useNavigate();
-  const [items,     setItems]    = useState<AppNotification[]>([]);
-  const [loading,   setLoading]  = useState(true);
+  const { user }        = useAuth();
+  const navigate        = useNavigate();
+  const [items,         setItems]        = useState<AppNotification[]>([]);
+  const [loading,       setLoading]      = useState(true);
+  const [loadingMore,   setLoadingMore]  = useState(false);
+  const [hasMore,       setHasMore]      = useState(false);
+  const [page,          setPage]         = useState(0);
   const channelRef  = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const data = await fetchNotifications(user.id, 60);
+    const data = await fetchNotifications(user.id, PAGE_SIZE);
     setItems(data);
+    setHasMore(data.length === PAGE_SIZE);
+    setPage(0);
     setLoading(false);
 
     // Auto-mark all unread as read the moment the page loads.
@@ -319,6 +326,17 @@ function NotificationsPage() {
     await markAllNotificationsRead(user.id);
     setItems((prev) => prev.map((x) => ({ ...x, read: true })));
     window.dispatchEvent(new CustomEvent("mrkt:notifications-read"));
+  }
+
+  async function loadMore() {
+    if (!user || loadingMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    const data = await fetchNotifications(user.id, PAGE_SIZE, nextPage * PAGE_SIZE);
+    setItems(prev => [...prev, ...data]);
+    setHasMore(data.length === PAGE_SIZE);
+    setPage(nextPage);
+    setLoadingMore(false);
   }
 
   const unreadCount = items.filter((n) => !n.read).length;
@@ -420,6 +438,24 @@ function NotificationsPage() {
               ))}
             </div>
           ))
+        )}
+        {hasMore && !loading && (
+          <div className="flex justify-center py-4">
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="text-[13px] font-medium px-5 py-2 rounded-lg"
+              style={{
+                background: "oklch(1 0 0 / 6%)",
+                border: `1px solid ${C.borderSubtle}`,
+                color: C.textSecondary,
+                cursor: loadingMore ? "default" : "pointer",
+                opacity: loadingMore ? 0.5 : 1,
+              }}
+            >
+              {loadingMore ? "Loading…" : "Load older notifications"}
+            </button>
+          </div>
         )}
       </div>
     </div>

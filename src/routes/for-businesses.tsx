@@ -174,7 +174,7 @@ function ForBusinessesPage() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-4">
-                {["Free during beta", "English + Arabic", "MENA creator network"].map((t) => (
+                {["Free to use", "English + Arabic", "MENA creator network"].map((t) => (
                   <span key={t} className="text-[11.5px]" style={{ color: "oklch(1 0 0 / 30%)" }}>{t}</span>
                 ))}
               </div>
@@ -338,7 +338,7 @@ function ForBusinessesPage() {
           <p className="mt-7 text-[1.0625rem] leading-[1.82] font-light max-w-sm mx-auto" style={bodyStyle}>
             {user
               ? "Campaigns, creators, and analytics are waiting inside."
-              : "Join brands running smarter creator campaigns in MENA. Free during beta."}
+              : "Join brands running smarter creator campaigns in MENA. Free to use."}
           </p>
           <Link
             to={user ? "/chat" : "/login"}

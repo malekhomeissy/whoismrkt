@@ -579,7 +579,7 @@ function VerificationPage() {
                   className="inline-flex items-center gap-2 rounded-full px-6 h-10 text-[12.5px] font-medium cursor-not-allowed"
                   style={{ background: C.raised, border: `1px solid ${C.borderNormal}`, color: C.textMuted }}
                 >
-                  Payments Coming Soon
+                  Payments — launching soon
                 </button>
               </div>
             ) : (

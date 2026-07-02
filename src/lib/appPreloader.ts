@@ -131,8 +131,7 @@ async function prefetchData(userId: string, role: "creator" | "business" | null)
       .single()
       .then(({ data }) => {
         if (data) cacheSet(`profile:${userId}`, data, 10 * 60 * 1000);
-      })
-      .catch(() => {});
+      }, () => {});
   }
 
   // Unread message count

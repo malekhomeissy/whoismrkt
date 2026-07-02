@@ -10,6 +10,8 @@
 //   track("creator_onboarding_completed", { step: 6 });
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { getCookieConsent } from "@/components/app/CookieBanner";
+
 const POSTHOG_KEY  = import.meta.env.VITE_POSTHOG_KEY  as string | undefined;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST as string | undefined ?? "https://app.posthog.com";
 
@@ -26,6 +28,7 @@ let _initializing = false;
 
 async function getPH(): Promise<PH | null> {
   if (!POSTHOG_KEY) return null;
+  if (getCookieConsent() !== "accepted") return null;
   if (_ph) return _ph;
   if (_initializing) return null;
   _initializing = true;

@@ -63,7 +63,7 @@ const COMPLETION_ICONS: Record<string, React.ElementType> = {
 
 function buildCreatorCompletion(_profile: Record<string, unknown> | null, creatorProfile: Record<string, unknown> | null): ProfileCompletion {
   if (!creatorProfile) return { score: 0, items: [] };
-  const result = computeCreatorCompletion(creatorProfile as CreatorProfile);
+  const result = computeCreatorCompletion(creatorProfile as unknown as CreatorProfile);
   const pts    = 11; // equal-weight: 9 items × 11 pts ≈ 99%, close enough for display
   return {
     score: result.score,

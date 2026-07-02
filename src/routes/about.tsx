@@ -51,7 +51,7 @@ const VALUES = [
   {
     icon: Heart,
     title: "Building in public",
-    desc: "We're in beta. We tell creators and businesses what's live, what's coming, and why. No vaporware. No overpromising. Just honest progress.",
+    desc: "We tell creators and businesses what's live, what's coming, and why. No vaporware. No overpromising. Just honest progress.",
   },
 ];
 
@@ -132,7 +132,7 @@ function About() {
               built specifically for the Arab world.
             </p>
             <p className="text-[1.0625rem] leading-[1.85] font-light" style={bodyStyle}>
-              We're in beta. We're building in public. And we're obsessed with getting this right.
+              We're building in public. And we're obsessed with getting this right.
             </p>
           </div>
         </div>
@@ -282,7 +282,7 @@ function About() {
           </h2>
           <p className="mt-7 text-[1.0625rem] leading-[1.82] font-light max-w-sm mx-auto" style={bodyStyle}>
             Sign up in seconds. Choose your workspace. Start building.
-            Free during beta.
+            Free to use.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Link

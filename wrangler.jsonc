@@ -8,5 +8,18 @@
   "custom_domains": [
     { "hostname": "usemrkt.app" },
     { "hostname": "www.usemrkt.app" }
-  ]
+  ],
+
+  "env": {
+    // Staging environment: deploy with `wrangler deploy --env staging`
+    // Points at a separate Supabase project — never at production data.
+    // To set up: create a new Supabase project, copy its URL + anon key,
+    // then run: wrangler secret put VITE_SUPABASE_URL --env staging
+    //           wrangler secret put VITE_SUPABASE_PUBLISHABLE_KEY --env staging
+    "staging": {
+      "name": "usemrkt-staging",
+      "workers_dev": true,
+      "custom_domains": []
+    }
+  }
 }

@@ -31,7 +31,8 @@ export type MarketplaceEventType =
   | "session_started"
   | "mission_completed"
   | "weekly_report_opened"
-  | "notification_clicked";
+  | "notification_clicked"
+  | "pipeline_updates";
 
 interface TrackParams {
   actorUserId: string;

@@ -309,7 +309,7 @@ function Landing() {
           >
             <span className="h-[5px] w-[5px] rounded-full animate-pulse" style={{ background: "oklch(0.72 0.10 224)" }} />
             <span className={`${EYEBROW} text-[9px]`} style={eyebrowStyle}>
-              Creator Collaboration OS · Now in Beta
+              Creator Collaboration OS
             </span>
           </div>
 
@@ -351,7 +351,7 @@ function Landing() {
           {/* Proof line */}
           <div className="mt-10 flex items-center justify-center gap-6 flex-wrap">
             {[
-              "Free during beta",
+              "Free to use",
               "English + Arabic (RTL)",
               "Built for MENA",
             ].map((t) => (
@@ -592,7 +592,7 @@ function Landing() {
                     style={{ background: "oklch(0.72 0.10 224 / 10%)", border: "1px solid oklch(0.72 0.10 224 / 22%)" }}
                   >
                     <Sparkles className="h-3 w-3" style={{ color: "oklch(0.72 0.10 224)" }} />
-                    <span className={`${EYEBROW} text-[8.5px]`} style={{ color: "oklch(0.72 0.10 224)" }}>Coming soon</span>
+                    <span className={`${EYEBROW} text-[8.5px]`} style={{ color: "oklch(0.72 0.10 224)" }}>Live now</span>
                   </div>
                   <h2 className="font-display text-[clamp(2rem,4vw,3.25rem)] font-bold tracking-[-0.04em] leading-[1.05]">
                     MRKT Studio
@@ -752,7 +752,7 @@ function Landing() {
                 from first contact to final delivery lives in one place.
               </p>
               <p className="text-[1.0625rem] leading-[1.85] font-light" style={bodyStyle}>
-                We're in beta. We're building in public. And we're obsessed with getting this right.
+                We're building in public. And we're obsessed with getting this right.
               </p>
               <Link
                 to="/about"
@@ -768,19 +768,9 @@ function Landing() {
         </div>
       </section>
 
-      {/* ══ 11 BETA CTA ══════════════════════════════════════════════════════════ */}
+      {/* ══ 11 CTA ═══════════════════════════════════════════════════════════════ */}
       <section className="px-6 py-32 hairline-t">
         <div className="mx-auto max-w-2xl text-center">
-          <div
-            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8"
-            style={{ background: "oklch(0.62 0.12 158 / 10%)", border: "1px solid oklch(0.62 0.12 158 / 24%)" }}
-          >
-            <span className="h-[5px] w-[5px] rounded-full" style={{ background: "oklch(0.62 0.12 158)" }} />
-            <span className={`${EYEBROW} text-[9px]`} style={{ color: "oklch(0.62 0.12 158)" }}>
-              Free during beta
-            </span>
-          </div>
-
           <h2 className="font-display text-[clamp(2.75rem,7vw,5.5rem)] font-bold tracking-[-0.048em] leading-[0.96]">
             Where collaborations
             <br />
@@ -788,8 +778,7 @@ function Landing() {
           </h2>
 
           <p className="mt-8 text-[1.0625rem] leading-[1.82] font-light max-w-md mx-auto" style={bodyStyle}>
-            Join MRKT during beta. Free, no credit card required. The creator collaboration
-            OS for MENA — from first brief to final delivery.
+            The creator collaboration OS for MENA — from first brief to final delivery. Free, no credit card required.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -806,10 +795,6 @@ function Landing() {
               See pricing
             </Link>
           </div>
-
-          <p className="mt-8 text-[12px]" style={{ color: "oklch(1 0 0 / 24%)" }}>
-            Beta access is free. Paid plans launch after the beta period.
-          </p>
         </div>
       </section>
 

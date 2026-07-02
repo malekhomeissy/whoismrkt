@@ -29,7 +29,7 @@ const muted   = { color: "oklch(1 0 0 / 40%)" };
 const dimmed  = { color: "oklch(1 0 0 / 26%)" };
 const text    = { color: "oklch(1 0 0 / 88%)" };
 
-type Tab = "overview" | "users" | "pioneer" | "contracts" | "trust" | "ai" | "log";
+type Tab = "overview" | "users" | "pioneer" | "contracts" | "trust" | "ai" | "log" | "abuse";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -86,6 +86,12 @@ interface ActionLogRow {
   payload: Record<string, unknown> | null; created_at: string;
 }
 
+interface AbuseReportRow {
+  id: string; reporter_user_id: string; reported_user_id: string | null;
+  reported_content_id: string | null; report_type: string; description: string | null;
+  status: string; created_at: string;
+}
+
 const EMPTY_STATS: AdminStats = {
   totalUsers: 0, totalCreators: 0, totalBusinesses: 0, verifiedCreators: 0, betaPioneers: 0,
   totalCampaigns: 0, activeCampaigns: 0, totalApplications: 0, totalMessages: 0,
@@ -106,6 +112,7 @@ function AdminPage() {
   const [creators, setCreators]   = useState<CreatorRow[]>([]);
   const [contracts, setContracts] = useState<ContractRow[]>([]);
   const [actionLog, setActionLog] = useState<ActionLogRow[]>([]);
+  const [abuseReports, setAbuseReports] = useState<AbuseReportRow[]>([]);
   const [loading, setLoading]     = useState(true);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [search, setSearch]       = useState("");
@@ -191,14 +198,25 @@ function AdminPage() {
     if (!error) setActionLog((data ?? []) as ActionLogRow[]);
   }, [isAdmin]);
 
+  const loadAbuseReports = useCallback(async () => {
+    if (!isAdmin) return;
+    const { data } = await (supabase as any)
+      .from("abuse_reports")
+      .select("id,reporter_user_id,reported_user_id,reported_content_id,report_type,description,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    setAbuseReports((data ?? []) as AbuseReportRow[]);
+  }, [isAdmin]);
+
   useEffect(() => {
     if (isAdmin === true) {
       loadStats();
       loadCreators();
       loadContracts();
       loadActionLog();
+      loadAbuseReports();
     }
-  }, [isAdmin, loadStats, loadCreators, loadContracts, loadActionLog]);
+  }, [isAdmin, loadStats, loadCreators, loadContracts, loadActionLog, loadAbuseReports]);
 
   // ── Admin actions ─────────────────────────────────────────────────────────────
 
@@ -287,6 +305,7 @@ function AdminPage() {
     { id: "contracts", label: "Contracts" },
     { id: "trust",     label: "Trust" },
     { id: "ai",        label: "AI & Costs" },
+    { id: "abuse",     label: "Abuse Reports" },
     { id: "log",       label: "Action Log" },
   ];
 
@@ -417,79 +436,62 @@ function AdminPage() {
               </div>
               <div className="text-[12px]" style={dimmed}>{filteredCreators.length} creators</div>
             </div>
-            <div className="rounded-2xl overflow-hidden" style={card}>
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
-                    {["Creator", "Niche", "Followers", "Status", "Actions"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-[9.5px] uppercase tracking-[0.28em] font-semibold" style={dimmed}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCreators.map((c, i) => (
-                    <tr key={c.id} style={{ borderBottom: i < filteredCreators.length - 1 ? "1px solid oklch(1 0 0 / 5%)" : "none" }}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{ background: "oklch(0.72 0.10 224 / 18%)", color: "oklch(0.72 0.10 224)" }}>
-                            {c.display_name?.[0]?.toUpperCase() ?? "?"}
-                          </div>
-                          <div>
-                            <div className="text-[12.5px] font-medium" style={text}>{c.display_name || "—"}</div>
-                            <div className="text-[10.5px]" style={dimmed}>@{c.username || "—"}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.niche || "—"}</td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>
-                        {c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {c.is_beta_pioneer && (
-                            <span className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold" style={{ background: "oklch(0.70 0.08 68 / 15%)", color: "oklch(0.70 0.08 68)", border: "1px solid oklch(0.70 0.08 68 / 30%)" }}>Pioneer</span>
-                          )}
-                          {c.is_verified && (
-                            <span className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold" style={{ background: "oklch(0.62 0.12 158 / 15%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 30%)" }}>Verified</span>
-                          )}
-                          {!c.is_beta_pioneer && !c.is_verified && <span className="text-[9.5px]" style={dimmed}>None</span>}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          {!c.is_verified && (
-                            <button
-                              onClick={() => verifyCreator(c.id, c.display_name)}
-                              disabled={actionPending === c.id + "_verify"}
-                              className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
-                              style={{ background: "oklch(0.62 0.12 158 / 15%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 25%)" }}
-                            >Verify</button>
-                          )}
-                          {!c.is_beta_pioneer ? (
-                            <button
-                              onClick={() => grantPioneer(c.user_id, c.display_name)}
-                              disabled={actionPending === c.user_id}
-                              className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
-                              style={{ background: "oklch(0.70 0.08 68 / 15%)", color: "oklch(0.70 0.08 68)", border: "1px solid oklch(0.70 0.08 68 / 25%)" }}
-                            >Grant Pioneer</button>
-                          ) : (
-                            <button
-                              onClick={() => revokePioneer(c.user_id, c.display_name)}
-                              disabled={actionPending === c.user_id}
-                              className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
-                              style={{ ...card, color: "oklch(1 0 0 / 40%)" }}
-                            >Revoke Pioneer</button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredCreators.length === 0 && (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-[12px]" style={dimmed}>{loading ? "Loading…" : "No creators found"}</td></tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="rounded-2xl overflow-hidden divide-y divide-white/[0.05]" style={card}>
+              {filteredCreators.map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:flex-nowrap">
+                  <div className="flex min-w-[160px] flex-1 items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                      style={{ background: "oklch(0.72 0.10 224 / 18%)", color: "oklch(0.72 0.10 224)" }}>
+                      {c.display_name?.[0]?.toUpperCase() ?? "?"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-[12.5px] font-medium" style={text}>{c.display_name || "—"}</div>
+                      <div className="truncate text-[10.5px]" style={dimmed}>@{c.username || "—"}</div>
+                    </div>
+                  </div>
+                  <div className="w-24 shrink-0 text-[12px]" style={muted}>{c.niche || "—"}</div>
+                  <div className="w-16 shrink-0 text-[12px]" style={muted}>
+                    {c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}
+                  </div>
+                  <div className="flex w-28 shrink-0 flex-wrap items-center gap-1.5">
+                    {c.is_beta_pioneer && (
+                      <span className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold" style={{ background: "oklch(0.70 0.08 68 / 15%)", color: "oklch(0.70 0.08 68)", border: "1px solid oklch(0.70 0.08 68 / 30%)" }}>Pioneer</span>
+                    )}
+                    {c.is_verified && (
+                      <span className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold" style={{ background: "oklch(0.62 0.12 158 / 15%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 30%)" }}>Verified</span>
+                    )}
+                    {!c.is_beta_pioneer && !c.is_verified && <span className="text-[9.5px]" style={dimmed}>None</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {!c.is_verified && (
+                      <button
+                        onClick={() => verifyCreator(c.id, c.display_name)}
+                        disabled={actionPending === c.id + "_verify"}
+                        className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
+                        style={{ background: "oklch(0.62 0.12 158 / 15%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 25%)" }}
+                      >Verify</button>
+                    )}
+                    {!c.is_beta_pioneer ? (
+                      <button
+                        onClick={() => grantPioneer(c.user_id, c.display_name)}
+                        disabled={actionPending === c.user_id}
+                        className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
+                        style={{ background: "oklch(0.70 0.08 68 / 15%)", color: "oklch(0.70 0.08 68)", border: "1px solid oklch(0.70 0.08 68 / 25%)" }}
+                      >Grant Pioneer</button>
+                    ) : (
+                      <button
+                        onClick={() => revokePioneer(c.user_id, c.display_name)}
+                        disabled={actionPending === c.user_id}
+                        className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
+                        style={{ ...card, color: "oklch(1 0 0 / 40%)" }}
+                      >Revoke Pioneer</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {filteredCreators.length === 0 && (
+                <div className="px-4 py-8 text-center text-[12px]" style={dimmed}>{loading ? "Loading…" : "No creators found"}</div>
+              )}
             </div>
           </div>
         )}
@@ -510,110 +512,82 @@ function AdminPage() {
             </div>
 
             <SectionTitle icon={Star} title="All Pioneers" />
-            <div className="rounded-2xl overflow-hidden" style={card}>
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
-                    {["Creator", "Niche", "Followers", "Verified", "Actions"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-[9.5px] uppercase tracking-[0.28em] font-semibold" style={dimmed}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {creators.filter(c => c.is_beta_pioneer).map((c, i, arr) => (
-                    <tr key={c.id} style={{ borderBottom: i < arr.length - 1 ? "1px solid oklch(1 0 0 / 5%)" : "none" }}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{ background: "oklch(0.70 0.08 68 / 18%)", color: "oklch(0.70 0.08 68)" }}>
-                            {c.display_name?.[0]?.toUpperCase() ?? "?"}
-                          </div>
-                          <div>
-                            <div className="text-[12.5px] font-medium" style={text}>{c.display_name}</div>
-                            <div className="text-[10.5px]" style={dimmed}>@{c.username}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.niche || "—"}</td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}</td>
-                      <td className="px-4 py-3">
-                        {c.is_verified
-                          ? <span className="text-[11px]" style={{ color: "oklch(0.62 0.12 158)" }}>✓ Verified</span>
-                          : <span className="text-[11px]" style={dimmed}>—</span>}
-                      </td>
-                      <td className="px-4 py-3 flex gap-1.5">
-                        {!c.is_verified && (
-                          <button onClick={() => verifyCreator(c.id, c.display_name)} disabled={!!actionPending}
-                            className="rounded-lg px-2 py-1 text-[10px] transition-opacity disabled:opacity-40"
-                            style={{ background: "oklch(0.62 0.12 158 / 12%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 22%)" }}>
-                            Verify
-                          </button>
-                        )}
-                        <button onClick={() => revokePioneer(c.user_id, c.display_name)} disabled={actionPending === c.user_id}
-                          className="rounded-lg px-2.5 py-1.5 text-[10.5px] transition-opacity disabled:opacity-40"
-                          style={{ background: "oklch(0.52 0.15 24 / 10%)", color: "oklch(0.52 0.15 24)", border: "1px solid oklch(0.52 0.15 24 / 20%)" }}>
-                          Revoke
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {creators.filter(c => c.is_beta_pioneer).length === 0 && (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-[12px]" style={dimmed}>No pioneers yet</td></tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="rounded-2xl overflow-hidden divide-y divide-white/[0.05]" style={card}>
+              {creators.filter(c => c.is_beta_pioneer).map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:flex-nowrap">
+                  <div className="flex min-w-[160px] flex-1 items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                      style={{ background: "oklch(0.70 0.08 68 / 18%)", color: "oklch(0.70 0.08 68)" }}>
+                      {c.display_name?.[0]?.toUpperCase() ?? "?"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-[12.5px] font-medium" style={text}>{c.display_name}</div>
+                      <div className="truncate text-[10.5px]" style={dimmed}>@{c.username}</div>
+                    </div>
+                  </div>
+                  <div className="w-24 shrink-0 text-[12px]" style={muted}>{c.niche || "—"}</div>
+                  <div className="w-16 shrink-0 text-[12px]" style={muted}>{c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}</div>
+                  <div className="w-24 shrink-0">
+                    {c.is_verified
+                      ? <span className="text-[11px]" style={{ color: "oklch(0.62 0.12 158)" }}>✓ Verified</span>
+                      : <span className="text-[11px]" style={dimmed}>—</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {!c.is_verified && (
+                      <button onClick={() => verifyCreator(c.id, c.display_name)} disabled={!!actionPending}
+                        className="rounded-lg px-2 py-1 text-[10px] transition-opacity disabled:opacity-40"
+                        style={{ background: "oklch(0.62 0.12 158 / 12%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 22%)" }}>
+                        Verify
+                      </button>
+                    )}
+                    <button onClick={() => revokePioneer(c.user_id, c.display_name)} disabled={actionPending === c.user_id}
+                      className="rounded-lg px-2.5 py-1.5 text-[10.5px] transition-opacity disabled:opacity-40"
+                      style={{ background: "oklch(0.52 0.15 24 / 10%)", color: "oklch(0.52 0.15 24)", border: "1px solid oklch(0.52 0.15 24 / 20%)" }}>
+                      Revoke
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {creators.filter(c => c.is_beta_pioneer).length === 0 && (
+                <div className="px-4 py-8 text-center text-[12px]" style={dimmed}>No pioneers yet</div>
+              )}
             </div>
 
             <SectionTitle icon={Users} title="Eligible — Grant Pioneer" />
-            <div className="rounded-2xl overflow-hidden" style={card}>
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
-                    {["Creator", "Niche", "Followers", "Verified", "Actions"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-[9.5px] uppercase tracking-[0.28em] font-semibold" style={dimmed}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {creators.filter(c => !c.is_beta_pioneer).slice(0, 30).map((c, i, arr) => (
-                    <tr key={c.id} style={{ borderBottom: i < arr.length - 1 ? "1px solid oklch(1 0 0 / 5%)" : "none" }}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{ background: "oklch(1 0 0 / 6%)", color: "oklch(1 0 0 / 50%)" }}>
-                            {c.display_name?.[0]?.toUpperCase() ?? "?"}
-                          </div>
-                          <div>
-                            <div className="text-[12.5px] font-medium" style={text}>{c.display_name || "—"}</div>
-                            <div className="text-[10.5px]" style={dimmed}>@{c.username}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.niche || "—"}</td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}</td>
-                      <td className="px-4 py-3">
-                        {c.is_verified ? <span style={{ color: "oklch(0.62 0.12 158)" }}>✓</span> : <span style={dimmed}>—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          {!c.is_verified && (
-                            <button onClick={() => verifyCreator(c.id, c.display_name)} disabled={!!actionPending}
-                              className="rounded-lg px-2 py-1 text-[10px] transition-opacity disabled:opacity-40"
-                              style={{ background: "oklch(0.62 0.12 158 / 12%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 22%)" }}>
-                              Verify
-                            </button>
-                          )}
-                          <button onClick={() => grantPioneer(c.user_id, c.display_name)} disabled={!!actionPending}
-                            className="rounded-lg px-2.5 py-1 text-[10px] font-medium transition-opacity disabled:opacity-40"
-                            style={{ background: "oklch(0.70 0.08 68 / 15%)", color: "oklch(0.70 0.08 68)", border: "1px solid oklch(0.70 0.08 68 / 25%)" }}>
-                            Grant Pioneer
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="rounded-2xl overflow-hidden divide-y divide-white/[0.05]" style={card}>
+              {creators.filter(c => !c.is_beta_pioneer).slice(0, 30).map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:flex-nowrap">
+                  <div className="flex min-w-[160px] flex-1 items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                      style={{ background: "oklch(1 0 0 / 6%)", color: "oklch(1 0 0 / 50%)" }}>
+                      {c.display_name?.[0]?.toUpperCase() ?? "?"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-[12.5px] font-medium" style={text}>{c.display_name || "—"}</div>
+                      <div className="truncate text-[10.5px]" style={dimmed}>@{c.username}</div>
+                    </div>
+                  </div>
+                  <div className="w-24 shrink-0 text-[12px]" style={muted}>{c.niche || "—"}</div>
+                  <div className="w-16 shrink-0 text-[12px]" style={muted}>{c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}</div>
+                  <div className="w-8 shrink-0">
+                    {c.is_verified ? <span style={{ color: "oklch(0.62 0.12 158)" }}>✓</span> : <span style={dimmed}>—</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {!c.is_verified && (
+                      <button onClick={() => verifyCreator(c.id, c.display_name)} disabled={!!actionPending}
+                        className="rounded-lg px-2 py-1 text-[10px] transition-opacity disabled:opacity-40"
+                        style={{ background: "oklch(0.62 0.12 158 / 12%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 22%)" }}>
+                        Verify
+                      </button>
+                    )}
+                    <button onClick={() => grantPioneer(c.user_id, c.display_name)} disabled={!!actionPending}
+                      className="rounded-lg px-2.5 py-1 text-[10px] font-medium transition-opacity disabled:opacity-40"
+                      style={{ background: "oklch(0.70 0.08 68 / 15%)", color: "oklch(0.70 0.08 68)", border: "1px solid oklch(0.70 0.08 68 / 25%)" }}>
+                      Grant Pioneer
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -627,45 +601,34 @@ function AdminPage() {
               <Stat label="Awaiting Response"  value={fmt(stats.pendingContracts)} accent="oklch(0.70 0.08 68)" />
             </div>
             <SectionTitle icon={FileText} title="Recent Contracts" />
-            <div className="rounded-2xl overflow-hidden" style={card}>
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
-                    {["Campaign", "Business → Creator", "Status", "Sent", "Signed"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-[9.5px] uppercase tracking-[0.28em] font-semibold" style={dimmed}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {contracts.map((c, i) => (
-                    <tr key={c.id} style={{ borderBottom: i < contracts.length - 1 ? "1px solid oklch(1 0 0 / 5%)" : "none" }}>
-                      <td className="px-4 py-3 text-[12px]" style={text}>{c.campaign_title || c.title}</td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.business_name || "—"} → {c.creator_name || "—"}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold" style={{
-                          background: c.status === "accepted" ? "oklch(0.62 0.12 158 / 15%)" : c.status === "sent" ? "oklch(0.70 0.08 68 / 15%)" : c.status === "declined" ? "oklch(0.52 0.15 24 / 15%)" : "oklch(1 0 0 / 5%)",
-                          color: c.status === "accepted" ? "oklch(0.62 0.12 158)" : c.status === "sent" ? "oklch(0.70 0.08 68)" : c.status === "declined" ? "oklch(0.52 0.15 24)" : "oklch(1 0 0 / 40%)",
-                          border: "1px solid oklch(1 0 0 / 8%)",
-                        }}>
-                          {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-[11px]" style={dimmed}>{c.sent_at ? new Date(c.sent_at).toLocaleDateString() : "—"}</td>
-                      <td className="px-4 py-3">
-                        {c.signed_at ? (
-                          <div>
-                            <div className="text-[11px]" style={{ color: "oklch(0.62 0.12 158)" }}>{new Date(c.signed_at).toLocaleDateString()}</div>
-                            {c.signer_email && <div className="text-[10px]" style={dimmed}>{c.signer_email}</div>}
-                          </div>
-                        ) : <span className="text-[11px]" style={dimmed}>—</span>}
-                      </td>
-                    </tr>
-                  ))}
-                  {contracts.length === 0 && (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-[12px]" style={dimmed}>No contracts yet</td></tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="rounded-2xl overflow-hidden divide-y divide-white/[0.05]" style={card}>
+              {contracts.map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:flex-nowrap">
+                  <div className="min-w-[140px] flex-1 truncate text-[12px]" style={text}>{c.campaign_title || c.title}</div>
+                  <div className="w-40 shrink-0 truncate text-[12px]" style={muted}>{c.business_name || "—"} → {c.creator_name || "—"}</div>
+                  <div className="w-24 shrink-0">
+                    <span className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold" style={{
+                      background: c.status === "accepted" ? "oklch(0.62 0.12 158 / 15%)" : c.status === "sent" ? "oklch(0.70 0.08 68 / 15%)" : c.status === "declined" ? "oklch(0.52 0.15 24 / 15%)" : "oklch(1 0 0 / 5%)",
+                      color: c.status === "accepted" ? "oklch(0.62 0.12 158)" : c.status === "sent" ? "oklch(0.70 0.08 68)" : c.status === "declined" ? "oklch(0.52 0.15 24)" : "oklch(1 0 0 / 40%)",
+                      border: "1px solid oklch(1 0 0 / 8%)",
+                    }}>
+                      {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                    </span>
+                  </div>
+                  <div className="w-20 shrink-0 text-[11px]" style={dimmed}>{c.sent_at ? new Date(c.sent_at).toLocaleDateString() : "—"}</div>
+                  <div className="w-28 shrink-0">
+                    {c.signed_at ? (
+                      <div>
+                        <div className="text-[11px]" style={{ color: "oklch(0.62 0.12 158)" }}>{new Date(c.signed_at).toLocaleDateString()}</div>
+                        {c.signer_email && <div className="truncate text-[10px]" style={dimmed}>{c.signer_email}</div>}
+                      </div>
+                    ) : <span className="text-[11px]" style={dimmed}>—</span>}
+                  </div>
+                </div>
+              ))}
+              {contracts.length === 0 && (
+                <div className="px-4 py-8 text-center text-[12px]" style={dimmed}>No contracts yet</div>
+              )}
             </div>
           </div>
         )}
@@ -698,39 +661,26 @@ function AdminPage() {
               </div>
             </div>
             <SectionTitle icon={ShieldCheck} title="Quick Verify — Unverified Creators" />
-            <div className="rounded-2xl overflow-hidden" style={card}>
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
-                    {["Creator", "Niche", "Followers", "Pioneer", "Verify"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-[9.5px] uppercase tracking-[0.28em] font-semibold" style={dimmed}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {creators.filter(c => !c.is_verified).slice(0, 20).map((c, i, arr) => (
-                    <tr key={c.id} style={{ borderBottom: i < arr.length - 1 ? "1px solid oklch(1 0 0 / 5%)" : "none" }}>
-                      <td className="px-4 py-3">
-                        <div className="text-[12.5px] font-medium" style={text}>{c.display_name || "—"}</div>
-                        <div className="text-[10.5px]" style={dimmed}>@{c.username}</div>
-                      </td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.niche || "—"}</td>
-                      <td className="px-4 py-3 text-[12px]" style={muted}>{c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}</td>
-                      <td className="px-4 py-3">
-                        {c.is_beta_pioneer ? <span style={{ color: "oklch(0.70 0.08 68)" }}>★ Pioneer</span> : <span style={dimmed}>—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => verifyCreator(c.id, c.display_name)}
-                          disabled={actionPending === c.id + "_verify"}
-                          className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
-                          style={{ background: "oklch(0.62 0.12 158 / 15%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 25%)" }}
-                        >Verify</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="rounded-2xl overflow-hidden divide-y divide-white/[0.05]" style={card}>
+              {creators.filter(c => !c.is_verified).slice(0, 20).map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:flex-nowrap">
+                  <div className="min-w-[140px] flex-1">
+                    <div className="text-[12.5px] font-medium" style={text}>{c.display_name || "—"}</div>
+                    <div className="text-[10.5px]" style={dimmed}>@{c.username}</div>
+                  </div>
+                  <div className="w-24 shrink-0 text-[12px]" style={muted}>{c.niche || "—"}</div>
+                  <div className="w-16 shrink-0 text-[12px]" style={muted}>{c.follower_count ? `${(c.follower_count / 1000).toFixed(1)}K` : "—"}</div>
+                  <div className="w-20 shrink-0">
+                    {c.is_beta_pioneer ? <span style={{ color: "oklch(0.70 0.08 68)" }}>★ Pioneer</span> : <span style={dimmed}>—</span>}
+                  </div>
+                  <button
+                    onClick={() => verifyCreator(c.id, c.display_name)}
+                    disabled={actionPending === c.id + "_verify"}
+                    className="rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium transition-opacity disabled:opacity-40"
+                    style={{ background: "oklch(0.62 0.12 158 / 15%)", color: "oklch(0.62 0.12 158)", border: "1px solid oklch(0.62 0.12 158 / 25%)" }}
+                  >Verify</button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -766,43 +716,72 @@ function AdminPage() {
         )}
 
         {/* ══ ACTION LOG ═══════════════════════════════════════════════════════ */}
+        {/* ══ ABUSE REPORTS ══════════════════════════════════════════════════ */}
+        {tab === "abuse" && (
+          <div className="space-y-6">
+            <div className="rounded-2xl overflow-hidden divide-y divide-white/[0.05]" style={card}>
+              {abuseReports.map((r) => (
+                <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:flex-nowrap">
+                  <div className="w-20 shrink-0 whitespace-nowrap text-[11px]" style={dimmed}>
+                    {new Date(r.created_at).toLocaleDateString()}
+                  </div>
+                  <div className="w-24 shrink-0">
+                    <span className="rounded-full px-2 py-0.5 text-[9.5px] font-mono" style={{ background: "oklch(0.52 0.15 24 / 12%)", color: "oklch(0.72 0.15 24)" }}>
+                      {r.report_type}
+                    </span>
+                  </div>
+                  <div className="w-20 shrink-0">
+                    <span className="rounded-full px-2 py-0.5 text-[9.5px]" style={{
+                      background: r.status === "resolved" ? "oklch(0.62 0.12 158 / 12%)" : "oklch(0.70 0.08 68 / 12%)",
+                      color: r.status === "resolved" ? "oklch(0.62 0.12 158)" : "oklch(0.70 0.08 68)",
+                    }}>
+                      {r.status}
+                    </span>
+                  </div>
+                  <div className="min-w-[140px] max-w-[220px] flex-1 truncate text-[11px]" style={muted}>
+                    {r.description ?? "—"}
+                  </div>
+                  <div className="w-20 shrink-0 truncate text-[10.5px] font-mono" style={dimmed}>
+                    {r.reporter_user_id.slice(0, 8)}…
+                  </div>
+                  <div className="w-20 shrink-0 truncate text-[10.5px] font-mono" style={dimmed}>
+                    {r.reported_user_id ? r.reported_user_id.slice(0, 8) + "…" : "—"}
+                  </div>
+                </div>
+              ))}
+              {abuseReports.length === 0 && (
+                <div className="px-4 py-8 text-center text-[12px]" style={dimmed}>No abuse reports</div>
+              )}
+            </div>
+          </div>
+        )}
+
         {tab === "log" && (
           <div className="space-y-6">
-            <div className="rounded-2xl overflow-hidden" style={card}>
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 6%)" }}>
-                    {["When", "Admin", "Action", "Target", "Note"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-[9.5px] uppercase tracking-[0.28em] font-semibold" style={dimmed}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {actionLog.map((l, i) => (
-                    <tr key={l.id} style={{ borderBottom: i < actionLog.length - 1 ? "1px solid oklch(1 0 0 / 5%)" : "none" }}>
-                      <td className="px-4 py-3 text-[11px] whitespace-nowrap" style={dimmed}>
-                        {new Date(l.created_at).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-[11px]" style={muted}>{l.admin_email}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full px-2 py-0.5 text-[9.5px] font-mono" style={{ background: "oklch(0.72 0.10 224 / 12%)", color: "oklch(0.72 0.10 224)" }}>
-                          {l.action}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-[10.5px] font-mono truncate max-w-[120px]" style={dimmed}>
-                        {l.target_id ? l.target_id.slice(0, 8) + "…" : "—"}
-                        {l.target_type && <span style={{ marginLeft: 4, color: "oklch(1 0 0 / 20%)" }}>({l.target_type})</span>}
-                      </td>
-                      <td className="px-4 py-3 text-[11px]" style={muted}>
-                        {l.payload?.note as string || l.payload?.reason as string || "—"}
-                      </td>
-                    </tr>
-                  ))}
-                  {actionLog.length === 0 && (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-[12px]" style={dimmed}>No admin actions yet</td></tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="rounded-2xl overflow-hidden divide-y divide-white/[0.05]" style={card}>
+              {actionLog.map((l) => (
+                <div key={l.id} className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] sm:flex-nowrap">
+                  <div className="w-32 shrink-0 whitespace-nowrap text-[11px]" style={dimmed}>
+                    {new Date(l.created_at).toLocaleString()}
+                  </div>
+                  <div className="w-32 shrink-0 truncate text-[11px]" style={muted}>{l.admin_email}</div>
+                  <div className="w-32 shrink-0">
+                    <span className="rounded-full px-2 py-0.5 text-[9.5px] font-mono" style={{ background: "oklch(0.72 0.10 224 / 12%)", color: "oklch(0.72 0.10 224)" }}>
+                      {l.action}
+                    </span>
+                  </div>
+                  <div className="w-32 shrink-0 truncate text-[10.5px] font-mono" style={dimmed}>
+                    {l.target_id ? l.target_id.slice(0, 8) + "…" : "—"}
+                    {l.target_type && <span style={{ marginLeft: 4, color: "oklch(1 0 0 / 20%)" }}>({l.target_type})</span>}
+                  </div>
+                  <div className="min-w-[140px] flex-1 truncate text-[11px]" style={muted}>
+                    {l.payload?.note as string || l.payload?.reason as string || "—"}
+                  </div>
+                </div>
+              ))}
+              {actionLog.length === 0 && (
+                <div className="px-4 py-8 text-center text-[12px]" style={dimmed}>No admin actions yet</div>
+              )}
             </div>
           </div>
         )}

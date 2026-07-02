@@ -673,7 +673,7 @@ function BrandKnowledgePage() {
                 Documents
               </div>
               <div style={{ fontSize: 12, color: C.textTertiary, marginTop: 1 }}>
-                PDF brand decks, creative briefs, product catalogs — coming soon
+                PDF brand decks, creative briefs, product catalogs
               </div>
             </div>
             <div

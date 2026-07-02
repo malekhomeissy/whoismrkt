@@ -17,16 +17,73 @@ import { corsHeaders } from "../_shared/security.ts";
 //   image → IMAGE_CREDIT_COST  (1)
 //   video → VIDEO_CREDIT_COST  (3)
 //   MONTHLY_CREDIT_LIMIT total per user per month (10)
+//
+// Higgsfield consumer API: fnf-api-gw.higgsfield.ai/fnf
+// Auth: Authorization: Bearer {oat_token}
+// Workspace: hf-workspace-id header
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-const HIGGSFIELD_BASE      = "https://fnf.higgsfield.ai";
-const IMAGE_MODEL          = "nano_banana_2";   // Nano Banana Pro
-const VIDEO_MODEL          = "seedance1_5";     // Seedance 1.5 Pro
+const HIGGSFIELD_BASE  = "https://fnf-api-gw.higgsfield.ai/fnf";
+const CLERK_TOKEN_URL  = "https://clerk.higgsfield.ai/oauth/token";
+const CLERK_CLIENT_ID  = "sRGCQJvvJkPrrtRj";
+const VIDEO_MODEL      = "soul";
 
 const MONTHLY_CREDIT_LIMIT = 10;
 const IMAGE_CREDIT_COST    = 1;
 const VIDEO_CREDIT_COST    = 3;
+
+// ── Token auto-refresh ────────────────────────────────────────────────────────
+
+async function getHiggsfieldToken(serviceClient: ReturnType<typeof createClient>): Promise<{
+  accessToken: string;
+  workspaceId: string;
+}> {
+  const { data: rows, error } = await serviceClient
+    .from("system_config")
+    .select("key, value")
+    .in("key", ["higgsfield_access_token", "higgsfield_refresh_token", "higgsfield_expires_at", "higgsfield_workspace_id"]);
+
+  if (error || !rows?.length) throw new Error("Higgsfield credentials not found in system_config");
+
+  const cfg: Record<string, string> = {};
+  for (const row of rows) cfg[row.key] = row.value;
+
+  const expiresAt   = parseInt(cfg["higgsfield_expires_at"] ?? "0", 10);
+  const nowSec      = Math.floor(Date.now() / 1000);
+  const workspaceId = cfg["higgsfield_workspace_id"] ?? "";
+
+  // Refresh if within 5 minutes of expiry
+  if (expiresAt - nowSec < 300) {
+    const refreshToken = cfg["higgsfield_refresh_token"];
+    if (!refreshToken) throw new Error("No Higgsfield refresh token — re-authenticate via `higgsfield auth login`");
+
+    const res = await fetch(CLERK_TOKEN_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:    new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken, client_id: CLERK_CLIENT_ID }).toString(),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Higgsfield token refresh failed (${res.status}): ${txt}`);
+    }
+
+    const tokens = await res.json() as { access_token: string; refresh_token?: string; expires_in?: number };
+    const newExpiry = nowSec + (tokens.expires_in ?? 86400);
+
+    await serviceClient.from("system_config").upsert([
+      { key: "higgsfield_access_token",  value: tokens.access_token,                 updated_at: new Date().toISOString() },
+      { key: "higgsfield_refresh_token", value: tokens.refresh_token ?? refreshToken, updated_at: new Date().toISOString() },
+      { key: "higgsfield_expires_at",    value: String(newExpiry),                    updated_at: new Date().toISOString() },
+    ]);
+
+    console.log("Higgsfield token auto-refreshed, expires", new Date(newExpiry * 1000).toISOString());
+    return { accessToken: tokens.access_token, workspaceId };
+  }
+
+  return { accessToken: cfg["higgsfield_access_token"] ?? "", workspaceId };
+}
 
 const PLATFORM_RATIO: Record<string, string> = {
   instagram: "1:1",
@@ -58,6 +115,11 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } },
+    );
+
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
@@ -123,59 +185,89 @@ Deno.serve(async (req: Request) => {
       (body.platform ? PLATFORM_RATIO[body.platform.toLowerCase()] : null) ||
       (asset_type === "video" ? "9:16" : "1:1");
 
-    // ── 5. Higgsfield API — create job ───────────────────────────────────────
+    // ── 5. Generate ──────────────────────────────────────────────────────────
 
-    const apiKey = Deno.env.get("HIGGSFIELD_API_KEY");
-    if (!apiKey) return json({ error: "HIGGSFIELD_API_KEY is not configured" }, 503);
+    let outputUrl:   string | null = null;
+    let jobStatus                  = "completed";
+    let requestId:   string | null = null;
+    let provider                   = "openai";
 
-    const model = asset_type === "video" ? VIDEO_MODEL : IMAGE_MODEL;
+    if (asset_type === "image") {
+      // Images → OpenAI DALL-E 3
+      const openaiKey = Deno.env.get("OPENAI_API_KEY");
+      if (!openaiKey) return json({ error: "OPENAI_API_KEY not configured" }, 503);
 
-    const higgsfieldRes = await fetch(`${HIGGSFIELD_BASE}/agents/jobs`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type":  "application/json",
-      },
-      body: JSON.stringify({
-        job_set_type: model,
-        params: {
-          prompt:       prompt.trim(),
-          aspect_ratio,
+      // Map aspect_ratio to DALL-E 3 size
+      const sizeMap: Record<string, string> = {
+        "1:1":  "1024x1024",
+        "16:9": "1792x1024",
+        "9:16": "1024x1792",
+      };
+      const size = sizeMap[aspect_ratio] ?? "1024x1024";
+
+      const openaiRes = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${openaiKey}`,
+          "Content-Type":  "application/json",
         },
-      }),
-    });
-
-    if (!higgsfieldRes.ok) {
-      const errText = await higgsfieldRes.text().catch(() => "");
-      console.error(`Higgsfield error ${higgsfieldRes.status}:`, errText);
-      return json(
-        { error: `Generation failed (${higgsfieldRes.status})`, details: errText },
-        502,
-      );
-    }
-
-    // Response is an array of job IDs: ["job_id"]
-    const jobIds = await higgsfieldRes.json() as string[];
-    const jobId  = Array.isArray(jobIds) ? jobIds[0] : null;
-
-    // ── 6. Fetch initial job state (often already completed for images) ───────
-
-    let initialUrl: string | null  = null;
-    let jobStatus:  string         = "generating";
-
-    if (jobId) {
-      const statusRes = await fetch(`${HIGGSFIELD_BASE}/agents/jobs/${jobId}`, {
-        headers: { "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model:   "dall-e-3",
+          prompt:  prompt.trim(),
+          n:       1,
+          size,
+          quality: "standard",
+        }),
       });
 
-      if (statusRes.ok) {
-        const jobData = await statusRes.json() as {
-          status?:     string;
-          result_url?: string | null;
-        };
-        initialUrl = jobData.result_url ?? null;
-        if (jobData.status === "completed" || initialUrl) jobStatus = "completed";
-        if (jobData.status === "failed")                  jobStatus = "failed";
+      if (!openaiRes.ok) {
+        const errText = await openaiRes.text().catch(() => "");
+        console.error(`OpenAI error ${openaiRes.status}:`, errText);
+        return json({ error: `Generation failed (${openaiRes.status})`, details: errText }, 502);
+      }
+
+      const openaiData = await openaiRes.json() as { data?: { url?: string }[] };
+      outputUrl = openaiData.data?.[0]?.url ?? null;
+
+    } else {
+      // Videos → Higgsfield with auto-refresh
+      provider  = "higgsfield";
+      jobStatus = "generating";
+
+      let hfToken: { accessToken: string; workspaceId: string };
+      try {
+        hfToken = await getHiggsfieldToken(serviceClient);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("Token error:", msg);
+        return json({ error: msg }, 503);
+      }
+
+      const hfRes = await fetch(
+        `${HIGGSFIELD_BASE}/developer/v2alpha/videos/${VIDEO_MODEL}/generations`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization":   `Bearer ${hfToken.accessToken}`,
+            "hf-workspace-id": hfToken.workspaceId,
+            "User-Agent":      "hf-cli/1.0.2",
+            "Content-Type":    "application/json",
+          },
+          body: JSON.stringify({ params: { prompt: prompt.trim(), aspect_ratio } }),
+        },
+      );
+
+      if (!hfRes.ok) {
+        const errText = await hfRes.text().catch(() => "");
+        console.error(`Higgsfield error ${hfRes.status}:`, errText);
+        return json({ error: `Generation failed (${hfRes.status})`, details: errText }, 502);
+      }
+
+      const hfData = await hfRes.json() as { id?: string; status?: string; result_url?: string | null };
+      requestId = hfData.id ?? null;
+      if (hfData.status === "completed") {
+        jobStatus = "completed";
+        outputUrl = hfData.result_url ?? null;
       }
     }
 
@@ -187,13 +279,13 @@ Deno.serve(async (req: Request) => {
         user_id:                 user.id,
         content_planner_item_id: content_planner_item_id ?? null,
         prompt:                  prompt.trim(),
-        provider:                "higgsfield",
+        provider,
         asset_type,
         aspect_ratio,
         credits_used:            creditCost,
         status:                  jobStatus,
-        output_url:              initialUrl ?? null,
-        higgsfield_request_id:   jobId,
+        output_url:              outputUrl ?? null,
+        higgsfield_request_id:   requestId,
         error_message:           null,
       })
       .select()

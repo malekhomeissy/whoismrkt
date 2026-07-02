@@ -7,20 +7,28 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://usemrkt.app",
+  "https://www.usemrkt.app",
+]);
 
-function json(data: unknown, status = 200) {
+function corsHeaders(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://usemrkt.app",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
+
+function json(req: Request, data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...CORS, "Content-Type": "application/json" },
+    headers: { ...corsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
 
   const META_APP_ID     = Deno.env.get("META_APP_ID");
   const META_APP_SECRET = Deno.env.get("META_APP_SECRET");
@@ -29,7 +37,7 @@ Deno.serve(async (req: Request) => {
   const SUPABASE_SVC    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   if (!META_APP_ID || !META_APP_SECRET) {
-    return json({ error: "meta_not_configured", message: "META_APP_ID and META_APP_SECRET not set." }, 500);
+    return json(req, { error: "meta_not_configured", message: "META_APP_ID and META_APP_SECRET not set." }, 500);
   }
 
   try {
@@ -39,11 +47,11 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authErr } = await userClient.auth.getUser();
-    if (authErr || !user) return json({ error: "unauthorized" }, 401);
+    if (authErr || !user) return json(req, { error: "unauthorized" }, 401);
 
     // ── Parse body ─────────────────────────────────────────────────────────
     const { code, redirect_uri } = await req.json() as { code: string; redirect_uri: string };
-    if (!code || !redirect_uri) return json({ error: "missing_params", message: "code and redirect_uri are required" }, 400);
+    if (!code || !redirect_uri) return json(req, { error: "missing_params", message: "code and redirect_uri are required" }, 400);
 
     // ── Step 1: Exchange code → short-lived token (Instagram Login API) ────
     const shortRes = await fetch("https://api.instagram.com/oauth/access_token", {
@@ -60,7 +68,7 @@ Deno.serve(async (req: Request) => {
     const shortData = await shortRes.json();
     if (shortData.error_type || shortData.error) {
       const msg = shortData.error_message ?? shortData.error?.message ?? "Token exchange failed";
-      return json({ error: "oauth_failed", message: msg });
+      return json(req, { error: "oauth_failed", message: msg });
     }
     const shortLivedToken: string = shortData.access_token;
 
@@ -72,7 +80,7 @@ Deno.serve(async (req: Request) => {
     );
     const longData = await longRes.json();
     if (longData.error) {
-      return json({ error: "token_exchange_failed", message: longData.error.message });
+      return json(req, { error: "token_exchange_failed", message: longData.error.message });
     }
     const longLivedToken: string = longData.access_token ?? shortLivedToken;
     const expiresIn: number      = longData.expires_in   ?? 5_183_944; // ~60 days
@@ -85,7 +93,7 @@ Deno.serve(async (req: Request) => {
     );
     const ig = await igRes.json();
     if (ig.error) {
-      return json({ error: "ig_fetch_failed", message: ig.error.message });
+      return json(req, { error: "ig_fetch_failed", message: ig.error.message });
     }
 
     const admin     = createClient(SUPABASE_URL, SUPABASE_SVC);
@@ -112,7 +120,7 @@ Deno.serve(async (req: Request) => {
       instagram_profile_picture_url:  ig.profile_picture_url  ?? null,
     }).eq("user_id", user.id);
 
-    return json({
+    return json(req, {
       success:   true,
       instagram: {
         username:            ig.username,
@@ -126,6 +134,6 @@ Deno.serve(async (req: Request) => {
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return json({ error: "internal", message }, 500);
+    return json(req, { error: "internal", message }, 500);
   }
 });
