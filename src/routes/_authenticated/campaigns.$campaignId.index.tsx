@@ -152,26 +152,38 @@ function CampaignDetailPage() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      // required_content_types, target_niche, max_followers,
+      // campaign_length_days, deliverable_count, content_rights, and
+      // additional_requirements do not exist as columns on campaigns (verified
+      // against generated types) — every one of these fields was previously
+      // requested in a single concatenated select string, which made the
+      // ENTIRE query error on every load (a single invalid column fails the
+      // whole select), silently redirecting every viewer away from this page.
+      // Select only real columns here; the UI already renders each of the
+      // missing fields conditionally, so defaulting them to null/[] below
+      // just hides those sections until a schema migration backs them for
+      // real, rather than continuing to break the page outright.
+      const { data, error } = await supabase
         .from("campaigns")
-        .select([
-          "id,title,description,status,is_published,user_id",
-          "business_name,business_industry,business_location",
-          "compensation_type,compensation_amount_fixed,compensation_budget_min,compensation_budget_max",
-          "required_platforms,required_niches,required_content_types,target_niche",
-          "required_country,required_language",
-          "min_followers,max_followers,deadline,campaign_length_days",
-          "deliverable_count,content_rights,additional_requirements",
-          "campaign_applications(id,status)",
-        ].join(","))
+        .select(
+          "id,title,description,status,is_published,user_id,business_name,business_industry,business_location,compensation_type,compensation_amount_fixed,compensation_budget_min,compensation_budget_max,required_platforms,required_niches,required_country,required_language,min_followers,deadline,campaign_applications(id,status)"
+        )
         .eq("id", campaignId)
         .single();
 
       if (error || !data) { navigate({ to: "/campaigns" }); return; }
       const owner = data.user_id === user.id;
       setIsOwner(owner);
-      setCampaign(data as CampaignDetail);
+      setCampaign({
+        ...data,
+        required_content_types:  [],
+        target_niche:            null,
+        max_followers:           null,
+        campaign_length_days:    null,
+        deliverable_count:       null,
+        content_rights:          null,
+        additional_requirements: null,
+      } as CampaignDetail);
       setLoading(false);
 
       // Detect role and load creator-specific context
@@ -182,7 +194,7 @@ function CampaignDetailPage() {
       if (creatorRole && !owner) {
         // Load creator profile for match score
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: cp } = await (supabase as any).from("creator_profiles").select(
+        const { data: cp } = await supabase.from("creator_profiles").select(
           "platforms,niche,categories,audience_location,location,location_city,location_country,follower_count,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types"
         ).eq("user_id", user.id).maybeSingle();
         if (cp) setCreatorProfile(cp as CreatorInput);
@@ -190,9 +202,9 @@ function CampaignDetailPage() {
         // Check applied + saved status
         const [appRes, saveRes] = await Promise.all([
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any).from("campaign_applications").select("id").eq("user_id", user.id).eq("campaign_id", data.id).maybeSingle(),
+          supabase.from("campaign_applications").select("id").eq("user_id", user.id).eq("campaign_id", data.id).maybeSingle(),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any).from("campaign_saves").select("id").eq("user_id", user.id).eq("campaign_id", data.id).maybeSingle(),
+          supabase.from("campaign_saves").select("id").eq("user_id", user.id).eq("campaign_id", data.id).maybeSingle(),
         ]);
         setHasApplied(!!appRes.data);
         setIsSaved(!!saveRes.data);
@@ -202,12 +214,10 @@ function CampaignDetailPage() {
       if (owner) {
         // Recommended creators (top 80 for scoring)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: creatorsData } = await (supabase as any)
+        const { data: creatorsData } = await supabase
           .from("creator_profiles")
           .select(
-            "id,display_name,niche,categories,platforms,profile_image_url,follower_count," +
-            "location,location_city,location_country,audience_location,primary_language," +
-            "accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified"
+            "id,display_name,niche,categories,platforms,profile_image_url,follower_count,location,location_city,location_country,audience_location,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified"
           )
           .eq("is_public", true)
           .eq("status", "active")
@@ -216,7 +226,7 @@ function CampaignDetailPage() {
 
         // Booked creators linked to this campaign via pipeline
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: bookedData } = await (supabase as any)
+        const { data: bookedData } = await supabase
           .from("project_saved_creators")
           .select(`
             id, estimated_rate, booked_at, contact_method,
@@ -248,14 +258,14 @@ function CampaignDetailPage() {
     setSubmitting(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cp } = await (supabase as any).from("creator_profiles").select("id").eq("user_id", user.id).maybeSingle();
+      const { data: cp } = await supabase.from("creator_profiles").select("id").eq("user_id", user.id).maybeSingle();
       if (!cp) { toast.error("Complete your creator profile first."); return; }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("campaign_applications").insert({
+      const { error } = await supabase.from("campaign_applications").insert({
         creator_profile_id: cp.id,
         campaign_id:        campaign.id,
         user_id:            user.id,
-        campaign_brand:     campaign.business_name,
+        campaign_brand:     campaign.business_name ?? undefined,
         campaign_title:     campaign.title,
         status:             "pending",
         cover_note:         applyNote.trim() || null,
@@ -279,11 +289,11 @@ function CampaignDetailPage() {
     try {
       if (next) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from("campaign_saves").insert({ user_id: user.id, campaign_id: campaign.id });
+        await supabase.from("campaign_saves").insert({ user_id: user.id, campaign_id: campaign.id });
         toast.success("Saved to your opportunities.");
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from("campaign_saves").delete().eq("user_id", user.id).eq("campaign_id", campaign.id);
+        await supabase.from("campaign_saves").delete().eq("user_id", user.id).eq("campaign_id", campaign.id);
         toast("Removed from saved.");
       }
     } catch {

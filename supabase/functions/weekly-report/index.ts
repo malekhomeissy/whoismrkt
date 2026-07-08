@@ -10,6 +10,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { corsHeaders, requireAuth, AuthError } from "../_shared/security.ts";
 
 const MODEL      = "claude-haiku-4-5-20251001";
 const MAX_TOKENS = 1200;
@@ -35,24 +36,23 @@ type BusinessStats = {
 };
 
 Deno.serve(async (req: Request) => {
-  const CORS = {
-    "Access-Control-Allow-Origin":  "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Content-Type": "application/json",
-  };
+  const CORS = corsHeaders(req);
 
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
-    const body = await req.json();
-    const { user_id, role } = body as { user_id: string; role: "creator" | "business" };
-
-    if (!user_id) throw new Error("user_id required");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const db = createClient(supabaseUrl, supabaseKey);
+
+    // Authenticate the caller and force the report to their own account —
+    // never trust a user_id passed in the request body (previously this let
+    // any logged-in user read another user's private weekly analytics).
+    const authedUser = await requireAuth(req, db);
+    const user_id = authedUser.id;
+
+    const body = await req.json().catch(() => ({}));
+    const { role } = body as { role: "creator" | "business" };
 
     // Week boundaries (Mon–Sun)
     const now       = new Date();
@@ -249,8 +249,15 @@ Deno.serve(async (req: Request) => {
     }), { headers: CORS });
 
   } catch (err: unknown) {
+    if (err instanceof AuthError) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
     const msg = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500, headers: { ...CORS, "Content-Type": "application/json" },
+    });
   }
 });
 

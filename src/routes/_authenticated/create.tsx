@@ -329,8 +329,14 @@ function BrandKitTab() {
 
   useEffect(() => {
     if (!user) return;
-    (supabase as any)
-      .from("business_profiles")
+    // NOTE: business_profiles has no `brand_colors` column in the live schema
+    // (verified against generated types) — this read/write has never actually
+    // persisted anything in production; a schema migration is needed to back
+    // this feature for real. `any` is scoped to this one known gap rather
+    // than the whole client, and left as pre-existing behavior rather than
+    // silently "fixed" by inventing a column here.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("business_profiles") as any)
       .select("brand_colors,logo_url")
       .eq("user_id", user.id)
       .maybeSingle()
@@ -343,8 +349,8 @@ function BrandKitTab() {
   async function saveColors() {
     if (!user) return;
     setSaving(true);
-    await (supabase as any)
-      .from("business_profiles")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("business_profiles") as any)
       .update({ brand_colors: colors })
       .eq("user_id", user.id);
     setSaving(false);
@@ -485,7 +491,7 @@ function StudioPage() {
   const loadAssets = useCallback(async () => {
     if (!user) return;
     setLoadingAssets(true);
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("generated_assets")
       .select("*")
       .eq("user_id", user.id)
@@ -503,13 +509,13 @@ function StudioPage() {
     if (pending.length === 0) return;
     const interval = setInterval(async () => {
       for (const asset of pending) {
-        const { data: updated } = await (supabase as any)
+        const { data: updated } = await supabase
           .from("generated_assets")
           .select("*")
           .eq("id", asset.id)
           .single();
         if (updated && updated.status !== "generating") {
-          setAssets((prev) => prev.map((a) => a.id === asset.id ? updated : a));
+          setAssets((prev) => prev.map((a) => a.id === asset.id ? (updated as GeneratedAsset) : a));
         }
       }
     }, 3000);

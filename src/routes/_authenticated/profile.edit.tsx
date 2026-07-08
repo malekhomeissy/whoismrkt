@@ -158,7 +158,7 @@ function EditProfilePage() {
   // ── Load existing profile ──────────────────────────────────────────────────
   const load = useCallback(async () => {
     if (!user) return;
-    const { data: cp } = await (supabase as any)
+    const { data: cp } = await supabase
       .from("creator_profiles")
       .select("*")
       .eq("user_id", user.id)
@@ -177,7 +177,7 @@ function EditProfilePage() {
       location_country:        cp.location_country ?? "",
       profile_image_url:       cp.profile_image_url ?? "",
       niche:                   cp.niche ?? "",
-      categories:              cp.categories ?? [],
+      categories:              (cp.categories ?? []) as CreatorCategory[],
       platforms:               cp.platforms ?? [],
       instagram_handle:        cp.instagram_handle ?? "",
       tiktok_handle:           cp.tiktok_handle ?? "",
@@ -192,7 +192,7 @@ function EditProfilePage() {
       accepts_affiliate:       cp.accepts_affiliate ?? false,
       rate_range:              cp.rate_range ?? "",
       preferred_content_types: cp.preferred_content_types ?? [],
-      creator_stage:           cp.creator_stage ?? "growing",
+      creator_stage:           (cp.creator_stage ?? "growing") as "growing" | "established" | "beginner",
       featured_link_1:         cp.featured_link_1 ?? "",
       featured_link_2:         cp.featured_link_2 ?? "",
       featured_link_3:         cp.featured_link_3 ?? "",
@@ -209,9 +209,14 @@ function EditProfilePage() {
     if (!user) return;
     setSaving(section);
     try {
-      const { error } = await (supabase as any)
+      // This is always an update to an existing row created during onboarding
+      // (display_name is only required by the Insert variant of this type);
+      // `patch` is intentionally a generic partial-field bag shared by every
+      // section of this edit form.
+      const { error } = await supabase
         .from("creator_profiles")
-        .upsert({ user_id: user.id, ...patch }, { onConflict: "user_id" });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .upsert({ user_id: user.id, ...patch } as any, { onConflict: "user_id" });
       if (error) throw error;
       toast.success("Saved.");
       if (patch.profile_image_url) {
@@ -231,9 +236,9 @@ function EditProfilePage() {
     setSaving("avatar");
     try {
       const path = `${user.id}/avatar.jpg`;
-      const { error: upErr } = await (supabase as any).storage.from("creator-avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+      const { error: upErr } = await supabase.storage.from("creator-avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
       if (upErr) throw upErr;
-      const { data: pub } = (supabase as any).storage.from("creator-avatars").getPublicUrl(path);
+      const { data: pub } = supabase.storage.from("creator-avatars").getPublicUrl(path);
       const url = `${pub.publicUrl}?t=${Date.now()}`;
       set("profile_image_url", url);
       await save("avatar", { profile_image_url: url });

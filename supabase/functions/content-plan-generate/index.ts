@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders } from "../_shared/security.ts";
+import { corsHeaders, isRateLimited, STRICT_AI_RATE } from "../_shared/security.ts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // content-plan-generate
@@ -17,7 +17,23 @@ import { corsHeaders } from "../_shared/security.ts";
 
 
 const MODEL      = "claude-sonnet-4-6";
-const MAX_TOKENS = 8192;
+// Reduced from 8192 — this was the largest output ceiling in the codebase,
+// combined with zero rate limit and zero credit check made this endpoint a
+// realistic ~$150+/day cost-explosion vector for a single abusive account.
+// Note: 4-week/24-item "generate" plans may occasionally truncate at this
+// ceiling; if that becomes a real problem, scale maxTokens by `weeks` instead
+// of raising the global cap back up.
+const MAX_TOKENS = 3000;
+
+// AI credit cost per action, consumed atomically server-side via the
+// consume_ai_credits() RPC (see migration 20260706000000). "generate" is by
+// far the most expensive call (full plan, largest prompt); item-level
+// regenerate/improve calls are cheap single-item rewrites.
+const CREDIT_COST: Record<"generate" | "regenerate_item" | "improve_item", number> = {
+  generate:        8,
+  regenerate_item: 2,
+  improve_item:    2,
+};
 
 const SYSTEM = `You are MRKT's Content Strategy AI — a world-class social media strategist specializing in creator-brand growth in the GCC market (Saudi Arabia, UAE, Qatar, Kuwait, Bahrain, Oman).
 
@@ -278,6 +294,13 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
+    // ── Rate limit ───────────────────────────────────────────────────────────
+    // This endpoint previously had zero rate limiting — a scripted loop could
+    // call it continuously with no throttle at all.
+    if (isRateLimited(`content-plan-generate:${user.id}`, STRICT_AI_RATE)) {
+      return json({ error: "Too many requests. Please wait a moment before generating again." }, 429);
+    }
+
     // ── Parse request ─────────────────────────────────────────────────────────
 
     const body = await req.json() as {
@@ -291,6 +314,29 @@ Deno.serve(async (req: Request) => {
     };
 
     const { weeks = 1, start_date, goal = "engagement", frequency = 5, platforms = [], action = "generate", item_context } = body;
+
+    // ── Credit check (fail closed) ────────────────────────────────────────────
+    // Previously this endpoint had NO server-side credit/quota check at all —
+    // the client-side credit system in src/lib/aiCredits.ts is unreachable
+    // (RLS blocks direct client UPDATEs) and fails OPEN on error. This call is
+    // atomic (row-locked) and fails CLOSED: if the RPC errors or reports
+    // insufficient credits, the request is rejected rather than allowed.
+    const cost = CREDIT_COST[action] ?? CREDIT_COST.generate;
+    const { data: creditRows, error: creditErr } = await serviceClient.rpc(
+      "consume_ai_credits",
+      { p_user_id: user.id, p_cost: cost },
+    );
+    if (creditErr) {
+      console.error("consume_ai_credits error:", creditErr);
+      return json({ error: "Unable to verify AI credits right now. Please try again shortly." }, 503);
+    }
+    const creditResult = Array.isArray(creditRows) ? creditRows[0] : creditRows;
+    if (!creditResult?.allowed) {
+      return json({
+        error: "You've reached your monthly AI credit limit for content planning. Upgrade your plan for more.",
+        remaining: creditResult?.remaining ?? 0,
+      }, 402);
+    }
 
     // ── Fetch creator context ─────────────────────────────────────────────────
 

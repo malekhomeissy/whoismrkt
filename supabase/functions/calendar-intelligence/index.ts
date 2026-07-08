@@ -18,6 +18,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { callAI }                    from "../_shared/router.ts";
 import { calendarIntelligencePrompt } from "../_shared/prompts.ts";
+import { corsHeaders, isRateLimited, STRICT_AI_RATE } from "../_shared/security.ts";
 
 
 // ── Regional audience behavior data ──────────────────────────────────────────
@@ -108,6 +109,10 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authErr } =
       await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authErr || !user) return respond({ error: "Unauthorized" }, 401);
+
+    if (isRateLimited(`calendar-intelligence:${user.id}`, STRICT_AI_RATE)) {
+      return respond({ error: "Too many requests. Please wait a moment." }, 429);
+    }
 
     const body = await req.json() as {
       role?: string; niche?: string; platforms?: string[]; location?: string;

@@ -383,16 +383,16 @@ function GenerateVisualSection({
   useEffect(() => {
     if (!user || !item.id) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("generated_assets")
       .select("*")
       .eq("user_id", user.id)
       .eq("content_planner_item_id", item.id)
       .order("created_at", { ascending: false })
       .limit(1)
-      .then(({ data }: { data: GeneratedAsset[] | null }) => {
+      .then(({ data }) => {
         if (data && data.length > 0) {
-          setAsset(data[0]);
+          setAsset(data[0] as GeneratedAsset);
           if (data[0].status === "generating") {
             setOpen(true);
             startPolling(data[0].id);
@@ -407,7 +407,7 @@ function GenerateVisualSection({
   function startPolling(assetId: string) {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
-      const { data, error } = await (supabase as any).functions.invoke("higgsfield-status", {
+      const { data, error } = await supabase.functions.invoke("higgsfield-status", {
         body: { asset_id: assetId },
       });
       if (error || !data?.asset) return;
@@ -427,7 +427,7 @@ function GenerateVisualSection({
     setAsset(null);
 
     try {
-      const { data, error } = await (supabase as any).functions.invoke("higgsfield-generate", {
+      const { data, error } = await supabase.functions.invoke("higgsfield-generate", {
         body: {
           prompt:                   prompt.trim(),
           asset_type:               assetType,
@@ -793,7 +793,7 @@ function DetailPanel({
     else setImproving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).functions.invoke("content-plan-generate", {
+      const { data, error } = await supabase.functions.invoke("content-plan-generate", {
         body: {
           action,
           item_context: item,
@@ -2132,7 +2132,7 @@ function ContentPlannerPage() {
     Promise.all([
       supabase.from("profiles").select("name,account_type,onboarding_path,niche,platforms").eq("id", user.id).single(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from("creator_profiles")
+      supabase.from("creator_profiles")
         .select("display_name,bio,niche,categories,platforms,location,audience_location,audience_age_range,audience_gender_split,follower_count,rate_range,preferred_content_types")
         .eq("user_id", user.id).maybeSingle(),
     ]).then(([{ data: base }, { data: creator }]) => {
@@ -2148,13 +2148,13 @@ function ContentPlannerPage() {
     if (!user) return;
     setLoading(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("content_planner_items")
       .select("*")
       .eq("user_id", user.id)
       .order("scheduled_date", { ascending: true })
-      .then(({ data }: { data: ContentItem[] | null }) => {
-        setItems(data ?? []);
+      .then(({ data }) => {
+        setItems((data ?? []) as ContentItem[]);
         setLoading(false);
       });
   }, [user]);
@@ -2209,7 +2209,7 @@ function ContentPlannerPage() {
   async function addItem(itemData: Omit<ContentItem, "id" | "user_id">) {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("content_planner_items")
       .insert([{ ...itemData, user_id: user.id }])
       .select()
@@ -2222,7 +2222,7 @@ function ContentPlannerPage() {
 
   async function updateItem(updated: ContentItem) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("content_planner_items")
       .update(updated)
       .eq("id", updated.id);
@@ -2233,7 +2233,7 @@ function ContentPlannerPage() {
 
   async function deleteItem(id: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("content_planner_items").delete().eq("id", id);
+    await supabase.from("content_planner_items").delete().eq("id", id);
     setItems((prev) => prev.filter((i) => i.id !== id));
     setSelectedItem(null);
     toast.success("Removed.");
@@ -2271,7 +2271,7 @@ function ContentPlannerPage() {
       const startISO = startDate.toISOString().split("T")[0];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).functions.invoke("content-plan-generate", {
+      const { data, error } = await supabase.functions.invoke("content-plan-generate", {
         body: { weeks, start_date: startISO, goal, frequency, platforms, action: "generate" },
       });
 
@@ -2286,7 +2286,7 @@ function ContentPlannerPage() {
         .map((g) => ({ ...g, user_id: user!.id }));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: saved, error: insertErr } = await (supabase as any)
+      const { data: saved, error: insertErr } = await supabase
         .from("content_planner_items")
         .insert(itemsWithUser)
         .select();

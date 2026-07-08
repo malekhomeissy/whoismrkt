@@ -146,12 +146,12 @@ function SettingsPage() {
     if (!user) return;
     (async () => {
       const [prefsRes, profileRes] = await Promise.all([
-        (supabase as any)
+        supabase
           .from("notification_preferences")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle(),
-        (supabase as any)
+        supabase
           .from("profiles")
           .select("phone_number, whatsapp_number")
           .eq("id", user.id)
@@ -177,7 +177,7 @@ function SettingsPage() {
     setPrefs(next);
 
     try {
-      await (supabase as any)
+      await supabase
         .from("notification_preferences")
         .upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
     } catch {
@@ -190,7 +190,7 @@ function SettingsPage() {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("profiles")
         .update({
           phone_number:    phones.phone_number.trim()    || null,
@@ -253,6 +253,18 @@ function SettingsPage() {
         },
       );
       if (!res.ok) throw new Error(await res.text());
+
+      const result = await res.json().catch(() => ({ success: true }));
+
+      // The account-delete function can return HTTP 200 with success:false
+      // when deletion is blocked by retained records (e.g. payment history) —
+      // profile PII was cleared, but the login/auth record is still live.
+      // Never sign the user out or claim deletion in that case.
+      if (result.success === false) {
+        toast.error(result.message ?? "Account deletion is on hold — contact privacy@usemrkt.app.");
+        setDeleting(false);
+        return;
+      }
 
       await supabase.auth.signOut();
       window.location.href = "/";

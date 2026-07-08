@@ -12,6 +12,7 @@ import {
   CheckCircle2, Loader2, Sparkles, ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
@@ -439,7 +440,7 @@ function BrandKnowledgePage() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: p } = await (supabase as any)
+      const { data: p } = await supabase
         .from("profiles")
         .select("account_type, onboarding_path")
         .eq("id", user.id)
@@ -456,7 +457,7 @@ function BrandKnowledgePage() {
     if (!user) return;
     (async () => {
       setLoading(true);
-      const { data: row } = await (supabase as any)
+      const { data: row } = await supabase
         .from("brand_knowledge")
         .select("*")
         .eq("business_user_id", user.id)
@@ -473,7 +474,7 @@ function BrandKnowledgePage() {
           content_pillars:   row.content_pillars    ?? "",
           marketing_goals:   row.marketing_goals    ?? "",
           brand_guidelines:  row.brand_guidelines   ?? "",
-          links:             row.links              ?? [],
+          links:             (row.links as unknown as BrandLink[] | null) ?? [],
         };
         setData(loaded);
         latestData.current = loaded;
@@ -502,10 +503,10 @@ function BrandKnowledgePage() {
         content_pillars:   d.content_pillars    || null,
         marketing_goals:   d.marketing_goals    || null,
         brand_guidelines:  d.brand_guidelines   || null,
-        links:             d.links,
+        links:             d.links as unknown as Json,
         updated_at:        new Date().toISOString(),
       };
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("brand_knowledge")
         .upsert(payload, { onConflict: "business_user_id" });
       if (error) {

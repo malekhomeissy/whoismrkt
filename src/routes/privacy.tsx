@@ -39,6 +39,8 @@ function Privacy() {
         <p style={p}>
           MRKT ("we", "us", "our") is committed to protecting your personal data. This Privacy Policy explains what data we collect, how we use it, who we share it with, and what rights you have. It applies to all users of usemrkt.app and the MRKT mobile application worldwide.
         </p>
+        {/* TODO(legal): confirm this matches the entity/jurisdiction actually being
+            registered this week — see matching note in terms.tsx §1. */}
         <p style={p}>
           <strong style={{ color: "oklch(1 0 0 / 72%)" }}>Data controller:</strong> MRKT, incorporated in Lebanon. Contact: <a href="mailto:privacy@usemrkt.app" style={a}>privacy@usemrkt.app</a>
         </p>
@@ -133,6 +135,7 @@ function Privacy() {
         </p>
 
         <h2 style={h2}>7. International Data Transfers</h2>
+        {/* TODO(legal): verify against actual registration jurisdiction — see §"Data controller" note above. */}
         <p style={p}>
           MRKT is incorporated in Lebanon. Your data is stored and processed on infrastructure in the United States (Supabase/AWS) and processed by AI providers operating globally (Anthropic — US, OpenAI — US). By using MRKT, you acknowledge this international transfer.
         </p>

@@ -629,13 +629,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (user) runAppPreloader(user.id, role);
 
         if (creator) {
-          (supabase as any)
+          supabase
             .from("creator_profiles").select("profile_image_url").eq("user_id", user.id).maybeSingle()
             .then(({ data: cp }: { data: { profile_image_url: string | null } | null }) => {
               if (cp?.profile_image_url) setAvatarUrl(cp.profile_image_url);
             });
         } else if (biz) {
-          (supabase as any)
+          supabase
             .from("business_profiles").select("logo_url").eq("user_id", user.id).maybeSingle()
             .then(({ data: bp }: { data: { logo_url: string | null } | null }) => {
               if (bp?.logo_url) setAvatarUrl(bp.logo_url);

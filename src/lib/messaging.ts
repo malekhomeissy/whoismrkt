@@ -12,9 +12,9 @@ export async function findOrCreateConversation(
   campaignId?: string | null,
 ): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).rpc("find_or_create_conversation", {
+  const { data, error } = await supabase.rpc("find_or_create_conversation", {
     p_other_user_id: otherUserId,
-    p_campaign_id:   campaignId ?? null,
+    p_campaign_id:   campaignId ?? undefined,
   });
 
   if (error) {
@@ -31,7 +31,7 @@ export async function markConversationRead(
   userId: string,
 ): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
+  await supabase
     .from("conversation_participants")
     .update({
       last_read_at:  new Date().toISOString(),
@@ -44,7 +44,7 @@ export async function markConversationRead(
 /** Returns total unread message count for the current user across all conversations. */
 export async function fetchUnreadCount(userId: string): Promise<number> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from("conversation_participants")
     .select("unread_count")
     .eq("user_id", userId)

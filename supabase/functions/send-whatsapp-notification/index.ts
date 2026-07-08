@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/security.ts";
+import { corsHeaders, requireAuth, AuthError, isRateLimited, DEFAULT_API_RATE, sanitizeStringArray } from "../_shared/security.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 
@@ -53,8 +53,20 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Require a logged-in caller — this endpoint previously had no auth check
+    // at all, letting anyone relay WhatsApp messages to any user_id at MRKT's
+    // (Meta Business API) expense.
+    const caller = await requireAuth(req, supabase);
+    if (isRateLimited(`send-whatsapp-notification:${caller.id}`, DEFAULT_API_RATE)) {
+      return new Response(
+        JSON.stringify({ error: "Too many notification requests. Please slow down." }),
+        { status: 429, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+      );
+    }
+
     const body: WhatsAppRequest = await req.json();
-    const { user_id, template_type, parameters } = body;
+    const { user_id, template_type, parameters: rawParameters } = body;
+    const parameters = sanitizeStringArray(rawParameters, 10, 300);
 
     if (!user_id || !template_type) {
       return new Response(
@@ -154,6 +166,11 @@ serve(async (req) => {
     );
 
   } catch (err) {
+    if (err instanceof AuthError) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
     console.error("send-whatsapp-notification error:", err);
     // Always graceful — notification failure must never break user actions
     return new Response(

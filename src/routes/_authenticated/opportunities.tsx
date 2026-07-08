@@ -624,12 +624,11 @@ function OpportunitiesPage() {
         const [profileRes, creatorRes, campaignRes, appliedRes, savedRes] = await Promise.all([
           supabase.from("profiles").select("onboarding_path,account_type").eq("id", user.id).maybeSingle(),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any).from("creator_profiles").select(
-            "id,platforms,niche,categories,audience_location,location,location_city,location_country," +
-            "follower_count,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types"
+          supabase.from("creator_profiles").select(
+            "id,platforms,niche,categories,audience_location,location,location_city,location_country,follower_count,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types"
           ).eq("user_id", user.id).maybeSingle(),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("campaigns")
             .select("*, deliverables:campaign_deliverables(*)")
             .eq("is_published", true)
@@ -637,12 +636,12 @@ function OpportunitiesPage() {
             .order("created_at", { ascending: false })
             .limit(100),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("campaign_applications")
             .select("campaign_id,status")
             .eq("user_id", user.id),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("campaign_saves")
             .select("campaign_id")
             .eq("user_id", user.id),
@@ -663,11 +662,11 @@ function OpportunitiesPage() {
 
         setHasCreatorProfile(!!creatorRes?.data);
         if (creatorRes?.data) setCreatorProfile(creatorRes.data as CreatorInput);
-        setCampaigns(campaignRes.data ?? []);
+        setCampaigns((campaignRes.data ?? []) as Campaign[]);
 
         // Fetch trust score for success probability
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: ts } = await (supabase as any)
+        const { data: ts } = await supabase
           .from("creator_trust_scores").select("*").eq("user_id", user.id).maybeSingle();
         if (ts) setTrustScore(ts as CreatorTrustScore);
 
@@ -681,25 +680,19 @@ function OpportunitiesPage() {
         const allCampaignIds = (campaignRes.data ?? []).map((c: { id: string }) => c.id);
         if (allCampaignIds.length > 0) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("match_score_cache")
             .select("campaign_id, score, success_probability, explanation_json, expires_at")
             .eq("creator_id", user.id)
             .in("campaign_id", allCampaignIds)
             .gt("expires_at", new Date().toISOString())
-            .then(({ data }: { data: Array<{
-              campaign_id: string;
-              score: number;
-              success_probability: number;
-              explanation_json: MatchExplanationData;
-              expires_at: string;
-            }> | null }) => {
+            .then(({ data }) => {
               if (!data) return;
               const map: Record<string, MatchExplanationData> = {};
               for (const row of data) {
                 if (row.explanation_json) {
                   map[row.campaign_id] = {
-                    ...row.explanation_json,
+                    ...(row.explanation_json as unknown as MatchExplanationData),
                     score: row.score,
                     success_probability: row.success_probability,
                   };
@@ -798,11 +791,11 @@ function OpportunitiesPage() {
     try {
       if (isSaved) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from("campaign_saves").delete().eq("user_id", user.id).eq("campaign_id", id);
+        await supabase.from("campaign_saves").delete().eq("user_id", user.id).eq("campaign_id", id);
         toast("Removed from saved.");
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from("campaign_saves").insert({ user_id: user.id, campaign_id: id });
+        await supabase.from("campaign_saves").insert({ user_id: user.id, campaign_id: id });
         toast.success("Saved to your opportunities.");
         trackMarketplaceEvent({
           actorUserId: user.id,
@@ -841,12 +834,12 @@ function OpportunitiesPage() {
     setSubmitting(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cp } = await (supabase as any)
+      const { data: cp } = await supabase
         .from("creator_profiles").select("id").eq("user_id", user.id).maybeSingle();
       if (!cp) { toast.error("Creator profile not found."); return; }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("campaign_applications")
         .insert({
           creator_profile_id: cp.id,

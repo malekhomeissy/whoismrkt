@@ -265,6 +265,19 @@ serve(async (req) => {
       });
     }
 
+    // Ownership check: only the business that owns this campaign may score
+    // arbitrary/batch creators against it; a creator may only look up their
+    // own score for the campaign. Without this, any logged-in user could pass
+    // an arbitrary campaign_id + creator_ids and read match scores/explanations
+    // for campaigns and creators they have no relationship to.
+    const isCampaignOwner = campaign.user_id === user.id;
+    const isSelfLookup = creatorIds.length === 1 && creatorIds[0] === user.id;
+    if (!isCampaignOwner && !isSelfLookup) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     const results: Record<string, unknown> = {};
 
     for (const creatorId of creatorIds) {

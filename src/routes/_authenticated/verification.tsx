@@ -123,12 +123,10 @@ function VerificationPage() {
 
   async function loadCreator() {
     if (!user) return;
-    const { data: cp } = await (supabase as any)
+    const { data: cp } = await supabase
       .from("creator_profiles")
       .select(
-        "instagram_handle,instagram_connected,instagram_user_id," +
-        "instagram_followers,instagram_followers_synced_at,instagram_profile_picture_url," +
-        "is_verified,creator_verification_type,verification_status"
+        "instagram_handle,instagram_connected,instagram_user_id,instagram_followers,instagram_followers_synced_at,instagram_profile_picture_url,is_verified,creator_verification_type,verification_status"
       )
       .eq("user_id", user.id)
       .maybeSingle();

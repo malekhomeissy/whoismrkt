@@ -1,6 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/security.ts";
+import { corsHeaders, requireAuth, AuthError, isRateLimited, DEFAULT_API_RATE, sanitizeString } from "../_shared/security.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Escape HTML metacharacters before interpolating any user/DB-sourced string
+// into the email template — data.preview, campaign_title, sender_name etc.
+// were previously inserted raw, allowing HTML injection into outbound emails.
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Sanitize + HTML-escape every string field in the notification payload before
+// it's interpolated into the email. Numbers/booleans/null pass through as-is.
+function sanitizeDataRecord(
+  data: Record<string, string | number | boolean | null>,
+): Record<string, string | number | boolean | null> {
+  const out: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(data ?? {})) {
+    out[key] = typeof value === "string" ? escapeHtml(sanitizeString(value, 500)) : value;
+  }
+  return out;
+}
 
 
 type NotificationType =
@@ -218,8 +242,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Require a logged-in caller — this endpoint previously had no auth check
+    // at all, letting anyone relay email to any user_id at MRKT's expense.
+    const caller = await requireAuth(req, supabase);
+    if (isRateLimited(`send-email-notification:${caller.id}`, DEFAULT_API_RATE)) {
+      return new Response(JSON.stringify({ error: "Too many notification requests. Please slow down." }), {
+        status: 429, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     const body: EmailRequest = await req.json();
-    const { user_id, notification_type, data } = body;
+    const { user_id, notification_type, data: rawData } = body;
+    const data = sanitizeDataRecord(rawData ?? {});
 
     if (!user_id || !notification_type) {
       return new Response(JSON.stringify({ error: "user_id and notification_type required" }), {
@@ -289,7 +323,7 @@ serve(async (req) => {
       .eq("id", user_id)
       .single();
 
-    const recipientName = profile?.name ?? "there";
+    const recipientName = escapeHtml(profile?.name ?? "there");
     const subject = buildSubject(notification_type, data);
     const html = buildHtml(notification_type, data, recipientName);
 
@@ -322,6 +356,11 @@ serve(async (req) => {
     });
 
   } catch (err) {
+    if (err instanceof AuthError) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
     console.error("send-email-notification error:", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },

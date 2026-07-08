@@ -58,7 +58,7 @@ export async function sendNotification(params: NotifyParams): Promise<void> {
   // 1. In-app notification
   if (inApp) {
     try {
-      await (supabase as any)
+      await supabase
         .from("notifications")
         .insert({
           user_id:  userId,
@@ -76,7 +76,7 @@ export async function sendNotification(params: NotifyParams): Promise<void> {
   // 2. Marketplace event
   if (marketplaceEvent) {
     try {
-      await (supabase as any)
+      await supabase
         .from("marketplace_events")
         .insert({
           event_type:     marketplaceEvent.eventType,
@@ -136,6 +136,14 @@ export async function sendNotification(params: NotifyParams): Promise<void> {
       body: JSON.stringify({ user_id: userId, template_type: waTemplate, parameters: waParams }),
     }).catch((err) => console.warn("[notify] whatsapp send failed:", err));
   }
+
+  // 5. Push notification (fire-and-forget) — mobile app only; the function
+  // itself no-ops gracefully for users with no registered Expo push token.
+  fetch(`${SUPABASE_URL}/functions/v1/send-push-notification`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ user_id: userId, notification_type: notificationType, data }),
+  }).catch((err) => console.warn("[notify] push send failed:", err));
 }
 
 function buildWhatsAppParams(

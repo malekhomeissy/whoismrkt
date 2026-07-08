@@ -100,7 +100,7 @@ function CampaignPage() {
   useEffect(() => {
     async function load() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("campaigns")
         .select("*, deliverables:campaign_deliverables(*), assets:campaign_assets(*)")
         .eq("id", campaignId)
@@ -119,7 +119,7 @@ function CampaignPage() {
     try {
       // Check if creator profile exists
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: profile } = await (supabase as any)
+      const { data: profile } = await supabase
         .from("creator_profiles")
         .select("id")
         .eq("user_id", user.id)
@@ -131,10 +131,12 @@ function CampaignPage() {
       }
 
       // Submit application
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      // user_id is NOT NULL on campaign_applications — omitting it here meant
+      // every public-link application submission failed at insert time.
+      const { error } = await supabase
         .from("campaign_applications")
         .insert({
+          user_id: user.id,
           creator_profile_id: profile.id,
           campaign_id: campaignId,
           campaign_brand: campaign?.business_name ?? "",

@@ -48,7 +48,7 @@ interface TrackParams {
 
 export async function trackMarketplaceEvent(params: TrackParams): Promise<void> {
   try {
-    await (supabase as any)
+    await supabase
       .from("marketplace_events")
       .insert({
         event_type:     params.eventType,
@@ -59,7 +59,7 @@ export async function trackMarketplaceEvent(params: TrackParams): Promise<void> 
         application_id: params.applicationId ?? null,
         contract_id:    params.contractId    ?? null,
         deliverable_id: params.deliverableId ?? null,
-        metadata_json:  params.metadata      ?? null,
+        metadata_json:  (params.metadata as Record<string, string | number | boolean | null> | undefined) ?? null,
       });
   } catch {
     // Fire-and-forget — event tracking must never break user actions

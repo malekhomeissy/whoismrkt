@@ -161,7 +161,7 @@ function OutreachModal({
     setMessages([]);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const supabaseUrl = (supabase as any).supabaseUrl as string;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(`${supabaseUrl}/functions/v1/outreach-generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
@@ -386,6 +386,7 @@ function CreatorCard({
   onUpdateContactMethod,
   onRemove,
   hasReviewed,
+  hasContract,
   onReview,
   onOutreach,
 }: {
@@ -399,6 +400,7 @@ function CreatorCard({
   onUpdateContactMethod: (id: string, method: string) => void;
   onRemove:   (id: string) => void;
   hasReviewed?: boolean;
+  hasContract?: boolean;
   onReview?:  (entry: PipelineEntry) => void;
   onOutreach?: (entry: PipelineEntry) => void;
 }) {
@@ -646,7 +648,9 @@ function CreatorCard({
             </button>
           )}
 
-          {/* Review button — completed entries with a campaign */}
+          {/* Review button — completed entries with a campaign. Reviews require
+              an accepted contract on this campaign (server-enforced); nudge
+              toward sending one instead of offering a "Rate" that would fail. */}
           {entry.status === "completed" && entry.campaign_id && onReview && (
             hasReviewed ? (
               <span
@@ -655,7 +659,7 @@ function CreatorCard({
               >
                 ★ Reviewed
               </span>
-            ) : (
+            ) : hasContract ? (
               <button
                 onClick={(e) => { e.stopPropagation(); onReview(entry); }}
                 className="flex-1 h-6 rounded-lg text-[8.5px] uppercase tracking-[0.16em] font-medium transition-colors duration-100"
@@ -665,6 +669,19 @@ function CreatorCard({
               >
                 ★ Rate
               </button>
+            ) : (
+              <Link
+                to="/campaigns/$campaignId/applicants"
+                params={{ campaignId: entry.campaign_id }}
+                onClick={(e) => e.stopPropagation()}
+                title="Send and accept a contract for this campaign to enable reviews"
+                className="flex-1 h-6 rounded-lg text-[8.5px] uppercase tracking-[0.16em] font-medium transition-colors duration-100 flex items-center justify-center"
+                style={{ background: "oklch(1 0 0 / 4%)", border: "1px dashed oklch(1 0 0 / 18%)", color: "oklch(1 0 0 / 45%)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 70%)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(1 0 0 / 45%)"; }}
+              >
+                Send contract to rate
+              </Link>
             )
           )}
 
@@ -792,6 +809,7 @@ function KanbanColumn({
   onUpdateContactMethod,
   onRemove,
   reviewedCampaignIds,
+  contractedPairs,
   onReview,
   onOutreach,
 }: {
@@ -807,6 +825,7 @@ function KanbanColumn({
   onMoveStage: (id: string, stage: Stage) => void;
   onUpdateNote: (id: string, note: string) => void;
   reviewedCampaignIds?: Set<string>;
+  contractedPairs?: Set<string>;
   onReview?: (entry: PipelineEntry) => void;
   onOutreach?: (entry: PipelineEntry) => void;
   onUpdatePriority: (id: string, priority: "high" | "medium" | "low" | null) => void;
@@ -862,6 +881,11 @@ function KanbanColumn({
             onUpdateContactMethod={onUpdateContactMethod}
             onRemove={onRemove}
             hasReviewed={entry.campaign_id ? reviewedCampaignIds?.has(entry.campaign_id) : false}
+            hasContract={
+              entry.campaign_id && entry.creator_profiles?.user_id
+                ? contractedPairs?.has(`${entry.campaign_id}:${entry.creator_profiles.user_id}`)
+                : false
+            }
             onReview={onReview}
             onOutreach={onOutreach}
           />
@@ -896,8 +920,18 @@ function PipelinePage() {
   const [loading,        setLoading]        = useState(true);
   const [draggedId,      setDraggedId]      = useState<string | null>(null);
   const [dragOverStage,  setDragOverStage]  = useState<Stage | null>(null);
-  const [activeCampaign,      setActiveCampaign]      = useState<CampaignInput | null>(null);
+  const [activeCampaign, setActiveCampaign] = useState<(CampaignInput & {
+    title?: string;
+    description?: string;
+    compensation_amount_fixed?: number | null;
+    compensation_budget_max?: number | null;
+  }) | null>(null);
   const [reviewedCampaignIds, setReviewedCampaignIds] = useState<Set<string>>(new Set());
+  // Reviews now require an accepted contract on the same campaign (RLS-enforced
+  // server-side) — this tracks which campaign+creator pairs actually have one,
+  // so we can nudge toward sending a contract instead of offering a "Rate"
+  // button that would just fail.
+  const [contractedPairs, setContractedPairs] = useState<Set<string>>(new Set());
   const [reviewEntry,         setReviewEntry]         = useState<PipelineEntry | null>(null);
   const [outreachEntry,       setOutreachEntry]       = useState<PipelineEntry | null>(null);
   const [displayName,         setDisplayName]         = useState("");
@@ -908,8 +942,8 @@ function PipelinePage() {
     if (!user) return;
     load();
     loadActiveCampaign();
-    (supabase as any).from("profiles").select("name").eq("id", user.id).single()
-      .then(({ data }: { data: { name?: string } | null }) => {
+    supabase.from("profiles").select("name").eq("id", user.id).single()
+      .then(({ data }) => {
         setDisplayName(data?.name ?? user.email?.split("@")[0] ?? "Your Brand");
       });
   }, [user]);
@@ -917,7 +951,7 @@ function PipelinePage() {
   async function load() {
     setLoading(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("project_saved_creators")
       .select(`
         id, project_id, status, estimated_rate, priority, internal_note,
@@ -954,30 +988,40 @@ function PipelinePage() {
         .map((r) => r.campaign_id as string);
       if (campaignIds.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: reviewData } = await (supabase as any)
+        const { data: reviewData } = await supabase
           .from("reviews")
           .select("campaign_id")
           .eq("reviewer_id", user!.id)
           .in("campaign_id", campaignIds);
         const ids = new Set<string>((reviewData ?? []).map((r: { campaign_id: string }) => r.campaign_id));
         setReviewedCampaignIds(ids);
+
+        const { data: contractData } = await supabase
+          .from("contracts")
+          .select("campaign_id, creator_id")
+          .eq("business_id", user!.id)
+          .eq("status", "accepted")
+          .in("campaign_id", campaignIds);
+        const pairs = new Set<string>(
+          (contractData ?? []).map((c: { campaign_id: string; creator_id: string }) => `${c.campaign_id}:${c.creator_id}`)
+        );
+        setContractedPairs(pairs);
       }
     }
     setLoading(false);
   }
 
   async function loadActiveCampaign() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("campaigns")
-      .select("title,description,budget_range,required_platforms,required_niches,business_industry,required_country,required_language,min_followers,compensation_type")
+      .select("title,description,compensation_type,compensation_amount_fixed,compensation_budget_max,required_platforms,required_niches,business_industry,required_country,required_language,min_followers")
       .eq("user_id", user!.id)
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (data) setActiveCampaign(data as CampaignInput);
+    if (data) setActiveCampaign(data);
   }
 
   // Match scores — one per entry, computed client-side
@@ -1015,15 +1059,15 @@ function PipelinePage() {
       if (!prev || prev.status === newStage) return;
 
       const now = new Date().toISOString();
-      const updates: Record<string, unknown> = { status: newStage, updated_at: now };
+      const updates: { status: Stage; updated_at: string; contacted_at?: string; booked_at?: string; completed_at?: string } =
+        { status: newStage, updated_at: now };
       if (newStage === "contacted"   && !prev.contacted_at)  updates.contacted_at  = now;
       if (newStage === "booked"      && !prev.booked_at)     updates.booked_at     = now;
       if (newStage === "completed"   && !prev.completed_at)  updates.completed_at  = now;
 
-      setEntries((es) => es.map((e) => e.id === entryId ? { ...e, status: newStage, ...updates } : e));
+      setEntries((es) => es.map((e) => e.id === entryId ? { ...e, ...updates } : e));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("project_saved_creators")
         .update(updates)
         .eq("id", entryId);
@@ -1063,7 +1107,7 @@ function PipelinePage() {
   const updateNote = useCallback(async (entryId: string, note: string) => {
     setEntries((es) => es.map((e) => e.id === entryId ? { ...e, internal_note: note || null } : e));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("project_saved_creators")
       .update({ internal_note: note || null, updated_at: new Date().toISOString() })
       .eq("id", entryId);
@@ -1074,10 +1118,11 @@ function PipelinePage() {
 
   const updatePriority = useCallback(async (entryId: string, priority: "high" | "medium" | "low" | null) => {
     setEntries((es) => es.map((e) => e.id === entryId ? { ...e, priority } : e));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    // `priority` is a NOT NULL column — omit it entirely when clearing rather
+    // than sending null, which the DB would reject outright.
+    const { error } = await supabase
       .from("project_saved_creators")
-      .update({ priority, updated_at: new Date().toISOString() })
+      .update(priority ? { priority, updated_at: new Date().toISOString() } : { updated_at: new Date().toISOString() })
       .eq("id", entryId);
     if (error) toast.error("Failed to update priority");
   }, []);
@@ -1088,7 +1133,7 @@ function PipelinePage() {
     const now = new Date().toISOString();
     setEntries((es) => es.map((e) => e.id === entryId ? { ...e, contact_method: method, contacted_at: e.contacted_at ?? now } : e));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("project_saved_creators")
       .update({ contact_method: method, contacted_at: now, updated_at: now })
       .eq("id", entryId);
@@ -1100,7 +1145,7 @@ function PipelinePage() {
   const removeEntry = useCallback(async (entryId: string) => {
     setEntries((es) => es.filter((e) => e.id !== entryId));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("project_saved_creators")
       .delete()
       .eq("id", entryId);
@@ -1310,6 +1355,11 @@ function PipelinePage() {
                     onUpdateContactMethod={updateContactMethod}
                     onRemove={removeEntry}
                     hasReviewed={entry.campaign_id ? reviewedCampaignIds.has(entry.campaign_id) : false}
+                    hasContract={
+                      entry.campaign_id && entry.creator_profiles?.user_id
+                        ? contractedPairs.has(`${entry.campaign_id}:${entry.creator_profiles.user_id}`)
+                        : false
+                    }
                     onReview={(e) => setReviewEntry(e)}
                     onOutreach={(e) => setOutreachEntry(e)}
                   />
@@ -1339,6 +1389,7 @@ function PipelinePage() {
                   onUpdateContactMethod={updateContactMethod}
                   onRemove={removeEntry}
                   reviewedCampaignIds={reviewedCampaignIds}
+                  contractedPairs={contractedPairs}
                   onReview={(entry) => setReviewEntry(entry)}
                   onOutreach={(entry) => setOutreachEntry(entry)}
                 />
@@ -1353,10 +1404,14 @@ function PipelinePage() {
         <OutreachModal
           entry={outreachEntry}
           campaign={activeCampaign ? {
-            title:       (activeCampaign as any).title ?? "Partnership Opportunity",
-            description: (activeCampaign as any).description ?? "",
-            budget:      (activeCampaign as any).budget_range ?? "TBD",
-            platforms:   (activeCampaign as any).required_platforms ?? [],
+            title:       activeCampaign.title ?? "Partnership Opportunity",
+            description: activeCampaign.description ?? "",
+            budget:      activeCampaign.compensation_amount_fixed
+              ? `$${activeCampaign.compensation_amount_fixed.toLocaleString()}`
+              : activeCampaign.compensation_budget_max
+                ? `$${activeCampaign.compensation_budget_max.toLocaleString()}`
+                : "TBD",
+            platforms:   activeCampaign.required_platforms ?? [],
           } : null}
           businessName={displayName}
           onClose={() => setOutreachEntry(null)}

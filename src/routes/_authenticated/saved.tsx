@@ -231,18 +231,17 @@ function SavedPage() {
         const [profileRes, creatorRes, savesRes, appliedRes] = await Promise.all([
           supabase.from("profiles").select("onboarding_path,account_type").eq("id", user.id).maybeSingle(),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any).from("creator_profiles").select(
-            "id,platforms,niche,categories,audience_location,location,location_city,location_country," +
-            "follower_count,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types"
+          supabase.from("creator_profiles").select(
+            "id,platforms,niche,categories,audience_location,location,location_city,location_country,follower_count,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types"
           ).eq("user_id", user.id).maybeSingle(),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("campaign_saves")
             .select("campaign_id, campaigns(*, deliverables:campaign_deliverables(*))")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false }),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any).from("campaign_applications").select("campaign_id").eq("user_id", user.id),
+          supabase.from("campaign_applications").select("campaign_id").eq("user_id", user.id),
         ]);
 
         // Gate: redirect businesses
@@ -254,8 +253,8 @@ function SavedPage() {
         if (creatorRes?.data) setCreatorProfile(creatorRes.data as CreatorInput);
 
         // Pull campaigns from the joined saves
-        const saved: Campaign[] = (savesRes.data ?? [])
-          .map((row: { campaigns: Campaign | null }) => row.campaigns)
+        const saved: Campaign[] = ((savesRes.data ?? []) as unknown as Array<{ campaigns: Campaign | null }>)
+          .map((row) => row.campaigns)
           .filter(Boolean) as Campaign[];
         setCampaigns(saved);
 
@@ -304,7 +303,7 @@ function SavedPage() {
     setCampaigns((prev) => prev.filter((c) => c.id !== id));
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from("campaign_saves").delete().eq("user_id", user!.id).eq("campaign_id", id);
+      await supabase.from("campaign_saves").delete().eq("user_id", user!.id).eq("campaign_id", id);
       toast("Removed from saved.");
     } catch {
       toast.error("Could not remove. Please try again.");
@@ -317,10 +316,10 @@ function SavedPage() {
     setSubmitting(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cp } = await (supabase as any).from("creator_profiles").select("id").eq("user_id", user.id).maybeSingle();
+      const { data: cp } = await supabase.from("creator_profiles").select("id").eq("user_id", user.id).maybeSingle();
       if (!cp) { toast.error("Creator profile not found."); return; }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("campaign_applications").insert({
+      const { error } = await supabase.from("campaign_applications").insert({
         creator_profile_id: cp.id,
         campaign_id:        applyTarget.id,
         user_id:            user.id,

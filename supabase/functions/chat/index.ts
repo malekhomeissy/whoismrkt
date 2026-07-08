@@ -1105,7 +1105,7 @@ Deno.serve(async (req) => {
 
     // ── 6. Stream SSE back ───────────────────────────────────────────────────
     return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      headers: { ...corsHeaders(req), "Content-Type": "text/event-stream" },
     });
   } catch (e) {
     console.error("chat error:", e);

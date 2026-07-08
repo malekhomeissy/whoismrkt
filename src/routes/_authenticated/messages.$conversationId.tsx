@@ -254,19 +254,19 @@ function ChatWindow() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [convRes, msgsRes, otherPartsRes] = await Promise.all([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("conversations")
         .select("id, campaign_id")
         .eq("id", conversationId)
         .single(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("messages")
         .select("id, conversation_id, sender_id, content, attachment_url, attachment_type, created_at, client_temp_id")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("conversation_participants")
         .select("user_id")
         .eq("conversation_id", conversationId)
@@ -303,13 +303,13 @@ function ChatWindow() {
       const [profileRes, creatorRes, bizRes] = await Promise.all([
         supabase.from("profiles").select("id, name, email").eq("id", otherUserId).single(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("creator_profiles")
           .select("user_id, display_name, profile_image_url, is_verified")
           .eq("user_id", otherUserId)
           .maybeSingle(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("business_profiles")
           .select("user_id, company_name, logo_url, is_verified")
           .eq("user_id", otherUserId)
@@ -342,7 +342,7 @@ function ChatWindow() {
     const campId = (convRes.data as { campaign_id: string | null })?.campaign_id;
     if (campId) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: camp } = await (supabase as any)
+      const { data: camp } = await supabase
         .from("campaigns")
         .select("id, title")
         .eq("id", campId)
@@ -366,7 +366,7 @@ function ChatWindow() {
     let mounted = true;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const channel = (supabase as any)
+    const channel = supabase
       .channel(`chat:${conversationId}:${user.id}`)  // unique per user+conversation
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .on("postgres_changes" as any, {
@@ -503,7 +503,7 @@ function ChatWindow() {
       // If the column doesn't exist yet, PostgREST returns a column-not-found error;
       // we retry without it so the message is never lost.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let insertRes = await (supabase as any)
+      let insertRes = await supabase
         .from("messages")
         .insert({
           conversation_id: conversationId,
@@ -520,7 +520,7 @@ function ChatWindow() {
         (insertRes.error.message ?? "").toLowerCase().includes("client_temp_id")
       )) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        insertRes = await (supabase as any)
+        insertRes = await supabase
           .from("messages")
           .insert({ conversation_id: conversationId, sender_id: user.id, content })
           .select("id, conversation_id, sender_id, content, attachment_url, attachment_type, created_at")

@@ -146,15 +146,15 @@ Deno.serve(async (req: Request) => {
 
     let user: { id: string };
     try {
-      user = await requireAuth(db);
+      user = await requireAuth(req, db);
     } catch (e) {
-      if (e instanceof AuthError) return jsonErr(e.message, 401, CORS);
+      if (e instanceof AuthError) return jsonErr(e.message, req, 401);
       throw e;
     }
 
     // ── Rate limit ────────────────────────────────────────────────────────
     if (isRateLimited(`generate-intelligence:${user.id}`, STRICT_AI_RATE)) {
-      return jsonErr("Rate limit exceeded. Please wait before requesting more insights.", 429, CORS);
+      return jsonErr("Rate limit exceeded. Please wait before requesting more insights.", req, 429);
     }
 
     const body = await req.json();

@@ -461,19 +461,19 @@ function ProjectDetailPage() {
       // ── Core data — must succeed for the page to render ──────────────────
       const [projRes, chatsRes, savedRes, creatorsRes, bizRes] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("projects").select("*").eq("id", projectId).eq("user_id", user!.id).maybeSingle(),
+        supabase.from("projects").select("*").eq("id", projectId).eq("user_id", user!.id).maybeSingle(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("chats").select("id,title,updated_at").eq("project_id", projectId).order("updated_at", { ascending: false }),
+        supabase.from("chats").select("id,title,updated_at").eq("project_id", projectId).order("updated_at", { ascending: false }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("saved_outputs").select("id,title,content,output_type,created_at").eq("project_id", projectId).order("created_at", { ascending: false }),
+        supabase.from("saved_outputs").select("id,title,content,output_type,created_at").eq("project_id", projectId).order("created_at", { ascending: false }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("project_saved_creators")
           .select("id,note,status,internal_note,why_fits,estimated_rate,priority,outreach_draft,created_at,updated_at,creator_profiles(id,display_name,username,niche,categories,platforms,profile_image_url,location,follower_count,bio,rate_range,accepts_paid,accepts_gifted,accepts_affiliate)")
           .eq("project_id", projectId)
           .order("created_at", { ascending: false }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("business_profiles").select("company_name,industry,preferred_platforms,campaign_goals,target_audience").eq("user_id", user!.id).maybeSingle(),
+        supabase.from("business_profiles").select("company_name,industry,preferred_platforms,campaign_goals,target_audience").eq("user_id", user!.id).maybeSingle(),
       ]);
 
       if (!projRes.data) {
@@ -485,7 +485,7 @@ function ProjectDetailPage() {
       setProject(projRes.data as Project);
       setChats(chatsRes.data ?? []);
       setSavedOutputs(savedRes.data ?? []);
-      setSavedCreators((creatorsRes.data ?? []).map((sc: SavedCreator) => ({
+      setSavedCreators(((creatorsRes.data ?? []) as unknown as SavedCreator[]).map((sc) => ({
         ...sc,
         status:   (sc.status   as CreatorStatus) ?? "saved",
         priority: (sc.priority as CreatorPriority) ?? "medium",
@@ -495,7 +495,7 @@ function ProjectDetailPage() {
       // ── Campaign brief — isolated: table may not exist yet ───────────────
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: briefData } = await (supabase as any)
+        const { data: briefData } = await supabase
           .from("project_campaign_briefs")
           .select("*")
           .eq("project_id", projectId)
@@ -508,7 +508,7 @@ function ProjectDetailPage() {
       // ── Outreach drafts — isolated: table may not exist yet ──────────────
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: draftsData } = await (supabase as any)
+        const { data: draftsData } = await supabase
           .from("project_outreach_drafts")
           .select("id,creator_profile_id,draft_type,subject,short_version,full_version,created_at")
           .eq("project_id", projectId)
@@ -528,7 +528,7 @@ function ProjectDetailPage() {
   async function saveProjectEdits() {
     if (!project || !editName.trim()) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("projects")
       .update({ name: editName.trim(), description: editDesc.trim() || null, updated_at: new Date().toISOString() })
       .eq("id", project.id);
@@ -542,14 +542,14 @@ function ProjectDetailPage() {
     if (!project) return;
     if (!confirm(`Archive "${project.name}"? You can restore it later.`)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("projects").update({ status: "archived" }).eq("id", project.id);
+    await supabase.from("projects").update({ status: "archived" }).eq("id", project.id);
     toast.success("Project archived.");
     nav({ to: "/projects" as "/" });
   }
 
   async function removeSavedCreator(savedCreatorId: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("project_saved_creators")
       .delete()
       .eq("id", savedCreatorId);
@@ -560,7 +560,7 @@ function ProjectDetailPage() {
 
   async function updateSavedCreator(id: string, patch: SavedCreatorPatch): Promise<boolean> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("project_saved_creators")
       .update({ ...patch, updated_at: new Date().toISOString() })
       .eq("id", id);
@@ -582,17 +582,17 @@ function ProjectDetailPage() {
     }
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("project_saved_creators")
         .insert({ project_id: projectId, creator_profile_id: creatorProfileId, saved_by: user!.id, status: "saved" })
         .select(
-          "id,note,status,internal_note,why_fits,estimated_rate,priority,outreach_draft,created_at,updated_at," +
-          "creator_profiles(id,display_name,username,niche,categories,platforms,profile_image_url,location,follower_count,bio,rate_range,accepts_paid,accepts_gifted,accepts_affiliate)"
+          "id,note,status,internal_note,why_fits,estimated_rate,priority,outreach_draft,created_at,updated_at,creator_profiles(id,display_name,username,niche,categories,platforms,profile_image_url,location,follower_count,bio,rate_range,accepts_paid,accepts_gifted,accepts_affiliate)"
         )
         .maybeSingle();
       if (error?.code === "23505") { toast(`${creatorName} is already saved.`); return false; }
-      if (error) throw error;
-      setSavedCreators((prev) => [{ ...data, status: data.status ?? "saved", priority: data.priority ?? "medium" }, ...prev]);
+      if (error || !data) throw error ?? new Error("No data returned");
+      const saved = data as unknown as SavedCreator;
+      setSavedCreators((prev) => [{ ...saved, status: saved.status ?? "saved", priority: saved.priority ?? "medium" }, ...prev]);
       toast.success(`${creatorName} added to pipeline.`);
       return true;
     } catch { toast.error("Couldn't add to pipeline."); return false; }
@@ -1082,7 +1082,7 @@ function CampaignBriefTab({ brief, projectId, userId, onBriefSaved, pipelineCrea
       updated_at:             new Date().toISOString(),
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("project_campaign_briefs")
       .upsert(payload, { onConflict: "project_id" })
       .select().maybeSingle();
@@ -1095,7 +1095,7 @@ function CampaignBriefTab({ brief, projectId, userId, onBriefSaved, pipelineCrea
     try {
       await saveBriefSilent();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("creator_profiles")
         .select("id,display_name,username,niche,categories,platforms,preferred_content_types,location,audience_location,follower_count,profile_image_url,accepts_paid,accepts_gifted,accepts_affiliate")
         .eq("is_public", true)
@@ -1118,7 +1118,7 @@ function CampaignBriefTab({ brief, projectId, userId, onBriefSaved, pipelineCrea
           meta:               { project_id: projectId, project_name: projectName },
         }));
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("creator_analytics_events").insert(events).then(() => { /* fire-and-forget */ });
+        supabase.from("creator_analytics_events").insert(events).then(() => { /* fire-and-forget */ });
       }
     } catch { toast.error("Couldn't run matching. Try again."); }
     finally { setMatchLoading(false); }
@@ -1146,7 +1146,7 @@ function CampaignBriefTab({ brief, projectId, userId, onBriefSaved, pipelineCrea
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("project_campaign_briefs")
         .upsert(payload, { onConflict: "project_id" })
         .select()
@@ -2142,7 +2142,7 @@ FULL: [complete outreach message]`;
     try {
       // Save structured draft to project_outreach_drafts
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: newDraft, error: draftErr } = await (supabase as any)
+      const { data: newDraft, error: draftErr } = await supabase
         .from("project_outreach_drafts")
         .insert({
           project_id:         projectId,
@@ -2159,7 +2159,7 @@ FULL: [complete outreach message]`;
 
       // Also update the legacy outreach_draft field for the "Draft saved" badge
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      await supabase
         .from("project_saved_creators")
         .update({ outreach_draft: fullText, updated_at: new Date().toISOString() })
         .eq("id", sc.id);
@@ -2734,7 +2734,7 @@ function OutreachTab({ drafts, savedCreators, onDelete, onNavigateCreators }: {
     setDeleting(id);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("project_outreach_drafts").delete().eq("id", id);
+      const { error } = await supabase.from("project_outreach_drafts").delete().eq("id", id);
       if (error) throw error;
       onDelete(id);
       toast.success("Draft deleted.");

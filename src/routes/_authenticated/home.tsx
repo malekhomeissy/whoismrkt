@@ -2077,7 +2077,7 @@ function HomePage() {
     setAiInsightsLoading(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).functions.invoke("generate-intelligence", {
+      const { data, error } = await supabase.functions.invoke("generate-intelligence", {
         body: { role, stats, context },
       });
       if (!error && data?.insights?.length) {
@@ -2096,7 +2096,7 @@ function HomePage() {
     setReportLoading(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).functions.invoke("weekly-report", {
+      const { data, error } = await supabase.functions.invoke("weekly-report", {
         body: { user_id: user?.id, role: roleRef.current },
       });
       if (!error && data) setWeeklyReport(data as WeeklyReportData);
@@ -2111,11 +2111,10 @@ function HomePage() {
     if (!user || completedMissionIds.has(missionId)) return;
     setCompletedMissionIds((prev) => new Set([...prev, missionId]));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("mission_completions")
       .insert({ user_id: user.id, mission_id: missionId })
-      .then(() => {})
-      .catch(() => {});
+      .then(() => {}, () => {});
     trackMarketplaceEvent({
       actorUserId: user.id,
       eventType: "mission_completed",
@@ -2126,7 +2125,7 @@ function HomePage() {
   useEffect(() => {
     if (!user) return;
     const uid = user.id;
-    const db  = supabase as any;
+    const db  = supabase;
 
     (async () => {
       setLoading(true);
@@ -2172,7 +2171,7 @@ function HomePage() {
       if ((existingSessionRes.count as number) === 0) {
         db.from("user_activity_log")
           .insert({ user_id: uid, event_type: "session_start", meta: { role: roleIsBusiness ? "business" : "creator" } })
-          .then(() => {}).catch(() => {});
+          .then(() => {}, () => {});
       }
 
       // ── Shared: resolve recent conversations with proper participant names ──
@@ -2481,8 +2480,16 @@ function HomePage() {
         const week1ago = new Date(Date.now() - 7 * 86400000).toISOString();
         const week2ago = new Date(Date.now() - 14 * 86400000).toISOString();
 
+        // creator_analytics_events is keyed by creator_profile_id (the profile
+        // row's own id), not the auth user id — resolve it first so the two
+        // view-count queries below can filter on the right column.
+        const cpRes = await db.from("creator_profiles")
+          .select("id, status, profile_image_url, bio, platforms, niche, categories, audience_location, audience_age_range, audience_gender_split, location, location_city, location_country, follower_count, primary_language, accepts_paid, accepts_gifted, accepts_affiliate, featured_link_1, featured_link_2, featured_link_3, rate_range")
+          .eq("user_id", uid)
+          .maybeSingle();
+        const creatorProfileId = cpRes.data?.id ?? null;
+
         const [
-          cpRes,
           viewsThisWeekRes,
           viewsLastWeekRes,
           unreadMsg,
@@ -2491,25 +2498,24 @@ function HomePage() {
           upcomingRes,
           savedRes,
         ] = await Promise.all([
-          db.from("creator_profiles")
-            .select("id, status, profile_image_url, bio, platforms, niche, categories, audience_location, audience_age_range, audience_gender_split, location, location_city, location_country, follower_count, primary_language, accepts_paid, accepts_gifted, accepts_affiliate, featured_link_1, featured_link_2, featured_link_3, rate_range")
-            .eq("user_id", uid)
-            .maybeSingle(),
-
           // Profile views this week
-          db.from("creator_analytics_events")
-            .select("*", { count: "exact", head: true })
-            .eq("actor_id", uid)
-            .eq("event_type", "profile_viewed")
-            .gte("created_at", week1ago),
+          creatorProfileId
+            ? db.from("creator_analytics_events")
+                .select("*", { count: "exact", head: true })
+                .eq("creator_profile_id", creatorProfileId)
+                .eq("event_type", "profile_viewed")
+                .gte("created_at", week1ago)
+            : Promise.resolve({ count: 0 }),
 
           // Profile views last week (for trend)
-          db.from("creator_analytics_events")
-            .select("*", { count: "exact", head: true })
-            .eq("actor_id", uid)
-            .eq("event_type", "profile_viewed")
-            .gte("created_at", week2ago)
-            .lt("created_at", week1ago),
+          creatorProfileId
+            ? db.from("creator_analytics_events")
+                .select("*", { count: "exact", head: true })
+                .eq("creator_profile_id", creatorProfileId)
+                .eq("event_type", "profile_viewed")
+                .gte("created_at", week2ago)
+                .lt("created_at", week1ago)
+            : Promise.resolve({ count: 0 }),
 
           fetchUnreadCount(uid),
 
@@ -2566,7 +2572,7 @@ function HomePage() {
           : 0;
 
         const visibilityScore = creatorProfile
-          ? computeVisibilityScore(creatorProfile as CreatorProfile).score
+          ? computeVisibilityScore(creatorProfile as unknown as CreatorProfile).score
           : 0;
 
         // Compute match scores for opportunities
@@ -2621,13 +2627,13 @@ function HomePage() {
             title:      opp.title,
             brandName:  businessNameMap[opp.user_id] ?? "Brand",
             budget,
-            matchScore,
+            matchScore: matchScore ?? 0,
             daysLeft:   daysLeft(opp.deadline),
             imageUrl:   null,
             isNew,
           };
         })
-          .sort((a: OpportunityItem, b: OpportunityItem) => (b.matchScore ?? 0) - (a.matchScore ?? 0))
+          .sort((a: OpportunityItem, b: OpportunityItem) => b.matchScore - a.matchScore)
           .slice(0, 5);
 
         // Resolve conversations with proper participant names + avatars

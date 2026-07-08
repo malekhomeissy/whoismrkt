@@ -171,7 +171,7 @@ function MessagesLayout() {
 
     // Step 1: my participations
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: myParts } = await (supabase as any)
+    const { data: myParts } = await supabase
       .from("conversation_participants")
       .select("conversation_id, last_read_at, unread_count")
       .eq("user_id", user.id);
@@ -183,7 +183,7 @@ function MessagesLayout() {
 
     // Step 2: conversations
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: convs } = await (supabase as any)
+    const { data: convs } = await supabase
       .from("conversations")
       .select("id, campaign_id, last_message, last_message_at, last_sender_id, updated_at")
       .in("id", convIds)
@@ -193,7 +193,7 @@ function MessagesLayout() {
 
     // Step 3: other participants
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: otherParts } = await (supabase as any)
+    const { data: otherParts } = await supabase
       .from("conversation_participants")
       .select("conversation_id, user_id")
       .in("conversation_id", convIds)
@@ -216,12 +216,12 @@ function MessagesLayout() {
     const [profilesRes, creatorProfsRes, bizProfsRes] = await Promise.all([
       supabase.from("profiles").select("id, name, email").in("id", otherUserIds),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("creator_profiles")
         .select("user_id, display_name, profile_image_url, is_verified")
         .in("user_id", otherUserIds),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("business_profiles")
         .select("user_id, company_name, logo_url, is_verified")
         .in("user_id", otherUserIds),

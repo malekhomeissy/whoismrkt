@@ -603,35 +603,30 @@ function ApplicantsPage() {
       // Load campaign (verify ownership), applicants, and pipeline entries in parallel
       const [campaignRes, appsRes, pipelineRes, contractsRes] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("campaigns")
           .select(
-            "title,business_name,user_id,compensation_type," +
-            "required_platforms,required_niches,business_industry," +
-            "required_country,required_language,min_followers"
+            "title,business_name,user_id,compensation_type,required_platforms,required_niches,business_industry,required_country,required_language,min_followers"
           )
           .eq("id", campaignId)
           .single(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("campaign_applications")
           .select(
-            "id,campaign_id,status,cover_note,created_at," +
-            "creator_profiles(id,user_id,display_name,niche,categories,platforms,follower_count," +
-            "profile_image_url,location,location_city,location_country," +
-            "audience_location,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified,avg_rating,review_count)"
+            "id,campaign_id,status,cover_note,created_at,creator_profiles(id,user_id,display_name,niche,categories,platforms,follower_count,profile_image_url,location,location_city,location_country,audience_location,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified,avg_rating,review_count)"
           )
           .eq("campaign_id", campaignId)
           .order("created_at", { ascending: false }),
         // Load already-pipelined creator profile IDs for this user
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("project_saved_creators")
           .select("creator_profile_id")
           .eq("saved_by", user.id),
         // Load existing contracts for this campaign (to show "Send Another" state)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("contracts")
           .select("creator_id")
           .eq("campaign_id", campaignId)
@@ -652,7 +647,10 @@ function ApplicantsPage() {
         min_followers:      campaignRes.data.min_followers,
         compensation_type:  campaignRes.data.compensation_type,
       });
-      setApplicants(appsRes.data ?? []);
+      // `status` is a free-form `text` column at the DB level (constrained by
+      // app logic, not a Postgres enum), so it comes back as `string` — narrow
+      // to the app's AppStatus union here rather than widening Applicant itself.
+      setApplicants((appsRes.data ?? []) as Applicant[]);
       setPipelineSet(new Set(
         (pipelineRes.data ?? []).map((r: { creator_profile_id: string }) => r.creator_profile_id)
       ));
@@ -667,7 +665,7 @@ function ApplicantsPage() {
     setUpdating(appId);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("campaign_applications")
         .update({ status: newStatus })
         .eq("id", appId);
@@ -734,7 +732,7 @@ function ApplicantsPage() {
       // Find or create a default project for this user
       let projectId: string;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: projects } = await (supabase as any)
+      const { data: projects } = await supabase
         .from("projects")
         .select("id")
         .eq("user_id", user.id)
@@ -746,7 +744,7 @@ function ApplicantsPage() {
         projectId = projects[0].id;
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: newProject, error: projErr } = await (supabase as any)
+        const { data: newProject, error: projErr } = await supabase
           .from("projects")
           .insert({ user_id: user.id, name: "Marketplace" })
           .select("id")
@@ -756,7 +754,7 @@ function ApplicantsPage() {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("project_saved_creators")
         .insert({
           project_id:         projectId,
@@ -786,7 +784,7 @@ function ApplicantsPage() {
     setSendingContract(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("contracts")
         .insert({
           campaign_id:       campaignId,

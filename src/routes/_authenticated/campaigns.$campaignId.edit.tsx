@@ -140,7 +140,7 @@ function EditCampaignPage() {
 
   async function load() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("campaigns")
       .select("*, deliverables:campaign_deliverables(*)")
       .eq("id", campaignId)
@@ -200,7 +200,7 @@ function EditCampaignPage() {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: campaignErr } = await (supabase as any)
+      const { error: campaignErr } = await supabase
         .from("campaigns")
         .update({
           title:                       form.title.trim(),
@@ -227,14 +227,14 @@ function EditCampaignPage() {
 
       // Replace deliverables — delete old, insert new
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      await supabase
         .from("campaign_deliverables")
         .delete()
         .eq("campaign_id", campaignId);
 
       if (form.deliverables.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: delErr } = await (supabase as any)
+        const { error: delErr } = await supabase
           .from("campaign_deliverables")
           .insert(
             form.deliverables.map((d, i) => ({

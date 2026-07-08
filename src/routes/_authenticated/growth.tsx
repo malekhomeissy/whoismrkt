@@ -365,20 +365,37 @@ function CreatorGrowth() {
 
   useEffect(() => {
     if (!user) return;
+    // profile_views and savedByBrands both key off the creator_profiles row
+    // id (not the auth user id) — resolve it first, matching the pattern
+    // used on the home dashboard.
     Promise.all([
-      (supabase as any).from("profiles").select("*").eq("id", user.id).single(),
-      (supabase as any).from("creator_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-      (supabase as any).from("creator_analytics").select("profile_views").eq("creator_id", user.id).maybeSingle(),
-      (supabase as any).from("campaign_applications").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-      (supabase as any).from("saved_creators").select("id", { count: "exact", head: true }).eq("creator_id", user.id),
-    ]).then(([p, cp, an, apps, saved]) => {
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("creator_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("campaign_applications").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    ]).then(async ([p, cp, apps]) => {
       setProfile(p.data as Record<string, unknown>);
       setCreatorProfile(cp.data as Record<string, unknown>);
+
+      const creatorProfileId = (cp.data as { id: string } | null)?.id ?? null;
+      const [viewsRes, savedRes] = await Promise.all([
+        creatorProfileId
+          ? supabase.from("creator_analytics_events")
+              .select("id", { count: "exact", head: true })
+              .eq("creator_profile_id", creatorProfileId)
+              .eq("event_type", "profile_viewed")
+          : Promise.resolve({ count: 0 }),
+        creatorProfileId
+          ? supabase.from("project_saved_creators")
+              .select("id", { count: "exact", head: true })
+              .eq("creator_profile_id", creatorProfileId)
+          : Promise.resolve({ count: 0 }),
+      ]);
+
       setStats({
-        visibilityScore: cp.data ? computeVisibilityScore(cp.data as CreatorProfile).score : 0,
+        visibilityScore: cp.data ? computeVisibilityScore(cp.data as unknown as CreatorProfile).score : 0,
         applications: apps.count ?? 0,
-        profileViews: (an.data as { profile_views?: number } | null)?.profile_views ?? 0,
-        savedByBrands: saved.count ?? 0,
+        profileViews: viewsRes.count ?? 0,
+        savedByBrands: savedRes.count ?? 0,
       });
       setLoading(false);
     });
@@ -388,7 +405,7 @@ function CreatorGrowth() {
     setLoadingAdvice(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const supabaseUrl = (supabase as any).supabaseUrl as string;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(`${supabaseUrl}/functions/v1/growth-advice`, {
         method: "POST",
         headers: {
@@ -661,14 +678,17 @@ function BusinessGrowth() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      (supabase as any).from("business_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-      (supabase as any).from("campaigns").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "active"),
-      (supabase as any).from("campaign_applications").select("id", { count: "exact", head: true }).in(
-        "campaign_id",
-        (supabase as any).from("campaigns").select("id").eq("user_id", user.id)
-      ),
-    ]).then(([bp, campaigns, apps]) => {
+    (async () => {
+      const { data: myCampaigns } = await supabase.from("campaigns").select("id").eq("user_id", user.id);
+      const campaignIds = (myCampaigns ?? []).map((c) => c.id);
+
+      const [bp, campaigns, apps] = await Promise.all([
+        supabase.from("business_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "active"),
+        campaignIds.length > 0
+          ? supabase.from("campaign_applications").select("id", { count: "exact", head: true }).in("campaign_id", campaignIds)
+          : Promise.resolve({ count: 0 }),
+      ]);
       setBizProfile({ ...((bp.data as Record<string, unknown>) ?? {}), has_campaigns: (campaigns.count ?? 0) > 0 });
       setStats({
         activeCampaigns:  campaigns.count ?? 0,
@@ -677,7 +697,7 @@ function BusinessGrowth() {
         pipelineTotal:    apps.count ?? 0,
       });
       setLoading(false);
-    });
+    })();
   }, [user]);
 
   const generateAdvice = useCallback(async () => {
@@ -851,12 +871,12 @@ function GrowthPage() {
 
   useEffect(() => {
     if (!user) return;
-    (supabase as any)
+    supabase
       .from("profiles")
       .select("name, account_type, onboarding_path")
       .eq("id", user.id)
       .single()
-      .then(({ data }: { data: { name?: string; account_type?: string; onboarding_path?: string } | null }) => {
+      .then(({ data }) => {
         if (!data) return;
         setDisplayName(data.name ?? user.email?.split("@")[0] ?? "");
         const isBiz = data.account_type === "brand" || data.account_type === "business"

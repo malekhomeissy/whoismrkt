@@ -595,12 +595,12 @@ async function uploadDeliverableFile(
 ): Promise<{ file_url: string; file_name: string; file_size: number; file_type: string }> {
   const ext  = file.name.split(".").pop() ?? "bin";
   const path = `${userId}/${applicationId}/${deliverableId}/${Date.now()}.${ext}`;
-  const { error } = await (supabase as any).storage
+  const { error } = await supabase.storage
     .from("deliverables")
     .upload(path, file, { upsert: true });
   if (error) throw error;
 
-  const { data: signed } = await (supabase as any).storage
+  const { data: signed } = await supabase.storage
     .from("deliverables")
     .createSignedUrl(path, 60 * 60 * 24 * 7); // 7-day signed URL
 
@@ -630,7 +630,7 @@ function DeliverablesPage() {
     setLoading(true);
     try {
       // Load application with campaign info
-      const { data: app, error: appErr } = await (supabase as any)
+      const { data: app, error: appErr } = await supabase
         .from("campaign_applications")
         .select(`
           id, campaign_id, user_id, status, campaign_title,
@@ -652,7 +652,7 @@ function DeliverablesPage() {
       setIsCreator(isCr);
 
       // Get creator profile for display name
-      const { data: creatorProfile } = await (supabase as any)
+      const { data: creatorProfile } = await supabase
         .from("creator_profiles")
         .select("display_name")
         .eq("user_id", app.user_id)
@@ -669,7 +669,7 @@ function DeliverablesPage() {
       });
 
       // Load campaign deliverables
-      const { data: delivs } = await (supabase as any)
+      const { data: delivs } = await supabase
         .from("campaign_deliverables")
         .select("id, platform, content_type, quantity")
         .eq("campaign_id", app.campaign_id)
@@ -679,13 +679,13 @@ function DeliverablesPage() {
       setDeliverables(delivList);
 
       // Load existing submissions
-      const { data: subs } = await (supabase as any)
+      const { data: subs } = await supabase
         .from("campaign_deliverable_submissions")
         .select("id, deliverable_id, status, submission_url, file_url, file_name, file_size, file_type, creator_notes, feedback, submitted_at, reviewed_at, revision_count")
         .eq("application_id", applicationId)
         .eq("creator_id", app.user_id);
 
-      const existingSubs: Submission[] = subs ?? [];
+      const existingSubs: Submission[] = (subs ?? []) as Submission[];
 
       // Auto-create 'not_started' submissions for deliverables that don't have one yet
       const missingDelivIds = delivList
@@ -701,11 +701,11 @@ function DeliverablesPage() {
           business_id:    app.campaigns.user_id,
           status:         "not_started",
         }));
-        const { data: newSubs } = await (supabase as any)
+        const { data: newSubs } = await supabase
           .from("campaign_deliverable_submissions")
           .insert(toInsert)
           .select("id, deliverable_id, status, submission_url, creator_notes, feedback, submitted_at, reviewed_at");
-        setSubmissions([...existingSubs, ...(newSubs ?? [])]);
+        setSubmissions([...existingSubs, ...((newSubs ?? []) as Submission[])]);
       } else {
         setSubmissions(existingSubs);
       }
@@ -722,9 +722,12 @@ function DeliverablesPage() {
   // ── Creator update ──
   async function handleCreatorUpdate(subId: string, updates: Partial<Submission>, status: SubStatus) {
     try {
-      const { error } = await (supabase as any)
+      // revision_count is NOT NULL at the DB level; Partial<Submission> allows
+      // null (to represent "unset" in local state), so normalize before send.
+      const { revision_count, ...restUpdates } = updates;
+      const { error } = await supabase
         .from("campaign_deliverable_submissions")
-        .update({ ...updates, status })
+        .update({ ...restUpdates, status, ...(revision_count != null ? { revision_count } : {}) })
         .eq("id", subId);
       if (error) throw error;
       setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, ...updates, status } : s));
@@ -759,7 +762,7 @@ function DeliverablesPage() {
   async function handleApprove(subId: string) {
     setActing(subId);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("campaign_deliverable_submissions")
         .update({ status: "approved" })
         .eq("id", subId);
@@ -797,7 +800,7 @@ function DeliverablesPage() {
   async function handleRequestRevision(subId: string, feedback: string) {
     setActing(subId);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("campaign_deliverable_submissions")
         .update({ status: "revision_requested", feedback: feedback || null })
         .eq("id", subId);

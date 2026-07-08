@@ -555,7 +555,7 @@ function AnalyticsPage() {
     async function load() {
       // 1. Check account type
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: profile } = await (supabase as any)
+      const { data: profile } = await supabase
         .from("profiles")
         .select("account_type,onboarding_path")
         .eq("id", user!.id)
@@ -572,7 +572,7 @@ function AnalyticsPage() {
 
       // 2. Load creator profile
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cp } = await (supabase as any)
+      const { data: cp } = await supabase
         .from("creator_profiles")
         .select("*")
         .eq("user_id", user!.id)
@@ -588,7 +588,7 @@ function AnalyticsPage() {
 
       // 3. Fetch analytics events, saves, and trust score — parallel
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const trustRes = await (supabase as any)
+      const trustRes = await supabase
         .from("creator_trust_scores")
         .select("*")
         .eq("user_id", user!.id)
@@ -597,21 +597,21 @@ function AnalyticsPage() {
 
       const [eventsRes, savesRes] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("creator_analytics_events")
           .select("id,event_type,meta,created_at")
           .eq("creator_profile_id", creatorId)
           .order("created_at", { ascending: false })
           .limit(100),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("project_saved_creators")
           .select("id,project_id,created_at")
           .eq("creator_profile_id", creatorId)
           .order("created_at", { ascending: false }),
       ]);
 
-      const events: AnalyticsEvent[] = eventsRes.data ?? [];
+      const events: AnalyticsEvent[] = (eventsRes.data ?? []) as unknown as AnalyticsEvent[];
       const saves:  SaveEvent[]      = savesRes.data  ?? [];
 
       // 4. Compute metric counts

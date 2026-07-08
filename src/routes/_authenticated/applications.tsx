@@ -337,21 +337,21 @@ function ApplicationsPage() {
         // Parallel: applications + creator profile
         const [appsRes, cpRes] = await Promise.all([
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("campaign_applications")
             .select("id,campaign_id,campaign_title,campaign_brand,status,cover_note,created_at")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false }),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("creator_profiles")
             .select("platforms,niche,categories,audience_location,location,location_city,location_country,follower_count,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types")
             .eq("user_id", user.id)
             .maybeSingle(),
         ]);
 
-        const rawApps: Omit<ApplicationRow, "matchScore">[] = appsRes.data ?? [];
-        const creatorProfile: CreatorInput | null = cpRes.data ?? null;
+        const rawApps = (appsRes.data ?? []) as Omit<ApplicationRow, "matchScore">[];
+        const creatorProfile = (cpRes.data ?? null) as CreatorInput | null;
 
         if (rawApps.length === 0) {
           setApps([]);
@@ -362,7 +362,7 @@ function ApplicationsPage() {
         // Fetch campaign details for enrichment
         const campaignIds = [...new Set(rawApps.map((a) => a.campaign_id))];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: campaigns } = await (supabase as any)
+        const { data: campaigns } = await supabase
           .from("campaigns")
           .select("id,compensation_type,compensation_amount_fixed,compensation_budget_min,compensation_budget_max,required_platforms,required_niches,required_country,required_language,min_followers,business_industry,user_id,deliverables:campaign_deliverables(*)")
           .in("id", campaignIds);
@@ -379,7 +379,7 @@ function ApplicationsPage() {
         let reviewed = new Set<string>();
         if (acceptedCampaignIds.length > 0) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: reviews } = await (supabase as any)
+          const { data: reviews } = await supabase
             .from("reviews")
             .select("campaign_id")
             .eq("reviewer_id", user.id)

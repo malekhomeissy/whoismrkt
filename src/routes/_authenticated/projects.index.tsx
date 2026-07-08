@@ -77,7 +77,7 @@ function NewProjectModal({ onClose, onCreated }: {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("projects")
         .insert({ user_id: user.id, name: name.trim(), description: desc.trim() || null })
         .select()
@@ -275,7 +275,7 @@ function ProjectsPage() {
     setLoading(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: projs } = await (supabase as any)
+      const { data: projs } = await supabase
         .from("projects")
         .select("id,name,description,status,created_at,updated_at")
         .eq("user_id", user.id)
@@ -292,15 +292,15 @@ function ProjectsPage() {
 
       const [{ data: chatData }, { data: savedData }] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("chats").select("project_id").in("project_id", ids),
+        supabase.from("chats").select("project_id").in("project_id", ids),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("saved_outputs").select("project_id").in("project_id", ids),
+        supabase.from("saved_outputs").select("project_id").in("project_id", ids),
       ]);
 
       const chatCounts: Record<string, number>  = {};
       const savedCounts: Record<string, number> = {};
-      for (const row of (chatData  ?? [])) chatCounts[row.project_id]  = (chatCounts[row.project_id]  ?? 0) + 1;
-      for (const row of (savedData ?? [])) savedCounts[row.project_id] = (savedCounts[row.project_id] ?? 0) + 1;
+      for (const row of (chatData  ?? [])) { if (row.project_id) chatCounts[row.project_id]  = (chatCounts[row.project_id]  ?? 0) + 1; }
+      for (const row of (savedData ?? [])) { if (row.project_id) savedCounts[row.project_id] = (savedCounts[row.project_id] ?? 0) + 1; }
 
       setProjects(projs.map((p: Project) => ({
         ...p,

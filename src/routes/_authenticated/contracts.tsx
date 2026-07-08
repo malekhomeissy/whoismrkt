@@ -567,7 +567,7 @@ function ContractsPage() {
 
       if (creatorRole) {
         // Creator: contracts sent to me
-        const { data: rows, error } = await (supabase as any)
+        const { data: rows, error } = await supabase
           .from("contracts")
           .select(`
             id, campaign_id, campaign_title, title, terms, status,
@@ -585,7 +585,7 @@ function ContractsPage() {
         // Enrich with business names
         const enriched: Contract[] = await Promise.all(
           (rows ?? []).map(async (row: any) => {
-            const { data: bp } = await (supabase as any)
+            const { data: bp } = await supabase
               .from("business_profiles")
               .select("company_name, logo_url")
               .eq("user_id", row.business_id)
@@ -605,7 +605,7 @@ function ContractsPage() {
         setContracts(enriched);
       } else {
         // Business: contracts I sent
-        const { data: rows, error } = await (supabase as any)
+        const { data: rows, error } = await supabase
           .from("contracts")
           .select(`
             id, campaign_id, campaign_title, title, terms, status,
@@ -622,7 +622,7 @@ function ContractsPage() {
 
         const enriched: Contract[] = await Promise.all(
           (rows ?? []).map(async (row: any) => {
-            const { data: cp } = await (supabase as any)
+            const { data: cp } = await supabase
               .from("creator_profiles")
               .select("display_name, profile_image_url")
               .eq("user_id", row.creator_id)
@@ -656,11 +656,14 @@ function ContractsPage() {
     if (!user) return;
     setAccepting(contractId);
     try {
-      const { data, error } = await (supabase as any).rpc("sign_contract", {
+      const { data: rawData, error } = await supabase.rpc("sign_contract", {
         p_contract_id: contractId,
         p_user_agent:  navigator.userAgent,
-        p_ip_address:  null,
+        p_ip_address:  undefined,
       });
+      // This RPC returns a dynamic JSON blob (either { signed_at } or
+      // { error: "..." }), not a fixed row shape, so it's typed as `Json`.
+      const data = rawData as unknown as { error?: string; signed_at?: string } | null;
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
@@ -685,7 +688,7 @@ function ContractsPage() {
     if (!user) return;
     setDeclining(contractId);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("contracts")
         .update({
           status:         "declined",

@@ -238,7 +238,7 @@ Return ONLY a JSON object with these exact fields (no markdown, no explanation):
 }`;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).functions.invoke("ai-router", {
+      const { data, error } = await supabase.functions.invoke("ai-router", {
         body: { task_type: "campaign_brief", prompt },
       });
 
@@ -925,7 +925,7 @@ function CampaignCreatePage() {
         .eq("id", user.id)
         .maybeSingle(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("business_profiles")
         .select("company_name,industry,website,location,is_complete")
         .eq("user_id", user.id)
@@ -1010,7 +1010,7 @@ function CampaignCreatePage() {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: campaign, error } = await (supabase as any)
+      const { data: campaign, error } = await supabase
         .from("campaigns")
         .insert({
           user_id:                      user.id,
@@ -1025,7 +1025,7 @@ function CampaignCreatePage() {
           description:                  data.description.trim(),
           product_service:              data.product_service.trim() || null,
           campaign_goal:                data.campaign_goal.trim() || null,
-          compensation_type:            data.compensation_type,
+          compensation_type:            data.compensation_type!,
           compensation_amount_fixed:    data.paid_structure === "fixed"           ? parseNum(data.compensation_amount_fixed)    : null,
           compensation_budget_min:      data.paid_structure === "range"           ? parseNum(data.compensation_budget_min)      : null,
           compensation_budget_max:      data.paid_structure === "range"           ? parseNum(data.compensation_budget_max)      : null,
@@ -1053,7 +1053,7 @@ function CampaignCreatePage() {
 
       if (delivs.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from("campaign_deliverables").insert(delivs);
+        await supabase.from("campaign_deliverables").insert(delivs);
       }
 
       const assets = data.assets
@@ -1065,7 +1065,7 @@ function CampaignCreatePage() {
 
       if (assets.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from("campaign_assets").insert(assets);
+        await supabase.from("campaign_assets").insert(assets);
       }
 
       toast.success(publish ? "Campaign published! It's live on MRKT Connect." : "Draft saved.");

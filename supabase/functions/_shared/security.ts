@@ -152,6 +152,24 @@ export class AuthError extends Error {
   constructor(msg: string) { super(msg); this.name = "AuthError"; }
 }
 
+/**
+ * Restrict an internal/cron-only function to callers presenting the project's
+ * service-role key as their bearer token. These functions (metrics rollups,
+ * scheduled score recomputation) have no legitimate end-user caller — they
+ * previously had no auth check at all, letting any logged-in user trigger
+ * them for arbitrary user_ids (IDOR). Supabase's own cron/dashboard "Run"
+ * invocations authenticate with the service-role key, so this doesn't break
+ * legitimate scheduled/manual admin runs.
+ */
+export function requireServiceRole(req: Request): void {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!serviceKey || token !== serviceKey) {
+    throw new AuthError("This endpoint is internal-only.");
+  }
+}
+
 // ── Standard JSON responses ───────────────────────────────────────────────────
 
 export function jsonOk(body: unknown, req: Request, status = 200): Response {

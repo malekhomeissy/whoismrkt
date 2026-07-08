@@ -124,7 +124,7 @@ Match score: ${breakdown.total}% (Platform: ${breakdown.platform}%, Niche: ${bre
 Return only the explanation text, no JSON, no headers.`;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).functions.invoke("ai-router", {
+      const { data, error } = await supabase.functions.invoke("ai-router", {
         body: { task_type: "creator_matching_reasoning", prompt },
       });
 
@@ -347,19 +347,17 @@ function MatchesPage() {
 
         const [campaignRes, creatorsRes] = await Promise.all([
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("campaigns")
             .select("id,title,compensation_type,required_platforms,required_niches,business_industry,required_country,required_language,min_followers")
             .eq("user_id", user.id)
             .in("status", ["active", "draft"])
             .order("created_at", { ascending: false }),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
+          supabase
             .from("creator_profiles")
             .select(
-              "id,user_id,display_name,niche,categories,platforms,location,location_city,location_country," +
-              "profile_image_url,follower_count,audience_location,primary_language," +
-              "accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified,avg_rating"
+              "id,user_id,display_name,niche,categories,platforms,location,location_city,location_country,profile_image_url,follower_count,audience_location,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified,avg_rating"
             )
             .eq("is_public", true)
             .eq("status", "active")
@@ -377,7 +375,7 @@ function MatchesPage() {
         const userIds = loadedCreators.map((c) => c.user_id).filter(Boolean) as string[];
         if (userIds.length > 0) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: trustData } = await (supabase as any)
+          const { data: trustData } = await supabase
             .from("creator_trust_scores")
             .select("*")
             .in("user_id", userIds);

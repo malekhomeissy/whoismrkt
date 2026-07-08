@@ -33,7 +33,7 @@ interface CreatorData {
   display_name:      string;
   username:          string;
   bio:               string | null;
-  avatar_url:        string | null;
+  profile_image_url: string | null;
   location:          string | null;
   location_city:     string | null;
   niche:             string | null;
@@ -105,12 +105,16 @@ function MediaKitPage() {
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await (supabase as any)
+      // engagement_rate and portfolio_urls do not exist as columns on
+      // creator_profiles (verified against generated types) — both are
+      // already rendered conditionally below, so they're defaulted to
+      // null/[] rather than backed by a schema migration here.
+      const { data, error } = await supabase
         .from("creator_profiles")
         .select(`
-          user_id, display_name, username, bio, avatar_url, location, location_city,
-          niche, categories, platforms, follower_count, engagement_rate,
-          audience_location, primary_language, portfolio_urls, media_kit_url,
+          user_id, display_name, username, bio, profile_image_url, location, location_city,
+          niche, categories, platforms, follower_count,
+          audience_location, primary_language, media_kit_url,
           is_verified, is_beta_pioneer, preferred_content_types
         `)
         .eq("username", username)
@@ -119,17 +123,20 @@ function MediaKitPage() {
       if (error || !data) { setNotFound(true); setLoading(false); return; }
 
       // Fetch trust score
-      const { data: trust } = await (supabase as any)
+      const { data: trust } = await supabase
         .from("creator_trust_scores")
         .select("score, tier")
         .eq("user_id", data.user_id)
         .maybeSingle();
 
       // Track media kit view
-      await (supabase as any).from("media_kit_views").insert({ creator_id: data.user_id });
+      await supabase.from("media_kit_views").insert({ creator_id: data.user_id });
 
       setCreator({
         ...data,
+        username:        data.username ?? username,
+        engagement_rate: null,
+        portfolio_urls:  [],
         trust_score: trust?.score ?? null,
         trust_tier:  trust?.tier ?? "new",
       });
@@ -189,9 +196,9 @@ function MediaKitPage() {
 
             {/* Avatar */}
             <div className="shrink-0">
-              {creator.avatar_url ? (
+              {creator.profile_image_url ? (
                 <img
-                  src={creator.avatar_url}
+                  src={creator.profile_image_url}
                   alt={creator.display_name}
                   className="h-24 w-24 rounded-2xl object-cover"
                   style={{ border: "2px solid oklch(1 0 0 / 10%)" }}

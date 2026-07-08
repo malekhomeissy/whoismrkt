@@ -92,24 +92,59 @@ Deno.serve(async (req: Request) => {
     // ── 4. Remove brand_knowledge ─────────────────────────────────────────────
     await supabase.from("brand_knowledge").delete().eq("business_user_id", userId);
 
-    // ── 5. Log deletion request ───────────────────────────────────────────────
-    await supabase.from("data_deletion_requests").insert({
-      user_id:      userId,
-      email,
-      reason:       body.reason ?? "User-initiated account deletion",
-      status:       "completed",
-      completed_at: new Date().toISOString(),
-    });
+    // ── 5. Log deletion request (must be inserted BEFORE the auth user is
+    //      deleted — its user_id column has a hard FK to auth.users, so an
+    //      insert attempted after a successful deleteUser() would itself fail
+    //      FK validation and silently drop the audit trail) ──────────────────
+    const { data: deletionRequest } = await supabase
+      .from("data_deletion_requests")
+      .insert({
+        user_id: userId,
+        email,
+        reason:  body.reason ?? "User-initiated account deletion",
+        status:  "processing",
+      })
+      .select("id")
+      .single();
 
-    // ── 6. Delete auth user (cascades to all FK tables) ───────────────────────
+    // ── 6. Delete auth user (cascades to most FK tables) ──────────────────────
+    // Note: campaign_payments.creator_id/business_id reference auth.users with
+    // ON DELETE RESTRICT (financial records are deliberately not cascade-
+    // deleted). If this user has any payment history, deleteUser() below will
+    // fail with a Postgres foreign_key_violation — that is expected, and we
+    // must NOT report success in that case: the auth record and login would
+    // still be live even though we already nulled out PII above.
     const { error: deleteErr } = await supabase.auth.admin.deleteUser(userId);
+
     if (deleteErr) {
       console.error("Auth user delete failed:", deleteErr.message);
-      // PII is already nullified. Log and return partial success.
+
+      if (deletionRequest?.id) {
+        await supabase.from("data_deletion_requests").update({
+          status:     "rejected",
+          admin_note: `Blocked deleting auth user: ${deleteErr.message}. Auth record and login are still live.`,
+        }).eq("id", deletionRequest.id);
+      }
+
+      // Honest partial-failure response — profile PII is nulled, but the
+      // login/auth record and any financial records are still live. Do not
+      // tell the user the account was deleted; it wasn't.
       return jsonOk({
-        success: true,
-        message: "Account data removed. Auth cleanup pending — contact privacy@usemrkt.app if you experience issues.",
+        success: false,
+        partial: true,
+        message:
+          "Your profile information has been removed, but full account deletion is on hold because " +
+          "this account has payment or contract history we're required to retain for financial " +
+          "record-keeping. Your login has NOT been deleted. Contact privacy@usemrkt.app to complete " +
+          "this request.",
       }, req);
+    }
+
+    if (deletionRequest?.id) {
+      await supabase.from("data_deletion_requests").update({
+        status:       "completed",
+        completed_at: new Date().toISOString(),
+      }).eq("id", deletionRequest.id);
     }
 
     return jsonOk({ success: true, message: "Account deleted successfully." }, req);

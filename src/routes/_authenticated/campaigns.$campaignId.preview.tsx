@@ -346,13 +346,13 @@ function CampaignPreviewPage() {
     async function load() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const [{ data, error }, { count }] = await Promise.all([
-        (supabase as any)
+        supabase
           .from("campaigns")
           .select("*, deliverables:campaign_deliverables(*), assets:campaign_assets(*)")
           .eq("id", campaignId)
           .single(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("campaign_applications")
           .select("id", { count: "exact", head: true })
           .eq("campaign_id", campaignId),

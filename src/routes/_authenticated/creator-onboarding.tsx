@@ -972,15 +972,9 @@ function CreatorOnboardingPage() {
   useEffect(() => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("creator_profiles")
-      .select("id,display_name,username,bio,location,location_area,location_city,location_country," +
-              "profile_image_url,niche,categories,platforms," +
-              "instagram_handle,tiktok_handle,youtube_handle,follower_count," +
-              "audience_location,audience_age_range,audience_gender_split,primary_language," +
-              "accepts_paid,accepts_gifted,accepts_affiliate,rate_range,preferred_content_types," +
-              "featured_link_1,featured_link_2,featured_link_3,media_kit_url,previous_collaborations," +
-              "creator_stage,status,is_public")
+      .select("id,display_name,username,bio,location,location_area,location_city,location_country,profile_image_url,niche,categories,platforms,instagram_handle,tiktok_handle,youtube_handle,follower_count,audience_location,audience_age_range,audience_gender_split,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,rate_range,preferred_content_types,featured_link_1,featured_link_2,featured_link_3,media_kit_url,previous_collaborations,creator_stage,status,is_public")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data: existing }: { data: Record<string, unknown> | null }) => {
@@ -1124,7 +1118,7 @@ function CreatorOnboardingPage() {
       console.debug("[creator-onboarding] upserting payload:", payload);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("creator_profiles")
         .upsert(payload, { onConflict: "user_id" });
 

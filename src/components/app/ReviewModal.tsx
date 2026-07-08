@@ -92,13 +92,20 @@ export function ReviewModal({
       if (v && v > 0) payload[cat.key] = v;
     }
 
+    // payload is built dynamically (category ratings only added when set),
+    // so it can't be a fixed literal type — the fields inserted are always a
+    // valid subset of the reviews table's real columns.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("reviews").insert(payload);
+    const { error } = await supabase.from("reviews").insert(payload as any);
 
     if (error) {
       console.error("[ReviewModal] submit error:", error);
       if (error.code === "23505") {
         toast.error("You've already submitted a review for this collaboration.");
+      } else if (error.code === "42501") {
+        // RLS rejection: no accepted contract links these two parties on this
+        // campaign — reviews require a real, signed collaboration.
+        toast.error("Reviews require a signed contract for this campaign. Send and accept a contract first.");
       } else {
         toast.error("Failed to submit review. Please try again.");
       }

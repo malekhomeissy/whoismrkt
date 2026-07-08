@@ -291,7 +291,7 @@ function SaveModal({ content, chatId, onClose, onSaved }: {
   useEffect(() => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("projects")
       .select("id,name,updated_at")
       .eq("user_id", user.id)
@@ -306,7 +306,7 @@ function SaveModal({ content, chatId, onClose, onSaved }: {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("saved_outputs")
         .insert({
           user_id: user.id,
@@ -794,7 +794,7 @@ function ContentPlanPanel({ items }: { items: ContentPlanItem[] }) {
         ai_generated:       true,
       }));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("content_planner_items")
         .insert(rows);
       if (error) throw error;
@@ -1007,7 +1007,7 @@ function ChatPage() {
   useEffect(() => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from("saved_outputs").select("id,title,output_type,created_at")
+    supabase.from("saved_outputs").select("id,title,output_type,created_at")
       .eq("user_id", user.id).order("created_at", { ascending: false }).limit(8)
       .then(({ data }: { data: SavedOutput[] | null }) => setSavedOutputs(data ?? []));
   }, [user]);
@@ -1017,7 +1017,7 @@ function ChatPage() {
     if (!user || !profile) return;
     if (profile.onboarding_path !== "creator" && profile.account_type !== "creator") return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from("creator_profiles")
+    supabase.from("creator_profiles")
       .select("id")
       .eq("user_id", user.id)
       .maybeSingle()
@@ -1032,19 +1032,19 @@ function ChatPage() {
     if (!creatorProfileId) return;
     Promise.all([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("creator_analytics_events")
         .select("*", { count: "exact", head: true })
         .eq("creator_profile_id", creatorProfileId)
         .eq("event_type", "profile_viewed"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("creator_analytics_events")
         .select("*", { count: "exact", head: true })
         .eq("creator_profile_id", creatorProfileId)
         .eq("event_type", "appeared_in_matching"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("project_saved_creators")
         .select("*", { count: "exact", head: true })
         .eq("creator_profile_id", creatorProfileId),
@@ -1062,7 +1062,7 @@ function ChatPage() {
     if (!user || !profile) return;
     if (!isBusinessAccount(profile)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from("business_profiles")
+    supabase.from("business_profiles")
       .select("company_name,industry,preferred_platforms,preferred_creator_categories,campaign_goals,monthly_creator_budget,target_audience,is_complete")
       .eq("user_id", user.id)
       .maybeSingle()
@@ -1074,7 +1074,7 @@ function ChatPage() {
     if (!user || !profile) return;
     if (!isBusinessAccount(profile)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("project_saved_creators")
       .select("status")
       .eq("saved_by", user.id)
@@ -1094,7 +1094,7 @@ function ChatPage() {
   useEffect(() => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from("projects")
+    supabase.from("projects")
       .select("id,name,updated_at")
       .eq("user_id", user.id)
       .eq("status", "active")
@@ -1110,7 +1110,7 @@ function ChatPage() {
     if (isBusinessAccount(profile)) {
       // Step 1: get active campaign IDs, then count pending applicants
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("campaigns")
         .select("id")
         .eq("user_id", user.id)
@@ -1122,7 +1122,7 @@ function ChatPage() {
           }
           const ids = camps.map((c) => c.id);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { count } = await (supabase as any)
+          const { count } = await supabase
             .from("campaign_applications")
             .select("id", { count: "exact", head: true })
             .in("campaign_id", ids)
@@ -1132,13 +1132,13 @@ function ChatPage() {
     } else if (isCreatorAccount(profile)) {
       Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("campaign_applications")
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
           .in("status", ["pending", "reviewing"]),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any)
+        supabase
           .from("campaign_saves")
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id),
@@ -1239,7 +1239,7 @@ function ChatPage() {
     if (!chatId && data && data.length) setChatId(data[0].id);
   }
   async function loadMessages(id: string) {
-    const { data } = await supabase.from("messages").select("role,content").eq("chat_id", id).order("created_at");
+    const { data } = await supabase.from("ai_chat_messages").select("role,content").eq("chat_id", id).order("created_at");
     setMessages((data ?? []) as Msg[]);
   }
   async function newChat() { setChatId(null); setMessages([]); setInput(""); }
@@ -1263,7 +1263,7 @@ function ChatPage() {
     const userMsg: Msg = { role: "user", content: text };
     const next = [...messages, userMsg];
     setMessages([...next, { role: "assistant", content: "" }]);
-    await supabase.from("messages").insert({ chat_id: activeId, user_id: user.id, role: "user", content: text });
+    await supabase.from("ai_chat_messages").insert({ chat_id: activeId, user_id: user.id, role: "user", content: text });
     let assistant = "";
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1299,7 +1299,7 @@ function ChatPage() {
         }
       }
       if (assistant) {
-        await supabase.from("messages").insert({ chat_id: activeId, user_id: user.id, role: "assistant", content: assistant });
+        await supabase.from("ai_chat_messages").insert({ chat_id: activeId, user_id: user.id, role: "assistant", content: assistant });
         await supabase.from("chats").update({ updated_at: new Date().toISOString() }).eq("id", activeId);
       }
     } catch (e) { console.error(e); toast.error("Connection failed"); }

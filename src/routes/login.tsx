@@ -51,12 +51,13 @@ function LoginPage() {
   const { user } = useAuth();
   const nav = useNavigate();
 
-  const [emailOpen, setEmailOpen] = useState(false);
-  const [mode,      setMode]      = useState<"signin" | "signup">("signin");
-  const [email,     setEmail]     = useState("");
-  const [password,  setPassword]  = useState("");
-  const [name,      setName]      = useState("");
-  const [loading,   setLoading]   = useState(false);
+  const [emailOpen,   setEmailOpen]   = useState(false);
+  const [mode,        setMode]        = useState<"signin" | "signup">("signin");
+  const [email,       setEmail]       = useState("");
+  const [password,    setPassword]    = useState("");
+  const [name,        setName]        = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => { if (user) nav({ to: "/home" }); }, [user, nav]);
 
@@ -72,10 +73,16 @@ function LoginPage() {
   // ── Email / password ───────────────────────────────────────────────────────
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (mode === "signup" && !agreedToTerms) {
+      toast.error("Please agree to the Terms and Privacy Policy to continue.");
+      return;
+    }
+
     setLoading(true);
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -85,6 +92,15 @@ function LoginPage() {
       });
       setLoading(false);
       if (error) return toast.error(error.message);
+
+      // Record affirmative consent — best-effort, never blocks signup.
+      if (data.user) {
+        supabase
+          .from("user_consents")
+          .insert({ user_id: data.user.id, consent_type: "terms_and_privacy" })
+          .then(() => {});
+      }
+
       toast.success("Account created — check your inbox to confirm.");
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -219,10 +235,34 @@ function LoginPage() {
                   required
                   minLength={6}
                 />
+
+                {mode === "signup" && (
+                  <label className="flex items-start gap-2.5 pt-1 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      required
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded"
+                      style={{ accentColor: "oklch(1 0 0 / 85%)" }}
+                    />
+                    <span className="text-[12px] leading-snug" style={{ color: "oklch(1 0 0 / 45%)" }}>
+                      I agree to MRKT's{" "}
+                      <Link to="/terms" target="_blank" className="underline underline-offset-2" style={{ color: "oklch(1 0 0 / 68%)" }}>
+                        Terms
+                      </Link>{" "}
+                      and{" "}
+                      <Link to="/privacy" target="_blank" className="underline underline-offset-2" style={{ color: "oklch(1 0 0 / 68%)" }}>
+                        Privacy Policy
+                      </Link>
+                    </span>
+                  </label>
+                )}
+
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="btn-primary w-full h-11 rounded-xl text-[13.5px] font-medium inline-flex items-center justify-center gap-2 mt-1"
+                  disabled={loading || (mode === "signup" && !agreedToTerms)}
+                  className="btn-primary w-full h-11 rounded-xl text-[13.5px] font-medium inline-flex items-center justify-center gap-2 mt-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {loading
                     ? "…"
@@ -253,9 +293,9 @@ function LoginPage() {
 
           <p className="mt-3 text-[10.5px] text-center" style={{ color: "oklch(1 0 0 / 14%)" }}>
             By continuing, you agree to MRKT's{" "}
-            <span className="underline underline-offset-2 cursor-pointer">Terms</span>
+            <Link to="/terms" target="_blank" className="underline underline-offset-2">Terms</Link>
             {" & "}
-            <span className="underline underline-offset-2 cursor-pointer">Privacy</span>
+            <Link to="/privacy" target="_blank" className="underline underline-offset-2">Privacy</Link>
           </p>
 
         </div>

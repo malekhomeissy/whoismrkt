@@ -79,7 +79,7 @@ export interface CreditBalance {
 export async function getCreditBalance(userId: string): Promise<CreditBalance> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("ai_credits")
       .select("total_credits, used_credits, reset_at, is_pro")
       .eq("user_id", userId)
@@ -126,7 +126,7 @@ export async function deductCredits(
   try {
     // Get or create the credits row
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existing } = await (supabase as any)
+    const { data: existing } = await supabase
       .from("ai_credits")
       .select("id, total_credits, used_credits, reset_at")
       .eq("user_id", userId)
@@ -138,7 +138,7 @@ export async function deductCredits(
       resetAt.setMonth(resetAt.getMonth() + 1);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("ai_credits")
         .insert({
           user_id:       userId,
@@ -164,7 +164,7 @@ export async function deductCredits(
       nextReset.setMonth(nextReset.getMonth() + 1);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      await supabase
         .from("ai_credits")
         .update({ used_credits: 0, reset_at: nextReset.toISOString() })
         .eq("id", existing.id);
@@ -178,7 +178,7 @@ export async function deductCredits(
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("ai_credits")
       .update({ used_credits: usedCredits + cost })
       .eq("id", existing.id);

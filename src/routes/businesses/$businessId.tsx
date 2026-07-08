@@ -41,8 +41,8 @@ interface PublicCampaign {
   description: string | null;
   status:      string;
   created_at:  string;
-  budget_min:  number | null;
-  budget_max:  number | null;
+  compensation_budget_min:  number | null;
+  compensation_budget_max:  number | null;
 }
 
 const AVATAR_COLORS = [
@@ -64,16 +64,19 @@ function BusinessProfilePage() {
     async function load() {
       setLoading(true);
       try {
-        const { data, error } = await (supabase as any).rpc("get_business_public_profile", {
+        const { data, error } = await supabase.rpc("get_business_public_profile", {
           p_business_id: businessId,
         });
-        if (error || data?.error) { setNotFound(true); return; }
-        setProfile(data as BusinessProfile);
+        // This RPC returns a dynamic JSON blob (either the profile or
+        // { error: "..." }), not a fixed row shape, so it's typed as `Json`.
+        const result = data as unknown as (BusinessProfile & { error?: string }) | null;
+        if (error || result?.error) { setNotFound(true); return; }
+        setProfile(result as BusinessProfile);
 
         // Load public active campaigns
-        const { data: camps } = await (supabase as any)
+        const { data: camps } = await supabase
           .from("campaigns")
-          .select("id, title, description, status, created_at, budget_min, budget_max")
+          .select("id, title, description, status, created_at, compensation_budget_min, compensation_budget_max")
           .eq("user_id", businessId)
           .in("status", ["active"])
           .order("created_at", { ascending: false })
@@ -260,13 +263,13 @@ function BusinessProfilePage() {
                         {camp.description}
                       </p>
                     )}
-                    {(camp.budget_min != null || camp.budget_max != null) && (
+                    {(camp.compensation_budget_min != null || camp.compensation_budget_max != null) && (
                       <p className="text-[11.5px] mt-1.5 font-medium" style={{ color: C.chrome }}>
-                        {camp.budget_min != null && camp.budget_max != null
-                          ? `$${camp.budget_min.toLocaleString()} – $${camp.budget_max.toLocaleString()}`
-                          : camp.budget_min != null
-                            ? `From $${camp.budget_min.toLocaleString()}`
-                            : `Up to $${camp.budget_max!.toLocaleString()}`
+                        {camp.compensation_budget_min != null && camp.compensation_budget_max != null
+                          ? `$${camp.compensation_budget_min.toLocaleString()} – $${camp.compensation_budget_max.toLocaleString()}`
+                          : camp.compensation_budget_min != null
+                            ? `From $${camp.compensation_budget_min.toLocaleString()}`
+                            : `Up to $${camp.compensation_budget_max!.toLocaleString()}`
                         }
                       </p>
                     )}

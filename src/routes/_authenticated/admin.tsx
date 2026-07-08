@@ -87,8 +87,8 @@ interface ActionLogRow {
 }
 
 interface AbuseReportRow {
-  id: string; reporter_user_id: string; reported_user_id: string | null;
-  reported_content_id: string | null; report_type: string; description: string | null;
+  id: string; reporter_id: string; reported_user_id: string | null;
+  content_id: string | null; reason: string; description: string | null;
   status: string; created_at: string;
 }
 
@@ -121,7 +121,7 @@ function AdminPage() {
   // ── Server-side admin check ──────────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
-    (supabase as any).rpc("is_admin").then(({ data, error }: { data: boolean; error: unknown }) => {
+    supabase.rpc("is_admin").then(({ data, error }) => {
       setIsAdmin(error ? false : Boolean(data));
     });
   }, [user]);
@@ -138,23 +138,23 @@ function AdminPage() {
       aiR, proR, newUsersR, newCampsR, newAppsR,
       contractsR, acceptedR, pendingR,
     ] = await Promise.all([
-      (supabase as any).from("profiles").select("id", { count: "exact", head: true }),
-      (supabase as any).from("creator_profiles").select("id", { count: "exact", head: true }),
-      (supabase as any).from("business_profiles").select("id", { count: "exact", head: true }),
-      (supabase as any).from("creator_profiles").select("id", { count: "exact", head: true }).eq("is_verified", true),
-      (supabase as any).from("profiles").select("id", { count: "exact", head: true }).eq("is_beta_pioneer", true),
-      (supabase as any).from("campaigns").select("id", { count: "exact", head: true }),
-      (supabase as any).from("campaigns").select("id", { count: "exact", head: true }).in("status", ["active", "published"]),
-      (supabase as any).from("campaign_applications").select("id", { count: "exact", head: true }),
-      (supabase as any).from("messages").select("id", { count: "exact", head: true }),
-      (supabase as any).from("ai_credits").select("used_credits"),
-      (supabase as any).from("ai_credits").select("id", { count: "exact", head: true }).eq("is_pro", true),
-      (supabase as any).from("profiles").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
-      (supabase as any).from("campaigns").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
-      (supabase as any).from("campaign_applications").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
-      (supabase as any).from("contracts").select("id", { count: "exact", head: true }),
-      (supabase as any).from("contracts").select("id", { count: "exact", head: true }).eq("status", "accepted"),
-      (supabase as any).from("contracts").select("id", { count: "exact", head: true }).eq("status", "sent"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase.from("creator_profiles").select("id", { count: "exact", head: true }),
+      supabase.from("business_profiles").select("id", { count: "exact", head: true }),
+      supabase.from("creator_profiles").select("id", { count: "exact", head: true }).eq("is_verified", true),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_beta_pioneer", true),
+      supabase.from("campaigns").select("id", { count: "exact", head: true }),
+      supabase.from("campaigns").select("id", { count: "exact", head: true }).in("status", ["active", "published"]),
+      supabase.from("campaign_applications").select("id", { count: "exact", head: true }),
+      supabase.from("messages").select("id", { count: "exact", head: true }),
+      supabase.from("ai_credits").select("used_credits"),
+      supabase.from("ai_credits").select("id", { count: "exact", head: true }).eq("is_pro", true),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
+      supabase.from("campaigns").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
+      supabase.from("campaign_applications").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
+      supabase.from("contracts").select("id", { count: "exact", head: true }),
+      supabase.from("contracts").select("id", { count: "exact", head: true }).eq("status", "accepted"),
+      supabase.from("contracts").select("id", { count: "exact", head: true }).eq("status", "sent"),
     ]);
     const credRows = (aiR.data ?? []) as { used_credits: number }[];
     const used = credRows.reduce((s: number, r: { used_credits: number }) => s + (r.used_credits ?? 0), 0);
@@ -174,7 +174,7 @@ function AdminPage() {
 
   const loadCreators = useCallback(async () => {
     if (!isAdmin) return;
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("creator_profiles")
       .select("id, user_id, display_name, username, is_verified, is_beta_pioneer, follower_count, niche, created_at")
       .order("created_at", { ascending: false })
@@ -184,7 +184,7 @@ function AdminPage() {
 
   const loadContracts = useCallback(async () => {
     if (!isAdmin) return;
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("contracts")
       .select("id, campaign_title, title, status, created_at, sent_at, accepted_at, signed_at, signer_email, creator_name, business_name")
       .order("created_at", { ascending: false })
@@ -194,15 +194,15 @@ function AdminPage() {
 
   const loadActionLog = useCallback(async () => {
     if (!isAdmin) return;
-    const { data, error } = await (supabase as any).rpc("get_admin_action_log", { p_limit: 100 });
+    const { data, error } = await supabase.rpc("get_admin_action_log", { p_limit: 100 });
     if (!error) setActionLog((data ?? []) as ActionLogRow[]);
   }, [isAdmin]);
 
   const loadAbuseReports = useCallback(async () => {
     if (!isAdmin) return;
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("abuse_reports")
-      .select("id,reporter_user_id,reported_user_id,reported_content_id,report_type,description,status,created_at")
+      .select("id,reporter_id,reported_user_id,content_id,reason,description,status,created_at")
       .order("created_at", { ascending: false })
       .limit(200);
     setAbuseReports((data ?? []) as AbuseReportRow[]);
@@ -223,7 +223,7 @@ function AdminPage() {
   async function grantPioneer(userId: string, name: string) {
     if (!user) return;
     setActionPending(userId);
-    const { error } = await (supabase as any).rpc("admin_grant_pioneer", {
+    const { error } = await supabase.rpc("admin_grant_pioneer", {
       p_user_id:  userId,
       p_admin_id: user.id,
       p_note:     "Granted via admin command center",
@@ -239,7 +239,7 @@ function AdminPage() {
   async function revokePioneer(userId: string, name: string) {
     if (!user) return;
     setActionPending(userId);
-    const { error } = await (supabase as any).rpc("admin_revoke_pioneer", {
+    const { error } = await supabase.rpc("admin_revoke_pioneer", {
       p_user_id:  userId,
       p_admin_id: user.id,
       p_note:     "Revoked via admin command center",
@@ -255,7 +255,7 @@ function AdminPage() {
   async function verifyCreator(creatorProfileId: string, name: string) {
     if (!user) return;
     setActionPending(creatorProfileId + "_verify");
-    const { error } = await (supabase as any).rpc("admin_verify_creator", {
+    const { error } = await supabase.rpc("admin_verify_creator", {
       p_creator_id: creatorProfileId,
       p_admin_id:   user.id,
       p_note:       "Verified via admin command center",
@@ -727,7 +727,7 @@ function AdminPage() {
                   </div>
                   <div className="w-24 shrink-0">
                     <span className="rounded-full px-2 py-0.5 text-[9.5px] font-mono" style={{ background: "oklch(0.52 0.15 24 / 12%)", color: "oklch(0.72 0.15 24)" }}>
-                      {r.report_type}
+                      {r.reason}
                     </span>
                   </div>
                   <div className="w-20 shrink-0">
@@ -742,7 +742,7 @@ function AdminPage() {
                     {r.description ?? "—"}
                   </div>
                   <div className="w-20 shrink-0 truncate text-[10.5px] font-mono" style={dimmed}>
-                    {r.reporter_user_id.slice(0, 8)}…
+                    {r.reporter_id.slice(0, 8)}…
                   </div>
                   <div className="w-20 shrink-0 truncate text-[10.5px] font-mono" style={dimmed}>
                     {r.reported_user_id ? r.reported_user_id.slice(0, 8) + "…" : "—"}

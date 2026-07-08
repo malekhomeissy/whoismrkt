@@ -462,13 +462,13 @@ function TravelPlansSection({ creatorProfileId }: { creatorProfileId: string }) 
   useEffect(() => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("creator_travel_plans")
       .select("id,destination_city,destination_country,start_date,end_date,notes,visibility")
       .eq("creator_profile_id", creatorProfileId)
       .order("start_date", { ascending: true })
-      .then(({ data }: { data: TravelPlan[] | null }) => {
-        setPlans(data ?? []);
+      .then(({ data }) => {
+        setPlans((data ?? []) as TravelPlan[]);
         setLoading(false);
       });
   }, [user, creatorProfileId]);
@@ -478,7 +478,7 @@ function TravelPlansSection({ creatorProfileId }: { creatorProfileId: string }) 
     if (!form.destination_city || !form.destination_country || !form.start_date || !form.end_date) return;
     setSubmitting(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("creator_travel_plans")
       .insert([{ ...form, creator_profile_id: creatorProfileId, user_id: user!.id, notes: form.notes || null }])
       .select()
@@ -492,7 +492,7 @@ function TravelPlansSection({ creatorProfileId }: { creatorProfileId: string }) 
 
   async function handleDelete(id: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("creator_travel_plans").delete().eq("id", id);
+    await supabase.from("creator_travel_plans").delete().eq("id", id);
     setPlans((prev) => prev.filter((p) => p.id !== id));
   }
 
@@ -670,19 +670,19 @@ function ReviewsReceivedSection({ userId }: { userId: string }) {
   useEffect(() => {
     (async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("reviews").select("*").eq("reviewed_user_id", userId)
         .order("created_at", { ascending: false }).limit(10);
 
       if (!data || data.length === 0) { setLoading(false); return; }
-      setReviews(data);
+      setReviews(data as Review[]);
 
-      const ids: string[] = data.map((r: Review) => r.reviewer_id);
+      const ids: string[] = (data as Review[]).map((r) => r.reviewer_id);
       const [crRes, biRes] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("creator_profiles").select("user_id,display_name").in("user_id", ids),
+        supabase.from("creator_profiles").select("user_id,display_name").in("user_id", ids),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("business_profiles").select("user_id,company_name").in("user_id", ids),
+        supabase.from("business_profiles").select("user_id,company_name").in("user_id", ids),
       ]);
       const names: Record<string, string> = {};
       for (const cp of (crRes.data ?? [])) names[cp.user_id] = cp.display_name;
@@ -834,12 +834,12 @@ function ProfilePage() {
 
       if (isCreator) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: cp } = await (supabase as any).from("creator_profiles").select("*").eq("user_id", user!.id).maybeSingle();
+        const { data: cp } = await supabase.from("creator_profiles").select("*").eq("user_id", user!.id).maybeSingle();
         if (cp) setCreatorProf(cp as CreatorProfile);
       }
       if (isBiz) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: bp } = await (supabase as any).from("business_profiles").select("*").eq("user_id", user!.id).maybeSingle();
+        const { data: bp } = await supabase.from("business_profiles").select("*").eq("user_id", user!.id).maybeSingle();
         if (bp) setBizProf(bp as BusinessProfile);
       }
       setLoading(false);

@@ -41,6 +41,10 @@ function Terms() {
         </p>
 
         <h2 style={h2}>1. Who We Are</h2>
+        {/* TODO(legal): confirm this matches the entity/jurisdiction actually being
+            registered this week — update here and in the governing-law clause
+            below (and privacy.tsx §"Data controller" + international-transfer
+            paragraph) if the registered entity differs from Lebanon. */}
         <p style={p}>
           MRKT is operated by MRKT ("Company", "we", "us", "our"), a company incorporated in Lebanon and serving users globally. Legal and privacy correspondence should be directed to <a href="mailto:legal@usemrkt.app" style={a}>legal@usemrkt.app</a>.
         </p>
@@ -175,6 +179,7 @@ function Terms() {
         </p>
 
         <h2 style={h2}>16. Governing Law</h2>
+        {/* TODO(legal): verify against actual registration jurisdiction — see §1 note. */}
         <p style={p}>
           These Terms are governed by the laws of the Republic of Lebanon, without regard to its conflict of law provisions. Nothing in these Terms limits mandatory consumer protection rights you may have under the laws of your country of residence.
         </p>

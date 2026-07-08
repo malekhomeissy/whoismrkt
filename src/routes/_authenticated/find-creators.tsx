@@ -108,7 +108,7 @@ function SaveCreatorModal({ creator, onClose, onSaved }: {
     // Load projects + pre-check which ones already have this creator
     Promise.all([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("projects")
         .select("id,name")
         .eq("user_id", user.id)
@@ -116,7 +116,7 @@ function SaveCreatorModal({ creator, onClose, onSaved }: {
         .order("updated_at", { ascending: false })
         .limit(10),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("project_saved_creators")
         .select("project_id")
         .eq("creator_profile_id", creator.id)
@@ -138,7 +138,7 @@ function SaveCreatorModal({ creator, onClose, onSaved }: {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("project_saved_creators")
         .insert({
           project_id:         projectId,
@@ -657,7 +657,7 @@ function FindCreatorsPage() {
   useEffect(() => {
     if (!user) return;
     // Pre-load saved creator IDs
-    (supabase as any)
+    supabase
       .from("project_saved_creators")
       .select("creator_profile_id")
       .eq("saved_by", user.id)
@@ -672,7 +672,7 @@ function FindCreatorsPage() {
       .then(({ data }) => {
         if (data?.account_type === "creator" || data?.onboarding_path === "creator") setIsCreatorAccount(true);
       });
-    (supabase as any)
+    supabase
       .from("campaigns")
       .select("required_platforms,required_niches,business_industry,required_country,required_language,min_followers,compensation_type")
       .eq("user_id", user.id)
@@ -709,11 +709,11 @@ function FindCreatorsPage() {
 
       if (isSearching) {
         // Server-side search via RPC
-        const { data: rpcData, error } = await (supabase as any).rpc("search_creators", {
-          p_query:     debouncedQuery.trim() || null,
-          p_platforms: selectedPlatforms.length > 0 ? selectedPlatforms : null,
-          p_categories: selectedNiches.length > 0 ? selectedNiches : null,
-          p_country:   selectedCountries.length > 0 ? selectedCountries[0] : null,
+        const { data: rpcData, error } = await supabase.rpc("search_creators", {
+          p_query:     debouncedQuery.trim() || undefined,
+          p_platforms: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
+          p_categories: selectedNiches.length > 0 ? selectedNiches : undefined,
+          p_country:   selectedCountries.length > 0 ? selectedCountries[0] : undefined,
           p_limit:     PAGE_SIZE,
           p_offset:    p * PAGE_SIZE,
         });
@@ -755,20 +755,17 @@ function FindCreatorsPage() {
         // Paginated view load (no search, no filters)
         const from = p * PAGE_SIZE;
         const to   = from + PAGE_SIZE - 1;
-        const { data, error, count } = await (supabase as any)
+        const { data, error, count } = await supabase
           .from("creator_discovery_ranked")
           .select(
-            "id,user_id,display_name,username,niche,categories,platforms,location,location_city,location_country,bio," +
-            "profile_image_url,instagram_handle,tiktok_handle,youtube_handle," +
-            "follower_count,audience_location,primary_language," +
-            "accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified,is_beta_pioneer,avg_rating,review_count,created_at,discovery_rank",
+            "id,user_id,display_name,username,niche,categories,platforms,location,location_city,location_country,bio,profile_image_url,instagram_handle,tiktok_handle,youtube_handle,follower_count,audience_location,primary_language,accepts_paid,accepts_gifted,accepts_affiliate,preferred_content_types,is_verified,is_beta_pioneer,avg_rating,review_count,created_at,discovery_rank",
             { count: "exact" }
           )
           .order("discovery_rank", { ascending: false })
           .range(from, to);
         if (error) throw error;
         if (p === 0) setTotalCount(count ?? 0);
-        loaded = data ?? [];
+        loaded = (data ?? []) as unknown as Creator[];
       }
 
       setCreators(prev => append ? [...prev, ...loaded] : loaded);
@@ -777,7 +774,7 @@ function FindCreatorsPage() {
       // Fetch trust scores for loaded creators
       const userIds = loaded.map((c) => c.user_id).filter(Boolean) as string[];
       if (userIds.length > 0) {
-        const { data: trustData } = await (supabase as any)
+        const { data: trustData } = await supabase
           .from("creator_trust_scores")
           .select("*")
           .in("user_id", userIds);

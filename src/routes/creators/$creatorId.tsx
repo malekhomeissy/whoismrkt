@@ -76,11 +76,11 @@ function SaveCreatorModal({ profile, onClose, onSaved }: {
     if (!user) return;
     Promise.all([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from("projects").select("id,name")
+      supabase.from("projects").select("id,name")
         .eq("user_id", user.id).eq("status", "active")
         .order("updated_at", { ascending: false }).limit(10),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from("project_saved_creators").select("project_id")
+      supabase.from("project_saved_creators").select("project_id")
         .eq("creator_profile_id", profile.id).eq("saved_by", user.id),
     ]).then(([pRes, sRes]) => {
       setProjects(pRes.data ?? []);
@@ -96,7 +96,7 @@ function SaveCreatorModal({ profile, onClose, onSaved }: {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("project_saved_creators").insert({
+      const { error } = await supabase.from("project_saved_creators").insert({
         project_id: projectId, creator_profile_id: profile.id,
         saved_by: user.id, note: note.trim() || null,
       });
@@ -287,7 +287,7 @@ function OutreachModal({ profile, bizCtx, onClose }: {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("saved_outputs").insert({
+      const { error } = await supabase.from("saved_outputs").insert({
         user_id: user.id,
         title: `Outreach: ${profile.display_name}`,
         output_type: "campaign_brief",
@@ -533,7 +533,7 @@ function CreatorProfilePage() {
   useEffect(() => {
     (async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("creator_profiles").select("*").eq("id", creatorId).single();
       if (error || !data) {
         setNotFound(true);
@@ -558,7 +558,7 @@ function CreatorProfilePage() {
   useEffect(() => {
     if (!user || !isBusiness(viewerProf)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from("business_profiles")
+    supabase.from("business_profiles")
       .select("company_name,industry,campaign_goals")
       .eq("user_id", user.id).maybeSingle()
       .then(({ data }: { data: BizCtx | null }) => setBizCtx(data));
@@ -568,7 +568,7 @@ function CreatorProfilePage() {
   useEffect(() => {
     if (!user || !profile || user.id === profile.user_id) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from("project_saved_creators")
+    supabase.from("project_saved_creators")
       .select("project_id, projects(name)")
       .eq("creator_profile_id", profile.id)
       .eq("saved_by", user.id)
@@ -594,7 +594,7 @@ function CreatorProfilePage() {
   useEffect(() => {
     if (!user || !profile || user.id === profile.user_id) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("creator_analytics_events")
       .insert({ creator_profile_id: profile.id, event_type: "profile_viewed" })
       .then(() => { /* fire-and-forget */ });

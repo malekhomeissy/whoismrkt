@@ -78,7 +78,7 @@ function AppLayout() {
       // Check BOTH account_type AND onboarding_path so no path is missed.
       if (isBizAccount(data.account_type, data.onboarding_path)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: bizProfile, error: bizError } = await (supabase as any)
+        const { data: bizProfile, error: bizError } = await supabase
           .from("business_profiles")
           .select("is_complete")
           .eq("user_id", user!.id)

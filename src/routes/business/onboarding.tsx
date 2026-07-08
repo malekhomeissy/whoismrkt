@@ -640,7 +640,7 @@ function BusinessOnboardingPage() {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("profiles")
       .select("account_type, onboarding_path")
       .eq("id", user.id)
@@ -687,7 +687,7 @@ function BusinessOnboardingPage() {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("business_profiles")
         .upsert({
           user_id:                      user.id,

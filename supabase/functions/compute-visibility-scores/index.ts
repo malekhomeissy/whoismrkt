@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/security.ts";
+import { corsHeaders, requireServiceRole, AuthError } from "../_shared/security.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 
@@ -30,6 +30,8 @@ serve(async (req) => {
   }
 
   try {
+    requireServiceRole(req);
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -216,6 +218,11 @@ serve(async (req) => {
     });
 
   } catch (err) {
+    if (err instanceof AuthError) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
     console.error("compute-visibility-scores error:", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },

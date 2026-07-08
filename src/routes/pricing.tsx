@@ -42,7 +42,7 @@ const FREE_FEATURES: PlanFeature[] = [
   { text: "Opportunities & applications", icon: Zap           },
   { text: "MRKT Connect messaging",       icon: MessageSquare },
   { text: "Pipeline CRM (6 stages)",      icon: BarChart3     },
-  { text: "AI Strategist (100 credits/mo)", icon: Sparkles    },
+  { text: "AI Strategist (200 credits/mo)", icon: Sparkles    },
   { text: "Content Calendar",             icon: CalendarDays  },
   { text: "MRKT Globe",                   icon: Globe2        },
   { text: "Analytics & visibility score", icon: BarChart3     },
@@ -51,7 +51,7 @@ const FREE_FEATURES: PlanFeature[] = [
 
 const CREATOR_FEATURES: PlanFeature[] = [
   { text: "Everything in Free",           icon: Check         },
-  { text: "Unlimited AI credits",         icon: Sparkles      },
+  { text: "2,000 AI credits/mo",          icon: Sparkles      },
   { text: "Advanced analytics",           icon: BarChart3     },
   { text: "Priority visibility in matches", icon: Zap         },
   { text: "Enhanced verification badge",  icon: Shield        },
@@ -88,7 +88,7 @@ const PLANS: Plan[] = [
     badge: "Launching soon",
     price: "TBD",
     period: null,
-    description: "For creators ready to grow seriously. Unlimited AI, advanced analytics, and priority placement.",
+    description: "For creators ready to grow seriously. More AI credits, advanced analytics, and priority placement.",
     cta: "Notify me",
     ctaTo: "/login",
     features: CREATOR_FEATURES,
@@ -290,7 +290,7 @@ function PricingPage() {
               How AI credits work
             </h2>
             <p className="text-[1rem] leading-[1.75] font-light" style={{ color: "oklch(1 0 0 / 46%)" }}>
-              Different AI actions use different credit amounts. All users get 100 credits per month, free. Credits reset monthly.
+              Different AI actions use different credit amounts. All users get 200 credits per month, free. Credits reset monthly.
             </p>
           </div>
 

@@ -290,7 +290,7 @@ function BusinessProfileEditPage() {
     if (!user) return;
     (async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: bp } = await (supabase as any)
+      const { data: bp } = await supabase
         .from("business_profiles")
         .select("company_name,industry,website,location,description,company_size,target_audience,geographic_market,logo_url")
         .eq("user_id", user.id)
@@ -322,7 +322,7 @@ function BusinessProfileEditPage() {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("business_profiles")
         .upsert({
           user_id:           user.id,

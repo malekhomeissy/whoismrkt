@@ -963,7 +963,7 @@ function CreatorSidebar({
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: myProfile, error: pErr } = await (supabase as any)
+      const { data: myProfile, error: pErr } = await supabase
         .from("creator_profiles")
         .select("id")
         .eq("user_id", userId)
@@ -973,7 +973,7 @@ function CreatorSidebar({
 
       const coords = guessCoords(city.trim().toLowerCase());
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("creator_availability")
         .upsert({
           creator_profile_id: myProfile.id,
@@ -1499,15 +1499,15 @@ function GlobePage() {
   useEffect(() => {
     if (!user || userRole !== "business") return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
+    supabase
       .from("campaigns")
-      .select("id,title,niche,platforms,target_audience,location,budget_min,budget_max,follower_min,follower_max,categories")
+      .select("required_platforms,required_niches,business_industry,required_country,required_language,min_followers,compensation_type")
       .eq("user_id", user.id)
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
-      .then(({ data }: { data: CampaignInput | null }) => {
+      .then(({ data }) => {
         if (data) setActiveCampaign(data);
       });
   }, [user, userRole]);
@@ -1518,17 +1518,16 @@ function GlobePage() {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const [profilesRes, availRes] = await Promise.all([
-        (supabase as any)
+        supabase
           .from("creator_profiles")
           .select(
-            "id,display_name,profile_image_url,follower_count,categories,platforms,niche," +
-            "location,location_lat,location_lng,location_city,location_country,is_verified,avg_rating,review_count"
+            "id,display_name,profile_image_url,follower_count,categories,platforms,niche,location,location_lat,location_lng,location_city,location_country,is_verified,avg_rating,review_count"
           )
           .eq("is_public", true)
           .eq("status", "active")
           .order("created_at", { ascending: false }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("creator_availability").select("*"),
+        supabase.from("creator_availability").select("*"),
       ]);
 
       const profiles: MapCreator[] = profilesRes.data ?? [];
@@ -1536,7 +1535,7 @@ function GlobePage() {
 
       for (const a of availRes.data ?? []) {
         availMap[a.creator_profile_id] = {
-          status:            a.status,
+          status:            a.status as "available" | "busy" | "traveling",
           current_city:      a.current_city,
           current_lat:       a.current_lat,
           current_lng:       a.current_lng,
