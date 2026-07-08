@@ -28,10 +28,19 @@ import type { Review } from "@/lib/reviews";
 import {
   type CreatorProfile,
   CATEGORY_LABELS,
-  formatFollowers,
   platformShort,
   platformColor,
 } from "@/types/creator";
+
+// The self-reported `follower_count` (typed in during onboarding) is never
+// updated by the Instagram sync, so it silently drifts from the real number.
+// Once Instagram is verified, that's the trustworthy figure — show it exactly
+// rather than showing both an approximate self-reported count and a verified
+// one side by side.
+function exactFollowers(n: number | null | undefined): string {
+  if (!n) return "—";
+  return n.toLocaleString("en-US");
+}
 
 export const Route = createFileRoute("/_authenticated/profile/")({
   head: () => ({ meta: [{ title: "My Profile — MRKT" }] }),
@@ -229,18 +238,19 @@ function CreatorSection({ cp }: { cp: CreatorProfile }) {
 
       <Card>
         <InfoRow icon={<MapPin className="h-3 w-3" />} label="Location" value={cp.location} />
-        <InfoRow icon={<Users className="h-3 w-3" />} label="Followers" value={cp.follower_count ? formatFollowers(cp.follower_count) : null} />
-        {cp.instagram_connected && cp.instagram_followers != null && (
+        {cp.instagram_connected && cp.instagram_followers != null ? (
           <InfoRow
             icon={<Instagram className="h-3 w-3" />}
             label="Instagram Followers"
             value={
               <span className="flex items-center gap-1.5">
-                {formatFollowers(cp.instagram_followers)}
+                {exactFollowers(cp.instagram_followers)}
                 <span className="text-[10px] uppercase tracking-[0.1em] font-semibold" style={{ color: C.accent }}>Verified</span>
               </span>
             }
           />
+        ) : (
+          <InfoRow icon={<Users className="h-3 w-3" />} label="Followers" value={cp.follower_count ? exactFollowers(cp.follower_count) : null} />
         )}
         {cp.bio && (
           <div className="py-2.5" style={{ borderBottom: `1px solid ${C.borderSubtle}` }}>

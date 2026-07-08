@@ -503,6 +503,7 @@ export type Database = {
       business_profiles: {
         Row: {
           avg_rating: number | null
+          brand_colors: string[]
           campaign_goals: string[]
           company_name: string | null
           company_size: string | null
@@ -528,6 +529,7 @@ export type Database = {
         }
         Insert: {
           avg_rating?: number | null
+          brand_colors?: string[]
           campaign_goals?: string[]
           company_name?: string | null
           company_size?: string | null
@@ -553,6 +555,7 @@ export type Database = {
         }
         Update: {
           avg_rating?: number | null
+          brand_colors?: string[]
           campaign_goals?: string[]
           company_name?: string | null
           company_size?: string | null
@@ -1788,6 +1791,7 @@ export type Database = {
           avatar_original_url: string | null
           avg_rating: number | null
           bio: string | null
+          brand_colors: string[]
           categories: string[]
           created_at: string
           creator_stage: string
@@ -1841,6 +1845,7 @@ export type Database = {
           avatar_original_url?: string | null
           avg_rating?: number | null
           bio?: string | null
+          brand_colors?: string[]
           categories?: string[]
           created_at?: string
           creator_stage?: string
@@ -1894,6 +1899,7 @@ export type Database = {
           avatar_original_url?: string | null
           avg_rating?: number | null
           bio?: string | null
+          brand_colors?: string[]
           categories?: string[]
           created_at?: string
           creator_stage?: string
@@ -2641,6 +2647,7 @@ export type Database = {
           in_app_enabled: boolean
           marketing_updates: boolean
           messages: boolean
+          push_enabled: boolean
           updated_at: string
           user_id: string
           weekly_reports: boolean
@@ -2656,6 +2663,7 @@ export type Database = {
           in_app_enabled?: boolean
           marketing_updates?: boolean
           messages?: boolean
+          push_enabled?: boolean
           updated_at?: string
           user_id: string
           weekly_reports?: boolean
@@ -2671,6 +2679,7 @@ export type Database = {
           in_app_enabled?: boolean
           marketing_updates?: boolean
           messages?: boolean
+          push_enabled?: boolean
           updated_at?: string
           user_id?: string
           weekly_reports?: boolean

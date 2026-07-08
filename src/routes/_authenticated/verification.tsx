@@ -13,7 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { VerifiedBadge } from "@/components/app/VerifiedBadge";
 import { computeCreatorMrktVerification } from "@/lib/verification";
-import { formatFollowers } from "@/types/creator";
 
 export const Route = createFileRoute("/_authenticated/verification")({
   head: () => ({ meta: [{ title: "Creator Verification — MRKT" }] }),
@@ -64,6 +63,14 @@ function Skeleton() {
       </div>
     </div>
   );
+}
+
+// Verification eligibility depends on exact thresholds (e.g. 10,000 followers),
+// so this page always shows the real synced count — never the abbreviated
+// "2K" form used elsewhere in the app for compact display.
+function exactFollowers(n: number | null | undefined): string {
+  if (!n) return "—";
+  return n.toLocaleString("en-US");
 }
 
 function formatSyncTime(iso: string | null | undefined): string {
@@ -168,7 +175,7 @@ function VerificationPage() {
       } else if (data?.error) {
         setSyncMsg(data.message ?? data.error);
       } else if (data?.success && data.instagram) {
-        setSyncMsg(`Updated · ${formatFollowers(data.instagram.followers_count)} followers`);
+        setSyncMsg(`Updated · ${exactFollowers(data.instagram.followers_count)} followers`);
         await loadCreator(); // refresh from DB
       }
     } catch {
@@ -330,7 +337,7 @@ function VerificationPage() {
                         {creator?.instagram_handle ? `@${creator.instagram_handle}` : "Connected"}
                       </p>
                       <p className="text-[11px] mt-0.5" style={{ color: C.textMuted }}>
-                        Verified by Instagram · {formatFollowers(v.igFollowers)} followers
+                        Verified by Instagram · {exactFollowers(v.igFollowers)} followers
                       </p>
                     </div>
                   </div>
@@ -429,7 +436,7 @@ function VerificationPage() {
                   value={
                     v.igFollowers > 0
                       ? <span className="flex items-center gap-1.5">
-                          {formatFollowers(v.igFollowers)}
+                          {exactFollowers(v.igFollowers)}
                           <span className="text-[9.5px] uppercase tracking-[0.12em] font-bold" style={{ color: C.blue }}>
                             Live
                           </span>
@@ -585,7 +592,7 @@ function VerificationPage() {
                 <p className="text-[13.5px] font-semibold" style={{ color: C.textSecondary }}>Not eligible yet.</p>
                 <p className="text-[12px] leading-relaxed" style={{ color: C.textMuted }}>
                   {v.igFollowers > 0
-                    ? `You have ${formatFollowers(v.igFollowers)} Instagram followers. Grow to 10K to unlock Creator Verification.`
+                    ? `You have ${exactFollowers(v.igFollowers)} Instagram followers. Grow to 10,000 to unlock Creator Verification.`
                     : "Your follower count will appear here after syncing."}
                 </p>
               </div>

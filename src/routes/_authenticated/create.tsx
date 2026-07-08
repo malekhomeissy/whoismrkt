@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +51,10 @@ const CREDIT_COST: Record<string, number> = {
   video: 3,
   image: 1,
 };
+
+// Must match MONTHLY_CREDIT_LIMIT in supabase/functions/higgsfield-generate/index.ts —
+// Studio has its own small monthly quota, separate from the AI Strategist's credit pool.
+const MONTHLY_CREDIT_LIMIT = 10;
 
 const CONCEPT_HOOKS = [
   "The one thing most people get wrong about…",
@@ -326,34 +330,47 @@ function BrandKitTab() {
   const [newColor, setNewColor] = useState("#FF6B6B");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    // NOTE: business_profiles has no `brand_colors` column in the live schema
-    // (verified against generated types) — this read/write has never actually
-    // persisted anything in production; a schema migration is needed to back
-    // this feature for real. `any` is scoped to this one known gap rather
-    // than the whole client, and left as pre-existing behavior rather than
-    // silently "fixed" by inventing a column here.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase.from("business_profiles") as any)
-      .select("brand_colors,logo_url")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }: { data: { brand_colors?: string[]; logo_url?: string | null } | null }) => {
+    (async () => {
+      const { data: profile } = await supabase.from("profiles")
+        .select("account_type,onboarding_path")
+        .eq("id", user.id)
+        .single();
+      const creator = profile?.account_type === "creator" || profile?.onboarding_path === "creator";
+      setIsCreator(creator);
+
+      if (creator) {
+        const { data } = await supabase.from("creator_profiles")
+          .select("brand_colors,profile_image_url")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (data?.brand_colors?.length) setColors(data.brand_colors);
+        if (data?.profile_image_url) setLogoUrl(data.profile_image_url);
+      } else {
+        const { data } = await supabase.from("business_profiles")
+          .select("brand_colors,logo_url")
+          .eq("user_id", user.id)
+          .maybeSingle();
         if (data?.brand_colors?.length) setColors(data.brand_colors);
         if (data?.logo_url) setLogoUrl(data.logo_url);
-      });
+      }
+    })();
   }, [user]);
 
   async function saveColors() {
-    if (!user) return;
+    if (!user || isCreator === null) return;
     setSaving(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("business_profiles") as any)
-      .update({ brand_colors: colors })
-      .eq("user_id", user.id);
+    const { error } = isCreator
+      ? await supabase.from("creator_profiles").update({ brand_colors: colors }).eq("user_id", user.id)
+      : await supabase.from("business_profiles").update({ brand_colors: colors }).eq("user_id", user.id);
     setSaving(false);
+    if (error) {
+      toast.error("Couldn't save brand colors. Please try again.");
+      return;
+    }
     toast.success("Brand colors saved");
   }
 
@@ -503,6 +520,34 @@ function StudioPage() {
 
   useEffect(() => { loadAssets(); }, [loadAssets]);
 
+  // Load Studio credit usage proactively — mirrors the credit check in the
+  // higgsfield-generate edge function so the count is visible before the
+  // user ever tries to generate anything.
+  const loadUsage = useCallback(async () => {
+    if (!user) return;
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const { data } = await supabase
+      .from("generated_assets")
+      .select("credits_used")
+      .eq("user_id", user.id)
+      .gte("created_at", monthStart.toISOString());
+
+    const creditsUsed = (data ?? []).reduce(
+      (sum, row) => sum + (row.credits_used ?? 1),
+      0,
+    );
+    setUsage({
+      credits_used:      creditsUsed,
+      credits_remaining: Math.max(0, MONTHLY_CREDIT_LIMIT - creditsUsed),
+      limit:              MONTHLY_CREDIT_LIMIT,
+    });
+  }, [user]);
+
+  useEffect(() => { loadUsage(); }, [loadUsage]);
+
   // Poll for generating assets
   useEffect(() => {
     const pending = assets.filter((a) => a.status === "generating");
@@ -571,7 +616,10 @@ function StudioPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Generation failed");
+        if (res.status === 429 && typeof data.credits_remaining === "number") {
+          setUsage({ credits_used: data.credits_used, credits_remaining: data.credits_remaining, limit: data.limit ?? MONTHLY_CREDIT_LIMIT });
+        }
+        toast.error(data.message ?? data.error ?? "Generation failed");
         return;
       }
       setUsage(data.usage);
@@ -645,22 +693,32 @@ function StudioPage() {
                 AI-powered content creation. Generate images and videos for any platform.
               </p>
             </div>
-            {usage && (
-              <div style={{
-                padding:      "10px 16px",
-                background:   C.surface,
-                border:       `1px solid ${C.borderSubtle}`,
-                borderRadius: 12,
-                textAlign:    "center",
-                flexShrink:   0,
-              }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: C.textPrimary, letterSpacing: "-0.03em" }}>
-                  {usage.credits_remaining}
-                </div>
-                <div style={{ fontSize: 11, color: C.textTertiary }}>credits left</div>
-                <div style={{ fontSize: 10, color: C.textTertiary, marginTop: 2 }}>of {usage.limit}/mo</div>
-              </div>
-            )}
+            <div style={{
+              padding:      "10px 16px",
+              background:   C.surface,
+              border:       `1px solid ${usage && usage.credits_remaining <= 0 ? C.redBorder : C.borderSubtle}`,
+              borderRadius: 12,
+              textAlign:    "center",
+              flexShrink:   0,
+              minWidth:     84,
+            }}>
+              {usage ? (
+                <>
+                  <div style={{
+                    fontSize:      20,
+                    fontWeight:    800,
+                    letterSpacing: "-0.03em",
+                    color:         usage.credits_remaining <= 0 ? C.red : C.textPrimary,
+                  }}>
+                    {usage.credits_remaining}
+                  </div>
+                  <div style={{ fontSize: 11, color: C.textTertiary }}>credits left</div>
+                  <div style={{ fontSize: 10, color: C.textTertiary, marginTop: 2 }}>of {usage.limit}/mo</div>
+                </>
+              ) : (
+                <div style={{ fontSize: 11, color: C.textTertiary, padding: "4px 0" }}>Loading…</div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -823,11 +881,49 @@ function StudioPage() {
                 </div>
               </div>
 
+              {/* Out of credits */}
+              {usage && usage.credits_remaining < CREDIT_COST[platform.format] && (
+                <div style={{
+                  display:      "flex",
+                  alignItems:   "center",
+                  justifyContent: "space-between",
+                  gap:          12,
+                  padding:      "14px 18px",
+                  background:   C.redBg,
+                  border:       `1px solid ${C.redBorder}`,
+                  borderRadius: 14,
+                  marginBottom: 16,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <AlertCircle size={16} style={{ color: C.red, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: C.textSecondary }}>
+                      You're out of Studio credits this month. More plans are coming soon.
+                    </span>
+                  </div>
+                  <Link
+                    to="/pricing"
+                    style={{
+                      flexShrink:   0,
+                      padding:      "7px 14px",
+                      borderRadius: 8,
+                      background:   C.red,
+                      color:        "#fff",
+                      fontSize:     12,
+                      fontWeight:   600,
+                      whiteSpace:   "nowrap",
+                      textDecoration: "none",
+                    }}
+                  >
+                    See plans
+                  </Link>
+                </div>
+              )}
+
               {/* Generate button */}
               <div style={{ display: "flex", gap: 10 }}>
                 <button
                   onClick={generate}
-                  disabled={generating || !prompt.trim()}
+                  disabled={generating || !prompt.trim() || (usage != null && usage.credits_remaining < CREDIT_COST[platform.format])}
                   style={{
                     flex:           1,
                     display:        "flex",
@@ -835,29 +931,31 @@ function StudioPage() {
                     justifyContent: "center",
                     gap:            9,
                     padding:        "14px 28px",
-                    background:     generating || !prompt.trim() ? C.raised : "oklch(1 0 0 / 92%)",
-                    color:          generating || !prompt.trim() ? C.textMuted : "oklch(0.06 0 0)",
-                    border:         `1px solid ${generating || !prompt.trim() ? C.borderSubtle : "transparent"}`,
+                    background:     generating || !prompt.trim() || (usage != null && usage.credits_remaining < CREDIT_COST[platform.format]) ? C.raised : "oklch(1 0 0 / 92%)",
+                    color:          generating || !prompt.trim() || (usage != null && usage.credits_remaining < CREDIT_COST[platform.format]) ? C.textMuted : "oklch(0.06 0 0)",
+                    border:         `1px solid ${generating || !prompt.trim() || (usage != null && usage.credits_remaining < CREDIT_COST[platform.format]) ? C.borderSubtle : "transparent"}`,
                     borderRadius:   14,
                     fontSize:       14,
                     fontWeight:     700,
-                    cursor:         generating || !prompt.trim() ? "not-allowed" : "pointer",
+                    cursor:         generating || !prompt.trim() || (usage != null && usage.credits_remaining < CREDIT_COST[platform.format]) ? "not-allowed" : "pointer",
                     transition:     "all 150ms ease",
                     letterSpacing:  "-0.01em",
                   }}
                   onMouseEnter={(e) => {
-                    if (!generating && prompt.trim()) {
+                    if (!generating && prompt.trim() && !(usage != null && usage.credits_remaining < CREDIT_COST[platform.format])) {
                       (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0)";
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!generating && prompt.trim()) {
+                    if (!generating && prompt.trim() && !(usage != null && usage.credits_remaining < CREDIT_COST[platform.format])) {
                       (e.currentTarget as HTMLElement).style.background = "oklch(1 0 0 / 92%)";
                     }
                   }}
                 >
                   {generating ? (
                     <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Generating…</>
+                  ) : usage != null && usage.credits_remaining < CREDIT_COST[platform.format] ? (
+                    <><AlertCircle size={16} /> Not enough credits</>
                   ) : (
                     <><Zap size={16} /> Generate {platform.label}</>
                   )}
