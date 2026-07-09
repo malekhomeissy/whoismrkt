@@ -5,9 +5,9 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
   "workers_dev": false,
-  "custom_domains": [
-    { "hostname": "usemrkt.app" },
-    { "hostname": "www.usemrkt.app" }
+  "routes": [
+    { "pattern": "usemrkt.app", "custom_domain": true },
+    { "pattern": "www.usemrkt.app", "custom_domain": true }
   ],
 
   "env": {
@@ -19,7 +19,7 @@
     "staging": {
       "name": "usemrkt-staging",
       "workers_dev": true,
-      "custom_domains": []
+      "routes": []
     }
   }
 }
