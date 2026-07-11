@@ -54,6 +54,7 @@ function AIDisclosure() {
         <ul style={{ paddingLeft: "1.25rem", marginBottom: "0.85rem" }}>
           <li style={li}><strong style={{ color: "oklch(1 0 0 / 72%)" }}>Anthropic</strong> (Claude models) — used for strategic, consultative, and long-form tasks</li>
           <li style={li}><strong style={{ color: "oklch(1 0 0 / 72%)" }}>OpenAI</strong> (GPT models) — used for fast, creative, and time-sensitive tasks</li>
+          <li style={li}><strong style={{ color: "oklch(1 0 0 / 72%)" }}>Higgsfield</strong> — used for AI image and video generation in MRKT Studio</li>
         </ul>
         <p style={p}>
           All AI responses are presented as "MRKT AI" to provide a consistent experience. The underlying provider is not disclosed in the interface, but is disclosed here in accordance with applicable transparency requirements.

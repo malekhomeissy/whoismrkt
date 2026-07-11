@@ -369,7 +369,7 @@ function MediaKitPage() {
                 >
                   <div className="absolute inset-0 rounded-2xl flex items-center justify-center">
                     {url.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
-                      <img src={url} alt={`Portfolio ${i + 1}`} className="w-full h-full object-cover" />
+                      <img src={url} alt={`Portfolio ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center gap-2" style={muted}>
                         <Briefcase className="h-6 w-6" />

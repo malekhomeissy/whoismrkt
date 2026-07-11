@@ -15,6 +15,9 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { callAI }                 from "../_shared/router.ts";
 import { outreachGeneratePrompt } from "../_shared/prompts.ts";
+import {
+  corsHeaders, isRateLimited, STRICT_AI_RATE, sanitizeForPrompt, sanitizeString, sanitizeStringArray,
+} from "../_shared/security.ts";
 
 
 Deno.serve(async (req: Request) => {
@@ -37,13 +40,33 @@ Deno.serve(async (req: Request) => {
       await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authErr || !user) return respond({ error: "Unauthorized" }, 401);
 
+    if (isRateLimited(`outreach-generate:${user.id}`, STRICT_AI_RATE)) {
+      return respond({ error: "Too many requests. Please wait a moment before generating again." }, 429);
+    }
+
     const body = await req.json();
+    const allowedTypes = ["initial", "followup", "negotiation", "proposal"];
+    const reqType = allowedTypes.includes(body.type) ? body.type : "initial";
+
+    const rawCreator  = body.creator  ?? {};
+    const rawCampaign = body.campaign ?? {};
+
     const prompt = outreachGeneratePrompt({
-      type:         body.type ?? "initial",
-      creator:      body.creator      ?? { name: "Creator", niche: "Lifestyle", followers: 0, platforms: [] },
-      campaign:     body.campaign     ?? { title: "Campaign", description: "", budget: "TBD", platforms: [] },
-      businessName: body.businessName ?? "Brand",
-      context:      body.context,
+      type: reqType,
+      creator: {
+        name:      sanitizeString(rawCreator.name ?? "Creator", 200),
+        niche:     sanitizeString(rawCreator.niche ?? "Lifestyle", 200),
+        followers: Number.isFinite(rawCreator.followers) ? rawCreator.followers : 0,
+        platforms: sanitizeStringArray(rawCreator.platforms, 10, 60),
+      },
+      campaign: {
+        title:       sanitizeString(rawCampaign.title ?? "Campaign", 200),
+        description: sanitizeForPrompt(sanitizeString(rawCampaign.description ?? "", 2000)),
+        budget:      sanitizeString(rawCampaign.budget ?? "TBD", 100),
+        platforms:   sanitizeStringArray(rawCampaign.platforms, 10, 60),
+      },
+      businessName: sanitizeString(body.businessName ?? "Brand", 200),
+      context:      body.context ? sanitizeForPrompt(sanitizeString(body.context, 2000)) : undefined,
     });
 
     const result = await callAI({

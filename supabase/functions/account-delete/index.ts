@@ -22,12 +22,6 @@ import {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
 
-  // Strict rate limit — one attempt per minute per user
-  const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
-  if (isRateLimited(`account-delete:${ip}`, { maxRequests: 3, windowMs: 60_000 })) {
-    return jsonErr("Too many requests. Please wait before trying again.", req, 429);
-  }
-
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -37,6 +31,14 @@ Deno.serve(async (req: Request) => {
     const user = await requireAuth(req, supabase);
     const userId = user.id;
     const email  = user.email ?? "";
+
+    // Strict rate limit — one attempt per minute per user. Previously keyed
+    // on cf-connecting-ip, which is attacker-controlled unless a trusted
+    // proxy guarantees it — the authenticated user id is available here
+    // (auth already ran above) and isn't spoofable.
+    if (isRateLimited(`account-delete:${userId}`, { maxRequests: 3, windowMs: 60_000 })) {
+      return jsonErr("Too many requests. Please wait before trying again.", req, 429);
+    }
 
     // Parse body
     let body: { confirmation?: string; reason?: string } = {};

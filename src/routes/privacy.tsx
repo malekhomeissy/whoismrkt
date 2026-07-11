@@ -39,10 +39,8 @@ function Privacy() {
         <p style={p}>
           MRKT ("we", "us", "our") is committed to protecting your personal data. This Privacy Policy explains what data we collect, how we use it, who we share it with, and what rights you have. It applies to all users of usemrkt.app and the MRKT mobile application worldwide.
         </p>
-        {/* TODO(legal): confirm this matches the entity/jurisdiction actually being
-            registered this week — see matching note in terms.tsx §1. */}
         <p style={p}>
-          <strong style={{ color: "oklch(1 0 0 / 72%)" }}>Data controller:</strong> MRKT, incorporated in Lebanon. Contact: <a href="mailto:privacy@usemrkt.app" style={a}>privacy@usemrkt.app</a>
+          <strong style={{ color: "oklch(1 0 0 / 72%)" }}>Data controller:</strong> MRKT. Our registered legal entity and jurisdiction of incorporation are finalized as part of our company registration process; the confirmed entity name and address will be published here once registration is complete. In the meantime, contact <a href="mailto:privacy@usemrkt.app" style={a}>privacy@usemrkt.app</a> for the current controller details or any privacy request.
         </p>
 
         <h2 style={h2}>1. Data We Collect</h2>
@@ -105,9 +103,18 @@ function Privacy() {
           We do not sell your personal data to third parties. We do not use your data to train third-party AI models.
         </p>
 
+        <h3 style={h3}>2.1 Legal Basis for Processing (GDPR Article 6)</h3>
+        <p style={p}>If you are located in the European Economic Area, the United Kingdom, or another jurisdiction with an equivalent requirement, we rely on the following legal bases for each purpose above:</p>
+        <ul style={{ paddingLeft: "1.25rem", marginBottom: "0.85rem" }}>
+          <li style={li}><strong style={{ color: "oklch(1 0 0 / 72%)" }}>Performance of a contract</strong> — operating the Platform, matching, messaging, contracting, and payment processing (the services you signed up for)</li>
+          <li style={li}><strong style={{ color: "oklch(1 0 0 / 72%)" }}>Consent</strong> — AI Strategist processing of your conversations, non-essential analytics cookies, and marketing communications (each withdrawable at any time, see §3 and §10)</li>
+          <li style={li}><strong style={{ color: "oklch(1 0 0 / 72%)" }}>Legitimate interests</strong> — improving matching accuracy and platform performance, sending service notifications, and investigating abuse reports — balanced against your right to object (see §9)</li>
+          <li style={li}><strong style={{ color: "oklch(1 0 0 / 72%)" }}>Legal obligation</strong> — retaining contract/payment records and responding to lawful requests from authorities</li>
+        </ul>
+
         <h2 style={h2}>3. AI Processing Disclosure</h2>
         <p style={p}>
-          <strong style={{ color: "oklch(1 0 0 / 72%)" }}>Your data is processed by AI providers.</strong> MRKT uses third-party AI providers — currently Anthropic and OpenAI — to power the AI Strategist, content planning, growth advice, and campaign matching features. When you use these features, your messages and relevant profile context (such as your niche, follower counts, and recent activity) are sent to these providers to generate responses.
+          <strong style={{ color: "oklch(1 0 0 / 72%)" }}>Your data is processed by AI providers.</strong> MRKT uses third-party AI providers — currently Anthropic and OpenAI for text-based features (AI Strategist, content planning, growth advice, campaign matching) and Higgsfield for AI image/video generation in MRKT Studio — to power these features. When you use them, your messages and relevant profile context (such as your niche, follower counts, and recent activity), or your generation prompts for Studio, are sent to these providers to generate responses.
         </p>
         <p style={p}>
           Data sent to AI providers is subject to their respective privacy policies. We contractually prohibit providers from using your data to train their foundational models. AI outputs may be generated based on patterns in your personal data.
@@ -135,9 +142,8 @@ function Privacy() {
         </p>
 
         <h2 style={h2}>7. International Data Transfers</h2>
-        {/* TODO(legal): verify against actual registration jurisdiction — see §"Data controller" note above. */}
         <p style={p}>
-          MRKT is incorporated in Lebanon. Your data is stored and processed on infrastructure in the United States (Supabase/AWS) and processed by AI providers operating globally (Anthropic — US, OpenAI — US). By using MRKT, you acknowledge this international transfer.
+          Your data is stored and processed on infrastructure in the United States (Supabase/AWS) and processed by third-party providers operating globally, including Anthropic (US), OpenAI (US), Higgsfield (AI image/video generation), and Meta (WhatsApp Business API, if you enable WhatsApp notifications, and Instagram integration). By using MRKT, you acknowledge this international transfer.
         </p>
         <p style={p}>
           We ensure appropriate safeguards are in place for such transfers, including standard contractual clauses with our data processors where applicable. If you are located in the European Economic Area, the United Kingdom, or another jurisdiction with data transfer restrictions, these safeguards form the legal basis for the transfer.

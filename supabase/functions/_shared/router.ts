@@ -19,9 +19,15 @@ export type ModelTier = "fast" | "balanced" | "deep";
 
 export interface ProviderConfig {
   baseUrl:   string;
-  envKey:    string;                            // Supabase secret name
+  envKey:    string;                                    // Supabase secret name
   models:    Record<ModelTier, string>;
-  costPer1k: { input: number; output: number }; // USD
+  // USD per 1K tokens, PER TIER — not a single flat provider rate. A flat
+  // rate here previously meant every OpenAI "balanced"/"deep" call (actually
+  // gpt-4o) was logged at gpt-4o-mini's ~16x-cheaper rate, and every
+  // Anthropic tier (haiku/sonnet/opus) was logged at Sonnet's rate — so
+  // ai_requests.estimated_cost silently understated real spend on every
+  // non-default-tier call. Rates below are per-model.
+  costPer1k: Record<ModelTier, { input: number; output: number }>;
 }
 
 export const PROVIDERS: Record<Provider, ProviderConfig> = {
@@ -33,7 +39,11 @@ export const PROVIDERS: Record<Provider, ProviderConfig> = {
       balanced: "claude-sonnet-4-6",
       deep:     "claude-opus-4-8",
     },
-    costPer1k: { input: 0.003, output: 0.015 },
+    costPer1k: {
+      fast:     { input: 0.001,  output: 0.005  }, // Haiku
+      balanced: { input: 0.003,  output: 0.015  }, // Sonnet
+      deep:     { input: 0.015,  output: 0.075  }, // Opus
+    },
   },
   openai: {
     baseUrl: "https://api.openai.com/v1",
@@ -43,13 +53,21 @@ export const PROVIDERS: Record<Provider, ProviderConfig> = {
       balanced: "gpt-4o",
       deep:     "gpt-4o",
     },
-    costPer1k: { input: 0.00015, output: 0.0006 },
+    costPer1k: {
+      fast:     { input: 0.00015, output: 0.0006 }, // gpt-4o-mini
+      balanced: { input: 0.0025,  output: 0.01   }, // gpt-4o
+      deep:     { input: 0.0025,  output: 0.01   }, // gpt-4o (same model as balanced today)
+    },
   },
   higgsfield: {
     baseUrl: "https://api.higgsfield.ai",
     envKey:  "HIGGSFIELD_API_KEY",
     models:  { fast: "flux-1.1-pro", balanced: "flux-1.1-pro", deep: "flux-1.1-pro" },
-    costPer1k: { input: 0, output: 0 }, // per-image pricing tracked separately
+    costPer1k: {
+      fast:     { input: 0, output: 0 }, // per-image/video pricing tracked separately
+      balanced: { input: 0, output: 0 },
+      deep:     { input: 0, output: 0 },
+    },
   },
 };
 
@@ -260,8 +278,10 @@ export async function callAI(opts: AICallOptions): Promise<AICallResult> {
     return { ...r, model };
   };
 
+  // Tier-accurate: a "balanced" OpenAI call is gpt-4o, not gpt-4o-mini, and
+  // must be costed at gpt-4o's rate — see the costPer1k comment above.
   const costOf = (p: Provider, inTok: number, outTok: number): number => {
-    const rates = PROVIDERS[p].costPer1k;
+    const rates = PROVIDERS[p].costPer1k[tier];
     return (inTok / 1000) * rates.input + (outTok / 1000) * rates.output;
   };
 

@@ -608,6 +608,7 @@ function GenerateVisualSection({
                   <img
                     src={asset.output_url}
                     alt="Generated visual"
+                    loading="lazy"
                     className="w-full object-cover"
                     style={{ maxHeight: 200 }}
                   />

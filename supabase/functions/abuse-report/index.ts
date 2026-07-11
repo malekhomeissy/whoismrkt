@@ -11,11 +11,6 @@ import {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
 
-  const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
-  if (isRateLimited(`abuse-report:${ip}`, { maxRequests: 5, windowMs: 60_000 })) {
-    return jsonErr("Too many reports submitted. Please wait before filing another.", req, 429);
-  }
-
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -23,6 +18,13 @@ Deno.serve(async (req: Request) => {
     );
 
     const user = await requireAuth(req, supabase);
+
+    // Previously keyed on cf-connecting-ip, which is attacker-controlled
+    // unless a trusted proxy guarantees it — the authenticated user id is
+    // available here and isn't spoofable.
+    if (isRateLimited(`abuse-report:${user.id}`, { maxRequests: 5, windowMs: 60_000 })) {
+      return jsonErr("Too many reports submitted. Please wait before filing another.", req, 429);
+    }
 
     const body = await req.json().catch(() => ({}));
     const { content_type, content_id, reported_user_id, reason, description } = body as {

@@ -125,7 +125,7 @@ Return only the explanation text, no JSON, no headers.`;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await supabase.functions.invoke("ai-router", {
-        body: { task_type: "creator_matching_reasoning", prompt },
+        body: { task_type: "match_score_reason", prompt },
       });
 
       if (error) throw new Error(error.message);

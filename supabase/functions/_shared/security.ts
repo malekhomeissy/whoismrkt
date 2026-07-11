@@ -16,11 +16,24 @@ const ALLOWED_ORIGINS = new Set([
   "https://app.supabase.com",
 ]);
 
+// Local dev origins — the Vite dev server (npm run dev, default port 8080)
+// talks to this SAME Supabase project (there is no separate staging
+// project), so every edge function call from a local frontend build was
+// silently rejected by the browser's CORS check. Only allowed when the
+// ALLOW_DEV_CORS secret is explicitly set on the project — production
+// deployments won't have it set, so this never widens the production
+// allowlist by accident.
+const DEV_ORIGINS = new Set([
+  "http://localhost:8080",
+  "http://127.0.0.1:8080",
+]);
+
 // Return the appropriate CORS origin header value.
 // Reflects the actual request origin if allowlisted; rejects others.
 export function corsOrigin(req: Request): string {
   const origin = req.headers.get("origin") ?? "";
   if (ALLOWED_ORIGINS.has(origin)) return origin;
+  if (Deno.env.get("ALLOW_DEV_CORS") === "true" && DEV_ORIGINS.has(origin)) return origin;
   // Default to the production domain if the origin is unknown/missing
   return "https://usemrkt.app";
 }

@@ -6,7 +6,8 @@
 // shared router module: provider selection, fallback, latency tracking, logging.
 //
 // POST /functions/v1/ai-router
-// Body: { task_type, prompt, context?, system_prompt?, metadata? }
+// Body: { task_type, prompt, context?, metadata? }
+// (system_prompt is not accepted from the client — see note below)
 //
 // Returns: { response, feature, latency_ms, usage }
 //
@@ -16,6 +17,9 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { callAI, ROUTES } from "../_shared/router.ts";
+import {
+  corsHeaders, isRateLimited, STRICT_AI_RATE, sanitizeForPrompt, sanitizeString,
+} from "../_shared/security.ts";
 
 
 // ─── Daily rate limits (requests/day/user per provider) ───────────────────────
@@ -25,25 +29,26 @@ const DAILY_LIMITS: Record<string, number> = {
   higgsfield: 10,
 };
 
+const MAX_PROMPT_LEN  = 4_000;
+const MAX_CONTEXT_LEN = 4_000;
+
+// Atomic — a single UPSERT (INSERT ... ON CONFLICT ... DO UPDATE ... RETURNING)
+// under Postgres row-level locking, closing the check-then-log race that
+// existed when this counted rows in ai_requests after the fact.
 async function checkDailyLimit(
-  supabase: ReturnType<typeof createClient>,
-  userId:   string,
-  provider: string,
+  serviceClient: ReturnType<typeof createClient>,
+  userId:        string,
+  provider:      string,
 ): Promise<{ allowed: boolean; used: number; limit: number }> {
-  const dayStart = new Date();
-  dayStart.setHours(0, 0, 0, 0);
-
-  const { count } = await supabase
-    .from("ai_requests")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("provider", provider)
-    .neq("status", "failed")
-    .gte("created_at", dayStart.toISOString());
-
-  const used  = count ?? 0;
   const limit = DAILY_LIMITS[provider] ?? 100;
-  return { allowed: used < limit, used, limit };
+  const { data, error } = await serviceClient.rpc("check_and_increment_ai_router_quota", {
+    p_user_id: userId,
+    p_provider: provider,
+    p_daily_limit: limit,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return { allowed: row.allowed, used: row.used, limit: row.quota_limit };
 }
 
 Deno.serve(async (req: Request) => {
@@ -72,21 +77,36 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) return respond({ error: "Unauthorized" }, 401);
 
-    // ── 2. Parse and validate request ─────────────────────────────────────────
+    // ── 2. Per-minute rate limit ───────────────────────────────────────────────
+    // ai-router previously had no per-minute guard at all — only the (racy)
+    // daily count below. A burst of requests within a minute had nothing
+    // slowing it down.
+    if (isRateLimited(`ai-router:${user.id}`, STRICT_AI_RATE)) {
+      return respond({ error: "Too many requests. Please wait a moment before trying again." }, 429);
+    }
+
+    // ── 3. Parse and validate request ─────────────────────────────────────────
+    // Note: `system_prompt` is intentionally NOT accepted from the client.
+    // MRKT's persona/guardrails are always built server-side (see
+    // systemPromptFor() in _shared/router.ts) — a client-supplied override
+    // previously let any caller replace MRKT's guardrails entirely and turn
+    // this endpoint into an unrestricted proxy to the underlying model,
+    // billed to MRKT's own API keys.
     const body = await req.json() as {
-      task_type:      string;
-      prompt:         string;
-      context?:       string;
-      system_prompt?: string;
-      metadata?:      Record<string, unknown>;
+      task_type: string;
+      prompt:    string;
+      context?:  string;
+      metadata?: Record<string, unknown>;
     };
 
-    const { task_type, prompt, context, system_prompt } = body;
+    const task_type = sanitizeString(body.task_type, 100);
+    const prompt    = sanitizeForPrompt(sanitizeString(body.prompt, MAX_PROMPT_LEN));
+    const context   = body.context ? sanitizeForPrompt(sanitizeString(body.context, MAX_CONTEXT_LEN)) : undefined;
 
-    if (!task_type?.trim()) return respond({ error: "task_type is required" }, 400);
-    if (!prompt?.trim())    return respond({ error: "prompt is required" }, 400);
+    if (!task_type) return respond({ error: "task_type is required" }, 400);
+    if (!prompt)    return respond({ error: "prompt is required" }, 400);
 
-    // ── 3. Validate feature is known ──────────────────────────────────────────
+    // ── 4. Validate feature is known ──────────────────────────────────────────
     const route = ROUTES[task_type];
     if (!route) {
       return respond({
@@ -103,7 +123,7 @@ Deno.serve(async (req: Request) => {
       }, 400);
     }
 
-    // ── 4. Rate limit check ───────────────────────────────────────────────────
+    // ── 5. Daily quota check (atomic — see check_and_increment_ai_router_quota) ─
     const { allowed, used, limit } = await checkDailyLimit(serviceClient, user.id, route.primary);
     if (!allowed) {
       const resetAt = new Date();
@@ -116,21 +136,18 @@ Deno.serve(async (req: Request) => {
       }, 429);
     }
 
-    // ── 5. Build messages — include context if provided ───────────────────────
-    const userContent = context?.trim()
-      ? `Context:\n${context.trim()}\n\n${prompt.trim()}`
-      : prompt.trim();
+    // ── 6. Build messages — include context if provided ───────────────────────
+    const userContent = context ? `Context:\n${context}\n\n${prompt}` : prompt;
 
-    // ── 6. Call MRKT AI ───────────────────────────────────────────────────────
+    // ── 7. Call MRKT AI — systemPrompt is always the server-side default ───────
     const result = await callAI({
-      feature:      task_type,
-      messages:     [{ role: "user", content: userContent }],
-      systemPrompt: system_prompt?.trim() || undefined,
-      userId:       user.id,
-      supabase:     serviceClient,
+      feature:  task_type,
+      messages: [{ role: "user", content: userContent }],
+      userId:   user.id,
+      supabase: serviceClient,
     });
 
-    // ── 7. Return — never expose provider name to client ─────────────────────
+    // ── 8. Return — never expose provider name to client ─────────────────────
     return respond({
       response:   result.content,
       feature:    task_type,
@@ -140,7 +157,7 @@ Deno.serve(async (req: Request) => {
         input_tokens:   result.inputTokens,
         output_tokens:  result.outputTokens,
         estimated_cost: result.estimatedCostUsd,
-        requests_today: used + 1,
+        requests_today: used,
         daily_limit:    limit,
       },
     });

@@ -143,25 +143,29 @@ Deno.serve(async (req: Request) => {
 
     const creditCost = asset_type === "video" ? VIDEO_CREDIT_COST : IMAGE_CREDIT_COST;
 
-    // ── 3. Credit balance check ──────────────────────────────────────────────
+    // ── 3. Credit balance check (atomic) ─────────────────────────────────────
+    // Previously a sum-then-generate-then-insert against generated_assets —
+    // not atomic, so concurrent requests near the cap could all pass the
+    // check. consume_higgsfield_credits() checks and reserves the credit in
+    // one row-locked RPC call, before the provider is ever invoked. As with
+    // consume_ai_credits() (content-plan-generate), a credit reserved here is
+    // not refunded if the provider call subsequently fails — the same
+    // fail-closed trade-off already established for AI credit accounting
+    // elsewhere in this codebase.
 
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-
-    const { data: usageRows } = await supabase
-      .from("generated_assets")
-      .select("credits_used")
-      .eq("user_id", user.id)
-      .gte("created_at", monthStart.toISOString());
-
-    const creditsUsed = (usageRows ?? []).reduce(
-      (sum: number, row: { credits_used: number }) => sum + (row.credits_used ?? 1),
-      0,
+    const { data: creditRows, error: creditErr } = await serviceClient.rpc(
+      "consume_higgsfield_credits",
+      { p_user_id: user.id, p_cost: creditCost, p_monthly_limit: MONTHLY_CREDIT_LIMIT },
     );
-    const creditsRemaining = MONTHLY_CREDIT_LIMIT - creditsUsed;
+    if (creditErr) {
+      console.error("consume_higgsfield_credits error:", creditErr);
+      return json({ error: "Unable to verify credits right now. Please try again shortly." }, 503);
+    }
+    const creditResult = Array.isArray(creditRows) ? creditRows[0] : creditRows;
+    const creditsUsed      = creditResult?.used ?? MONTHLY_CREDIT_LIMIT;
+    const creditsRemaining = creditResult?.remaining ?? 0;
 
-    if (creditsRemaining < creditCost) {
+    if (!creditResult?.allowed) {
       return json(
         {
           error:             "Not enough credits",
@@ -299,8 +303,10 @@ Deno.serve(async (req: Request) => {
     return json({
       asset,
       usage: {
-        credits_used:      creditsUsed + creditCost,
-        credits_remaining: creditsRemaining - creditCost,
+        // creditsUsed/creditsRemaining already reflect this request's cost —
+        // consume_higgsfield_credits() returns the POST-consumption balance.
+        credits_used:      creditsUsed,
+        credits_remaining: creditsRemaining,
         limit:             MONTHLY_CREDIT_LIMIT,
         cost:              creditCost,
       },

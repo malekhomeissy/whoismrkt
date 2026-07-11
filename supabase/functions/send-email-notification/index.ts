@@ -261,6 +261,19 @@ serve(async (req) => {
       });
     }
 
+    // Relationship check: the caller may only notify a user they share a
+    // contract, campaign application, conversation, or deliverable with —
+    // closes the IDOR that let any authenticated user email-relay anyone.
+    const { data: related, error: relErr } = await supabase.rpc("users_have_relationship", {
+      p_a: caller.id,
+      p_b: user_id,
+    });
+    if (relErr || !related) {
+      return new Response(JSON.stringify({ error: "Not authorized to notify this user" }), {
+        status: 403, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     // Check notification preferences
     let prefs = (await supabase
       .from("notification_preferences")

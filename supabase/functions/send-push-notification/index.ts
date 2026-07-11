@@ -111,10 +111,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Same relay-abuse concern as send-email/send-whatsapp-notification: at
-    // minimum require a logged-in caller and rate-limit them. Full
-    // relationship verification (caller actually triggered this event) is a
-    // deeper fix tracked separately.
     const caller = await requireAuth(req, supabase);
     if (isRateLimited(`send-push-notification:${caller.id}`, DEFAULT_API_RATE)) {
       return new Response(JSON.stringify({ error: "Too many notification requests. Please slow down." }), {
@@ -128,6 +124,19 @@ serve(async (req) => {
     if (!user_id || !notification_type) {
       return new Response(JSON.stringify({ error: "user_id and notification_type required" }), {
         status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
+    // Relationship check: the caller may only notify a user they share a
+    // contract, campaign application, conversation, or deliverable with —
+    // closes the IDOR that let any authenticated user push-notify anyone.
+    const { data: related, error: relErr } = await supabase.rpc("users_have_relationship", {
+      p_a: caller.id,
+      p_b: user_id,
+    });
+    if (relErr || !related) {
+      return new Response(JSON.stringify({ error: "Not authorized to notify this user" }), {
+        status: 403, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
